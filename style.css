@@ -104,8 +104,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .ring3 { inset: 32px; border-color: var(--gold-light); opacity: .3; animation: spin 16s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .magic-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
-.magic-center-logo { width: 70px; height: 70px; object-fit: contain; animation: logoPulse 4s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px rgba(201,168,76,0.6)); }
-@keyframes logoPulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(201,168,76,1)); } }
+.magic-center-logo { width: 140px; height: 140px; object-fit: contain; animation: logoPulse 4s ease-in-out infinite alternate; filter: drop-shadow(0 0 12px rgba(201,168,76,0.7)); }
+@keyframes logoPulse { 0% { transform: scale(0.95); opacity: 0.85; } 100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 24px rgba(201,168,76,1)); } }
 
 /* BENEFITS */
 .benefits { padding: 100px 0; }
