@@ -31,7 +31,7 @@ async function handleSubmit(e) {
 
   try {
     const formData = new FormData(form);
-    
+
     // Gửi data tới Google Apps Script (sử dụng mode no-cors để tránh lỗi CORS)
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -97,6 +97,9 @@ document.querySelectorAll('.pain-card, .benefit-item, .price-card, .step').forEa
   observer.observe(el);
 });
 
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasTouchPointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
 // Magic dust effect
 function createDust() {
   const dust = document.createElement('div');
@@ -109,28 +112,33 @@ function createDust() {
   document.body.appendChild(dust);
   setTimeout(() => dust.remove(), 10000);
 }
-setInterval(createDust, 300);
+
+if (!prefersReducedMotion) {
+  setInterval(createDust, hasTouchPointer ? 900 : 300);
+}
 
 // Custom Magic Cursor Trail
-const cursorTrail = document.createElement('div');
-cursorTrail.className = 'cursor-trail';
-document.body.appendChild(cursorTrail);
+if (!hasTouchPointer && !prefersReducedMotion) {
+  const cursorTrail = document.createElement('div');
+  cursorTrail.className = 'cursor-trail';
+  document.body.appendChild(cursorTrail);
 
-document.addEventListener('mousemove', (e) => {
-  cursorTrail.style.left = e.clientX + 'px';
-  cursorTrail.style.top = e.clientY + 'px';
-  
-  if(Math.random() > 0.85) {
-    const spark = document.createElement('div');
-    spark.className = 'spark';
-    spark.style.left = e.clientX + 'px';
-    spark.style.top = e.clientY + 'px';
-    spark.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
-    spark.style.setProperty('--dy', (Math.random() * 60 - 30) + 'px');
-    document.body.appendChild(spark);
-    setTimeout(() => spark.remove(), 800);
-  }
-});
+  document.addEventListener('mousemove', (e) => {
+    cursorTrail.style.left = e.clientX + 'px';
+    cursorTrail.style.top = e.clientY + 'px';
+
+    if(Math.random() > 0.85) {
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      spark.style.left = e.clientX + 'px';
+      spark.style.top = e.clientY + 'px';
+      spark.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
+      spark.style.setProperty('--dy', (Math.random() * 60 - 30) + 'px');
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 800);
+    }
+  });
+}
 
 // --- BACKGROUND AUDIO (HTML5) ---
 const bgMusic = document.getElementById('bg-music');
