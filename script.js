@@ -142,7 +142,7 @@ function pickWaveImages() {
 
 function spawnWave() {
   const isMobileViewport = window.matchMedia('(max-width: 900px)').matches;
-  const heroVisual = document.querySelector(isMobileViewport ? '.mobile-card-stage' : '.hero-visual');
+  const heroVisual = document.querySelector('.hero-visual');
   if (!heroVisual) return;
 
   const images = pickWaveImages();
@@ -172,14 +172,18 @@ function spawnWave() {
 
       const duration = baseDuration + Math.random() * 2; // desktop: 14-16s, mobile: 9-11s
       const peakOpacity = 0.7 + Math.random() * 0.25;
+      const startY = isMobileViewport ? '18px' : '-240px';
+      const earlyY = isMobileViewport ? '150px' : '-160px';
+      const lateY = isMobileViewport ? '82vh' : '86vh';
+      const startOpacity = isMobileViewport ? Math.min(0.82, peakOpacity) : 0;
 
       const id = 'fc_' + Date.now() + '_' + i;
       const styleEl = document.createElement('style');
       styleEl.textContent = `
         @keyframes ${id} {
-          0%   { transform: translateY(-240px) rotate(${rotStart.toFixed(1)}deg); opacity: 0; }
-          8%   { opacity: ${peakOpacity.toFixed(2)}; }
-          86%  { opacity: ${(peakOpacity * 0.45).toFixed(2)}; }
+          0%   { transform: translateY(${startY}) rotate(${rotStart.toFixed(1)}deg); opacity: ${startOpacity.toFixed(2)}; }
+          10%  { transform: translateY(${earlyY}) rotate(${(rotStart + tiltDir * 2).toFixed(1)}deg); opacity: ${peakOpacity.toFixed(2)}; }
+          86%  { transform: translateY(${lateY}) rotate(${(rotEnd - tiltDir * 3).toFixed(1)}deg); opacity: ${(peakOpacity * 0.45).toFixed(2)}; }
           100% { transform: translateY(110vh) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
         }
       `;
@@ -211,8 +215,8 @@ function spawnWave() {
 }
 
 if (!prefersReducedMotion) {
-  // First wave starts after 1.5s
-  setTimeout(spawnWave, 1500);
+  // Start quickly on mobile so the cards are visible as soon as the hero opens.
+  setTimeout(spawnWave, window.matchMedia('(max-width: 900px)').matches ? 180 : 1500);
 }
 
 // Custom Magic Cursor Trail
