@@ -117,9 +117,8 @@ if (!prefersReducedMotion) {
   setInterval(createDust, hasTouchPointer ? 900 : 300);
 }
 
-// --- FALLING CARDS (Slot-based, max 4 on screen) ---
+// --- FALLING CARDS (Wave system: exactly 3 cards per wave, zero overlap) ---
 const CARD_IMAGES = [
-  'hinh/labai.jpg',
   'hinh/labai1.jpg',
   'hinh/labai2.jpg',
   'hinh/labai3.jpg',
@@ -128,115 +127,86 @@ const CARD_IMAGES = [
   'hinh/labai6.jpg',
 ];
 
-// 4 columns: each slot occupies ~22vw, spaced evenly across screen
-// Slots: left-edge positions (vw) with safe padding so card doesn't clip edges
-const SLOTS = [3, 25, 52, 75]; // left vw for each column
-const slotBusy = [false, false, false, false];
-let lastImageIndex = -1;
-let slotQueue = [0, 1, 2, 3]; // round-robin order, shuffled
+// 3 fixed lanes spread across screen (left, center, right)
+const LANES = [4, 38, 72]; // vw positions
+const WAVE_FALL_DURATION = 14; // seconds per card
+const WAVE_STAGGER      = 500;  // ms between each card in a wave
+const WAVE_GAP          = 3000; // ms gap after wave ends before next
 
-function shuffleSlotQueue() {
-  for (let i = slotQueue.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [slotQueue[i], slotQueue[j]] = [slotQueue[j], slotQueue[i]];
-  }
-}
-shuffleSlotQueue();
-let slotQueueIdx = 0;
-
-function nextUniqueImage() {
-  let idx;
-  do { idx = Math.floor(Math.random() * CARD_IMAGES.length); }
-  while (idx === lastImageIndex && CARD_IMAGES.length > 1);
-  lastImageIndex = idx;
-  return CARD_IMAGES[idx];
+function pickWaveImages() {
+  // Shuffle all 6 and pick first 3 (no duplicates within a wave)
+  return [...CARD_IMAGES].sort(() => Math.random() - 0.5).slice(0, 3);
 }
 
-function spawnCard(slotIndex) {
-  if (slotBusy[slotIndex]) return;
+function spawnWave() {
   const heroVisual = document.querySelector('.hero-visual');
   if (!heroVisual) return;
 
-  slotBusy[slotIndex] = true;
+  const images = pickWaveImages();
 
-  const card = document.createElement('div');
-  card.className = 'card-fall card-fall-random';
+  LANES.forEach((laneVw, i) => {
+    setTimeout(() => {
+      const card = document.createElement('div');
+      card.className = 'card-fall card-fall-random';
 
-  const img = document.createElement('img');
-  img.src = nextUniqueImage();
-  img.alt = 'Lá bài Clow';
-  img.className = 'card-img';
-  card.appendChild(img);
+      const img = document.createElement('img');
+      img.src = images[i];
+      img.alt = 'Lá bài Clow';
+      img.className = 'card-img';
+      card.appendChild(img);
 
-  // Position within this slot: base + small jitter (±4vw)
-  const jitter = (Math.random() * 8) - 4;
-  const leftVw = Math.max(1, Math.min(82, SLOTS[slotIndex] + jitter));
-  card.style.left = leftVw + 'vw';
+      // Tiny jitter within lane so it feels natural (±3vw)
+      const jitter = (Math.random() * 6) - 3;
+      const left = Math.max(1, Math.min(80, laneVw + jitter));
 
-  // Rotation: gentle tilt based on which side of screen
-  const sideBias = slotIndex < 2 ? -1 : 1;
-  const rotStart = sideBias * (8 + Math.random() * 18);
-  const rotEnd   = rotStart + sideBias * (Math.random() * 8);
+      // Tilt: left lane → left lean, right lane → right lean, center → slight random
+      const tiltDir = i === 0 ? -1 : i === 2 ? 1 : (Math.random() > 0.5 ? -1 : 1);
+      const rotStart = tiltDir * (10 + Math.random() * 14);
+      const rotEnd   = rotStart + tiltDir * (2 + Math.random() * 6);
 
-  // Fall duration: 11–16s (slower = more elegant)
-  const duration = 11 + Math.random() * 5;
-  const peakOpacity = 0.65 + Math.random() * 0.3;
+      const duration = WAVE_FALL_DURATION + Math.random() * 2; // 14–16s
+      const peakOpacity = 0.7 + Math.random() * 0.25;
 
-  const id = 'fc_' + Date.now() + '_' + slotIndex;
-  const styleEl = document.createElement('style');
-  styleEl.textContent = `
-    @keyframes ${id} {
-      0%   { transform: translateY(-240px) rotate(${rotStart.toFixed(1)}deg); opacity: 0; }
-      7%   { opacity: ${peakOpacity.toFixed(2)}; }
-      85%  { opacity: ${(peakOpacity * 0.55).toFixed(2)}; }
-      100% { transform: translateY(108vh) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
-    }
-  `;
-  document.head.appendChild(styleEl);
+      const id = 'fc_' + Date.now() + '_' + i;
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `
+        @keyframes ${id} {
+          0%   { transform: translateY(-240px) rotate(${rotStart.toFixed(1)}deg); opacity: 0; }
+          8%   { opacity: ${peakOpacity.toFixed(2)}; }
+          86%  { opacity: ${(peakOpacity * 0.45).toFixed(2)}; }
+          100% { transform: translateY(110vh) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(styleEl);
 
-  card.style.cssText += `
-    animation: ${id} ${duration.toFixed(1)}s ease-in forwards;
-    position: absolute;
-    top: 0;
-    pointer-events: auto;
-    will-change: transform, opacity;
-  `;
+      card.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: ${left}vw;
+        animation: ${id} ${duration.toFixed(1)}s ease-in forwards;
+        pointer-events: auto;
+        will-change: transform, opacity;
+      `;
 
-  heroVisual.appendChild(card);
+      heroVisual.appendChild(card);
 
-  // Free slot after animation + small buffer
-  setTimeout(() => {
-    card.remove();
-    styleEl.remove();
-    slotBusy[slotIndex] = false;
-  }, duration * 1000 + 300);
-}
+      setTimeout(() => {
+        card.remove();
+        styleEl.remove();
+      }, duration * 1000 + 400);
 
-function scheduleFallingCards() {
-  // Count active cards
-  const activeCount = slotBusy.filter(Boolean).length;
-  if (activeCount >= 4) return; // max 4 on screen
+    }, i * WAVE_STAGGER);
+  });
 
-  // Find next free slot from round-robin queue
-  let tries = 0;
-  while (tries < 4) {
-    const slot = slotQueue[slotQueueIdx % slotQueue.length];
-    slotQueueIdx++;
-    if (!slotBusy[slot]) {
-      spawnCard(slot);
-      // Reshuffle queue each full cycle
-      if (slotQueueIdx % slotQueue.length === 0) shuffleSlotQueue();
-      break;
-    }
-    tries++;
-  }
+  // Schedule next wave only AFTER this wave fully finishes + gap
+  // Total wave time = fall duration + last card's stagger delay + gap
+  const nextWaveDelay = WAVE_FALL_DURATION * 1000 + LANES.length * WAVE_STAGGER + WAVE_GAP;
+  setTimeout(spawnWave, nextWaveDelay);
 }
 
 if (!prefersReducedMotion) {
-  // Stagger initial 3 cards across different slots at startup
-  [0, 2, 1].forEach((slot, i) => setTimeout(() => spawnCard(slot), i * 2200));
-  // Then cycle a new card every 3.5s (keeps max ~3-4 on screen)
-  setInterval(scheduleFallingCards, 3500);
+  // First wave starts after 1.5s
+  setTimeout(spawnWave, 1500);
 }
 
 // Custom Magic Cursor Trail
