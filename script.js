@@ -129,10 +129,11 @@ const CARD_IMAGES = [
 
 // 3 fixed lanes spread across screen (left, center, right)
 const DESKTOP_LANES = [4, 38, 72]; // vw positions
-const MOBILE_LANES = [8, 38, 62];
+const MOBILE_LANES = [4, 42, 78];
 const WAVE_FALL_DURATION = 14; // seconds per card
-const MOBILE_WAVE_FALL_DURATION = 9;
+const MOBILE_WAVE_FALL_DURATION = 10;
 const WAVE_STAGGER      = 500;  // ms between each card in a wave
+const MOBILE_WAVE_STAGGER = 1450;
 const WAVE_GAP          = 3000; // ms gap after wave ends before next
 
 function pickWaveImages() {
@@ -148,6 +149,7 @@ function spawnWave() {
   const images = pickWaveImages();
   const lanes = isMobileViewport ? MOBILE_LANES : DESKTOP_LANES;
   const baseDuration = isMobileViewport ? MOBILE_WAVE_FALL_DURATION : WAVE_FALL_DURATION;
+  const waveStagger = isMobileViewport ? MOBILE_WAVE_STAGGER : WAVE_STAGGER;
 
   lanes.forEach((laneVw, i) => {
     setTimeout(() => {
@@ -161,8 +163,9 @@ function spawnWave() {
       card.appendChild(img);
 
       // Tiny jitter within lane so it feels natural (±3vw)
-      const jitter = (Math.random() * 6) - 3;
-      const maxLeft = isMobileViewport ? 66 : 80;
+      const jitterRange = isMobileViewport ? 2 : 6;
+      const jitter = (Math.random() * jitterRange) - (jitterRange / 2);
+      const maxLeft = isMobileViewport ? 80 : 80;
       const left = Math.max(1, Math.min(maxLeft, laneVw + jitter));
 
       // Tilt: left lane → left lean, right lane → right lean, center → slight random
@@ -172,8 +175,8 @@ function spawnWave() {
 
       const duration = baseDuration + Math.random() * 2; // desktop: 14-16s, mobile: 9-11s
       const peakOpacity = 0.7 + Math.random() * 0.25;
-      const startY = isMobileViewport ? '18px' : '-240px';
-      const earlyY = isMobileViewport ? '150px' : '-160px';
+      const startY = isMobileViewport ? `${18 + i * 26}px` : '-240px';
+      const earlyY = isMobileViewport ? `${150 + i * 28}px` : '-160px';
       const lateY = isMobileViewport ? '82vh' : '86vh';
       const startOpacity = isMobileViewport ? Math.min(0.82, peakOpacity) : 0;
 
@@ -205,12 +208,12 @@ function spawnWave() {
         styleEl.remove();
       }, duration * 1000 + 400);
 
-    }, i * WAVE_STAGGER);
+    }, i * waveStagger);
   });
 
   // Schedule next wave only AFTER this wave fully finishes + gap
   // Total wave time = fall duration + last card's stagger delay + gap
-  const nextWaveDelay = baseDuration * 1000 + lanes.length * WAVE_STAGGER + WAVE_GAP;
+  const nextWaveDelay = baseDuration * 1000 + lanes.length * waveStagger + WAVE_GAP;
   setTimeout(spawnWave, nextWaveDelay);
 }
 

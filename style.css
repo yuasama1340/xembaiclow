@@ -258,7 +258,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
     z-index: 1;
   }
   .card-fall { pointer-events: none; }
-  .card-img { width: clamp(82px, 22vw, 108px); border-radius: 12px; opacity: .88; }
+  .card-img { width: clamp(64px, 18vw, 86px); border-radius: 10px; opacity: .78; }
   .hero-center-glow { top: 48%; width: 260px; height: 260px; opacity: .65; }
   .about, .benefits, .pricing, .process, .contact { padding: 72px 0; }
   .section-title { margin-bottom: 32px; }
@@ -285,7 +285,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .hero-actions { flex-direction: column; width: 100%; gap: 12px; }
   .btn-primary, .btn-outline, .btn-price { width: 100%; text-align: center; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
   .hero-stats { grid-template-columns: 1fr; }
-  .card-img { width: clamp(76px, 23vw, 98px); border-width: 1px; }
+  .card-img { width: clamp(60px, 17vw, 78px); border-width: 1px; }
   .section-label { font-size: .7rem; letter-spacing: 2px; }
   .section-title { font-size: clamp(1.75rem, 8vw, 2.25rem); }
   .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
