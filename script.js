@@ -117,6 +117,80 @@ if (!prefersReducedMotion) {
   setInterval(createDust, hasTouchPointer ? 900 : 300);
 }
 
+// --- FALLING CARDS (Random) ---
+const CARD_IMAGES = [
+  'hinh/labai.jpg',
+  'hinh/labai1.jpg',
+  'hinh/labai2.jpg',
+  'hinh/labai3.jpg',
+  'hinh/labai4.jpg',
+  'hinh/labai5.jpg',
+  'hinh/labai6.jpg',
+];
+
+function createFallingCard() {
+  const heroVisual = document.querySelector('.hero-visual');
+  if (!heroVisual) return;
+
+  const card = document.createElement('div');
+  card.className = 'card-fall card-fall-random';
+
+  const img = document.createElement('img');
+  img.src = CARD_IMAGES[Math.floor(Math.random() * CARD_IMAGES.length)];
+  img.alt = 'Lá bài Clow';
+  img.className = 'card-img';
+  card.appendChild(img);
+
+  // Random horizontal position (0% – 90% of viewport width)
+  const leftPercent = Math.random() * 90;
+  card.style.left = leftPercent + 'vw';
+
+  // Random rotation: -30 to +30 deg start, end rotation varies too
+  const rotStart = (Math.random() * 60) - 30;
+  const rotEnd   = rotStart + (Math.random() * 20) - 10;
+
+  // Random fall duration 8–18s, random opacity range
+  const duration = 8 + Math.random() * 10;
+  const peakOpacity = 0.55 + Math.random() * 0.45;
+
+  // Build a unique keyframe name
+  const id = 'fc_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    @keyframes ${id} {
+      0%   { transform: translateY(-220px) rotate(${rotStart}deg); opacity: 0; }
+      8%   { opacity: ${peakOpacity}; }
+      88%  { opacity: ${(peakOpacity * 0.6).toFixed(2)}; }
+      100% { transform: translateY(105vh) rotate(${rotEnd}deg); opacity: 0; }
+    }
+  `;
+  document.head.appendChild(styleEl);
+
+  card.style.animation = `${id} ${duration.toFixed(1)}s linear forwards`;
+  card.style.position = 'absolute';
+  card.style.top = '0';
+  card.style.pointerEvents = 'auto';
+
+  heroVisual.appendChild(card);
+
+  // Remove card and style after animation ends
+  const totalMs = duration * 1000;
+  setTimeout(() => {
+    card.remove();
+    styleEl.remove();
+  }, totalMs + 200);
+}
+
+// Spawn random falling cards continuously (only on desktop)
+if (!prefersReducedMotion) {
+  // Initial burst: stagger 6 cards at startup
+  for (let i = 0; i < 6; i++) {
+    setTimeout(createFallingCard, i * 1800);
+  }
+  // Then keep spawning every 2.5s
+  setInterval(createFallingCard, 2500);
+}
+
 // Custom Magic Cursor Trail
 if (!hasTouchPointer && !prefersReducedMotion) {
   const cursorTrail = document.createElement('div');
