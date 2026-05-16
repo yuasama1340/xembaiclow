@@ -117,7 +117,7 @@ if (!prefersReducedMotion) {
   setInterval(createDust, hasTouchPointer ? 900 : 300);
 }
 
-// --- FALLING CARDS (Wave system: exactly 3 cards per wave, zero overlap) ---
+// --- FALLING CARDS (Wave system) ---
 const CARD_IMAGES = [
   'hinh/labai1.jpg',
   'hinh/labai2.jpg',
@@ -127,67 +127,61 @@ const CARD_IMAGES = [
   'hinh/labai6.jpg',
 ];
 
-// 3 fixed lanes spread across screen (left, center, right)
-const DESKTOP_LANES = [4, 38, 72]; // vw positions
-const MOBILE_LANES = [4, 42, 78];
-const WAVE_FALL_DURATION = 14; // seconds per card
-const MOBILE_WAVE_FALL_DURATION = 10;
-const WAVE_STAGGER      = 500;  // ms between each card in a wave
-const MOBILE_WAVE_STAGGER = 1450;
-const WAVE_GAP          = 3000; // ms gap after wave ends before next
+function isMobileViewport() {
+  return window.innerWidth <= 900;
+}
 
-function pickWaveImages() {
-  // Shuffle all 6 and pick first 3 (no duplicates within a wave)
-  return [...CARD_IMAGES].sort(() => Math.random() - 0.5).slice(0, 3);
+function pickImages(count) {
+  return [...CARD_IMAGES].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
 function spawnWave() {
-  const isMobileViewport = window.matchMedia('(max-width: 900px)').matches;
-  const heroVisual = document.querySelector('.hero-visual');
-  if (!heroVisual) return;
+  const mobile = isMobileViewport();
 
-  const images = pickWaveImages();
-  const lanes = isMobileViewport ? MOBILE_LANES : DESKTOP_LANES;
-  const baseDuration = isMobileViewport ? MOBILE_WAVE_FALL_DURATION : WAVE_FALL_DURATION;
-  const waveStagger = isMobileViewport ? MOBILE_WAVE_STAGGER : WAVE_STAGGER;
+  // Pick the right container and config
+  const container = mobile
+    ? document.querySelector('.hero-cards-mobile')
+    : document.querySelector('.hero-visual');
+  if (!container) return;
+
+  // Desktop: 3 lanes across full viewport; Mobile: 2 lanes well-separated
+  const lanes        = mobile ? [8, 52]   : [4, 38, 72];   // vw
+  const fallDuration = mobile ? 8         : 14;             // seconds
+  const stagger      = mobile ? 700       : 500;            // ms between cards
+  const gap          = 3000;                                 // ms between waves
+  const maxLeft      = mobile ? 68        : 80;             // clamp vw
+
+  const images = pickImages(lanes.length);
 
   lanes.forEach((laneVw, i) => {
     setTimeout(() => {
       const card = document.createElement('div');
-      card.className = 'card-fall card-fall-random';
-
-      const img = document.createElement('img');
-      img.src = images[i];
-      img.alt = 'Lá bài Clow';
+      const img  = document.createElement('img');
+      img.src       = images[i];
+      img.alt       = 'Lá bài Clow';
       img.className = 'card-img';
       card.appendChild(img);
 
-      // Tiny jitter within lane so it feels natural (±3vw)
-      const jitterRange = isMobileViewport ? 2 : 6;
-      const jitter = (Math.random() * jitterRange) - (jitterRange / 2);
-      const maxLeft = isMobileViewport ? 80 : 80;
-      const left = Math.max(1, Math.min(maxLeft, laneVw + jitter));
+      // Small jitter so cards don't feel robotic
+      const jitter   = (Math.random() * 4) - 2;
+      const left     = Math.max(1, Math.min(maxLeft, laneVw + jitter));
 
-      // Tilt: left lane → left lean, right lane → right lean, center → slight random
-      const tiltDir = i === 0 ? -1 : i === 2 ? 1 : (Math.random() > 0.5 ? -1 : 1);
+      // Tilt: left card leans left, right card leans right
+      const tiltDir  = i === 0 ? -1 : i === (lanes.length - 1) ? 1 : (Math.random() > 0.5 ? -1 : 1);
       const rotStart = tiltDir * (10 + Math.random() * 14);
-      const rotEnd   = rotStart + tiltDir * (2 + Math.random() * 6);
+      const rotEnd   = rotStart + tiltDir * (2 + Math.random() * 5);
 
-      const duration = baseDuration + Math.random() * 2; // desktop: 14-16s, mobile: 9-11s
-      const peakOpacity = 0.7 + Math.random() * 0.25;
-      const startY = isMobileViewport ? `${18 + i * 26}px` : '-240px';
-      const earlyY = isMobileViewport ? `${150 + i * 28}px` : '-160px';
-      const lateY = isMobileViewport ? '82vh' : '86vh';
-      const startOpacity = isMobileViewport ? Math.min(0.82, peakOpacity) : 0;
+      const duration    = fallDuration + Math.random() * 2;
+      const peakOpacity = 0.75 + Math.random() * 0.2;
 
-      const id = 'fc_' + Date.now() + '_' + i;
+      const id      = 'fc_' + Date.now() + '_' + i;
       const styleEl = document.createElement('style');
       styleEl.textContent = `
         @keyframes ${id} {
-          0%   { transform: translateY(${startY}) rotate(${rotStart.toFixed(1)}deg); opacity: ${startOpacity.toFixed(2)}; }
-          10%  { transform: translateY(${earlyY}) rotate(${(rotStart + tiltDir * 2).toFixed(1)}deg); opacity: ${peakOpacity.toFixed(2)}; }
-          86%  { transform: translateY(${lateY}) rotate(${(rotEnd - tiltDir * 3).toFixed(1)}deg); opacity: ${(peakOpacity * 0.45).toFixed(2)}; }
-          100% { transform: translateY(110vh) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
+          0%   { transform: translateY(-200px) rotate(${rotStart.toFixed(1)}deg); opacity: 0; }
+          8%   { opacity: ${peakOpacity.toFixed(2)}; }
+          86%  { opacity: ${(peakOpacity * 0.4).toFixed(2)}; }
+          100% { transform: translateY(115%) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
         }
       `;
       document.head.appendChild(styleEl);
@@ -197,30 +191,26 @@ function spawnWave() {
         top: 0;
         left: ${left}vw;
         animation: ${id} ${duration.toFixed(1)}s ease-in forwards;
-        pointer-events: auto;
         will-change: transform, opacity;
       `;
 
-      heroVisual.appendChild(card);
+      container.appendChild(card);
 
-      setTimeout(() => {
-        card.remove();
-        styleEl.remove();
-      }, duration * 1000 + 400);
+      setTimeout(() => { card.remove(); styleEl.remove(); }, duration * 1000 + 400);
 
-    }, i * waveStagger);
+    }, i * stagger);
   });
 
-  // Schedule next wave only AFTER this wave fully finishes + gap
-  // Total wave time = fall duration + last card's stagger delay + gap
-  const nextWaveDelay = baseDuration * 1000 + lanes.length * waveStagger + WAVE_GAP;
-  setTimeout(spawnWave, nextWaveDelay);
+  // Next wave starts only after this wave fully finishes + gap
+  const nextDelay = fallDuration * 1000 + lanes.length * stagger + gap;
+  setTimeout(spawnWave, nextDelay);
 }
 
 if (!prefersReducedMotion) {
-  // Start quickly on mobile so the cards are visible as soon as the hero opens.
-  setTimeout(spawnWave, window.matchMedia('(max-width: 900px)').matches ? 180 : 1500);
+  setTimeout(spawnWave, isMobileViewport() ? 400 : 1500);
 }
+
+
 
 // Custom Magic Cursor Trail
 if (!hasTouchPointer && !prefersReducedMotion) {

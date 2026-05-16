@@ -74,6 +74,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .stat-label { font-size: .8rem; color: var(--text-muted); }
 .stat-divider { width: 1px; height: 40px; background: var(--glass-border); }
 .hero-visual { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.hero-cards-mobile { display: none; }
 .card-fall { position: absolute; top: 0; pointer-events: auto; }
 .card-fall-1 { left: 5%; animation: fallCard1 9s linear infinite; }
 .card-fall-2 { left: 43%; animation: fallCard2 12s linear infinite; animation-delay: -5s; }
@@ -238,9 +239,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .nav-links li { flex: 0 0 auto; }
   .nav-links a { display: block; white-space: nowrap; font-size: .86rem; padding: 8px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(180,126,229,0.14); border-radius: 999px; }
   .nav-cta { padding: 8px 14px !important; }
-  .hero { min-height: auto; padding: 112px 0 54px; }
-  .hero-content { grid-template-columns: 1fr; padding: 0 20px; }
+  .hero { min-height: auto; padding: 112px 0 0; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .hero-content { grid-template-columns: 1fr; padding: 0 20px; padding-bottom: 32px; }
   .hero-logo-img { width: 136px; height: 136px; margin-bottom: 18px; }
+  .hero-cards-mobile { display: block; position: relative; width: 100%; height: 280px; overflow: hidden; flex-shrink: 0; }
+  .hero-cards-mobile .card-img { width: 100px; }
   .hero-badge { font-size: .76rem; line-height: 1.35; padding: 8px 14px; max-width: 100%; }
   .hero-title { font-size: clamp(2.05rem, 10vw, 3rem); line-height: 1.08; }
   .hero-sub { font-size: 1rem; line-height: 1.65; margin-bottom: 26px; }
