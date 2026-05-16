@@ -82,6 +82,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 @keyframes fallCard1 { 0% { transform: translateY(-220px) rotate(-20deg); opacity: 0; } 8% { opacity: 1; } 88% { opacity: 0.7; } 100% { transform: translateY(105vh) rotate(-8deg); opacity: 0; } }
 @keyframes fallCard2 { 0% { transform: translateY(-220px) rotate(6deg); opacity: 0; } 8% { opacity: 0.9; } 88% { opacity: 0.5; } 100% { transform: translateY(105vh) rotate(-4deg); opacity: 0; } }
 @keyframes fallCard3 { 0% { transform: translateY(-220px) rotate(20deg); opacity: 0; } 8% { opacity: 1; } 88% { opacity: 0.7; } 100% { transform: translateY(105vh) rotate(28deg); opacity: 0; } }
+.mobile-card-stage { display: none; }
 .hero-center-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(107,63,160,.3) 0%, transparent 70%); border-radius: 50%; animation: pulse 3s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .5; } 50% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; } }
 
@@ -251,6 +252,26 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .stat-label { display: block; font-size: .72rem; line-height: 1.35; }
   .stat-divider { display: none; }
   .hero-visual { display: none; }
+  .mobile-card-stage {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: clamp(260px, 62vw, 380px);
+    margin: -10px 0 20px;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .mobile-card-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10,8,18,0) 0%, rgba(45,27,94,0.18) 45%, rgba(10,8,18,0) 100%);
+    pointer-events: none;
+  }
+  .card-fall { pointer-events: none; }
+  .card-img { width: clamp(86px, 24vw, 118px); border-radius: 12px; }
+  .hero-center-glow { top: 45%; width: 220px; height: 220px; opacity: .65; }
   .about, .benefits, .pricing, .process, .contact { padding: 72px 0; }
   .section-title { margin-bottom: 32px; }
   .pricing-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
@@ -276,6 +297,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .hero-actions { flex-direction: column; width: 100%; gap: 12px; }
   .btn-primary, .btn-outline, .btn-price { width: 100%; text-align: center; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
   .hero-stats { grid-template-columns: 1fr; }
+  .mobile-card-stage { height: clamp(280px, 78vw, 360px); margin: -4px 0 24px; }
+  .card-img { width: clamp(78px, 25vw, 104px); border-width: 1px; }
   .section-label { font-size: .7rem; letter-spacing: 2px; }
   .section-title { font-size: clamp(1.75rem, 8vw, 2.25rem); }
   .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }

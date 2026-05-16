@@ -128,8 +128,10 @@ const CARD_IMAGES = [
 ];
 
 // 3 fixed lanes spread across screen (left, center, right)
-const LANES = [4, 38, 72]; // vw positions
+const DESKTOP_LANES = [4, 38, 72]; // vw positions
+const MOBILE_LANES = [8, 38, 62];
 const WAVE_FALL_DURATION = 14; // seconds per card
+const MOBILE_WAVE_FALL_DURATION = 9;
 const WAVE_STAGGER      = 500;  // ms between each card in a wave
 const WAVE_GAP          = 3000; // ms gap after wave ends before next
 
@@ -139,12 +141,15 @@ function pickWaveImages() {
 }
 
 function spawnWave() {
-  const heroVisual = document.querySelector('.hero-visual');
+  const isMobileViewport = window.matchMedia('(max-width: 900px)').matches;
+  const heroVisual = document.querySelector(isMobileViewport ? '.mobile-card-stage' : '.hero-visual');
   if (!heroVisual) return;
 
   const images = pickWaveImages();
+  const lanes = isMobileViewport ? MOBILE_LANES : DESKTOP_LANES;
+  const baseDuration = isMobileViewport ? MOBILE_WAVE_FALL_DURATION : WAVE_FALL_DURATION;
 
-  LANES.forEach((laneVw, i) => {
+  lanes.forEach((laneVw, i) => {
     setTimeout(() => {
       const card = document.createElement('div');
       card.className = 'card-fall card-fall-random';
@@ -157,14 +162,15 @@ function spawnWave() {
 
       // Tiny jitter within lane so it feels natural (±3vw)
       const jitter = (Math.random() * 6) - 3;
-      const left = Math.max(1, Math.min(80, laneVw + jitter));
+      const maxLeft = isMobileViewport ? 66 : 80;
+      const left = Math.max(1, Math.min(maxLeft, laneVw + jitter));
 
       // Tilt: left lane → left lean, right lane → right lean, center → slight random
       const tiltDir = i === 0 ? -1 : i === 2 ? 1 : (Math.random() > 0.5 ? -1 : 1);
       const rotStart = tiltDir * (10 + Math.random() * 14);
       const rotEnd   = rotStart + tiltDir * (2 + Math.random() * 6);
 
-      const duration = WAVE_FALL_DURATION + Math.random() * 2; // 14–16s
+      const duration = baseDuration + Math.random() * 2; // desktop: 14-16s, mobile: 9-11s
       const peakOpacity = 0.7 + Math.random() * 0.25;
 
       const id = 'fc_' + Date.now() + '_' + i;
@@ -200,7 +206,7 @@ function spawnWave() {
 
   // Schedule next wave only AFTER this wave fully finishes + gap
   // Total wave time = fall duration + last card's stagger delay + gap
-  const nextWaveDelay = WAVE_FALL_DURATION * 1000 + LANES.length * WAVE_STAGGER + WAVE_GAP;
+  const nextWaveDelay = baseDuration * 1000 + lanes.length * WAVE_STAGGER + WAVE_GAP;
   setTimeout(spawnWave, nextWaveDelay);
 }
 
