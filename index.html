@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="style.css?v=20260516-hero-cards" />
 </head>
 <body>
@@ -54,14 +55,13 @@
     <div class="hero-visual">
       <div class="hero-center-glow"></div>
     </div>
-    <div class="hero-cards-mobile"></div>
   </section>
 
   <!-- ABOUT / PROBLEM -->
   <section class="about" id="about">
     <div class="container">
       <div class="section-label">Bạn có đang trải qua điều này?</div>
-      <h2 class="section-title">Khi Cuộc Sống Cảm Thấy <em>Mù Mịt</em></h2>
+      <h2 class="section-title">Khi Cuộc Sống Cảm Thấy <span style="white-space: nowrap;"><em>Mù Mịt</em></span></h2>
       <div class="pain-grid">
         <div class="pain-card" id="pain-1">
           <div class="pain-icon">🎓</div>
@@ -93,7 +93,7 @@
         <div class="solution-visual">
           <div class="magic-circle">
             <div class="magic-center">
-              <img src="hinh/logo.png" alt="ClowCat Logo" class="magic-center-logo" />
+              <img src="hinh/baiclow.png" alt="Bài Clow" class="magic-center-logo" />
             </div>
           </div>
         </div>
@@ -264,10 +264,19 @@
 
       </div>
 
-      <div class="extra-fee">
-        <div class="extra-icon">⏳</div>
-        <div class="extra-text">
-          <strong>Phụ phí linh hoạt:</strong> Thêm <span class="gold">100.000đ</span> cho mỗi 15 phút trò chuyện thêm ngoài gói đã chọn.
+      <div class="extra-fee" style="flex-direction: column; align-items: flex-start; gap: 16px; padding: 24px 28px;">
+        <div style="display: flex; align-items: flex-start; gap: 20px; width: 100%;">
+          <div class="extra-icon">🔮</div>
+          <div class="extra-text">
+            <strong>Từng chủ đề gồm:</strong> công việc, sự nghiệp, tình yêu, học tập, mối quan hệ, tài chính... Mỗi chủ đề không giới hạn số lượng câu hỏi.
+          </div>
+        </div>
+        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
+        <div style="display: flex; align-items: flex-start; gap: 20px; width: 100%;">
+          <div class="extra-icon">⏳</div>
+          <div class="extra-text">
+            <strong>Phụ phí linh hoạt:</strong> Thêm <span class="gold">100.000đ</span> cho mỗi 15 phút trò chuyện thêm ngoài gói đã chọn.
+          </div>
         </div>
       </div>
     </div>
@@ -280,7 +289,12 @@
         <div class="offer-glow"></div>
         <div class="offer-content">
           <div class="offer-badge">🎁 Ưu Đãi Đặc Biệt Tháng 6</div>
-          <h2 class="offer-title">Tặng Miễn Phí<br /><em>File PDF Tóm Tắt Buổi Tư Vấn</em></h2>
+          <h2 class="offer-title">
+            Tặng Miễn Phí<br /> <em>File PDF Tóm Tắt Buổi Tư Vấn</em>
+            <div style="font-size: 0.65em; color: var(--gold-light); margin-top: 18px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; font-family: 'Playfair Display', serif; text-shadow: 0 2px 10px rgba(201,168,76,0.3);">
+              ✦ Dành Riêng Cho Gói Toàn Diện 500k ✦
+            </div>
+          </h2>
           <p class="offer-desc">Đăng ký qua Landing Page trong tháng 6 và nhận ngay file PDF đẹp tóm tắt toàn bộ nội dung tư vấn, kèm hình ảnh trải bài của bạn – kỷ niệm chương hành trình khám phá bản thân.</p>
           <div class="offer-features">
             <div class="of-item">✦ File PDF thiết kế đẹp, chuyên nghiệp</div>
@@ -415,9 +429,20 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-top">
-        <div class="footer-brand">
-          <img src="hinh/logo.png" alt="ClowCat Logo" class="footer-logo-img" />
-          <p>Định hướng cuộc đời qua những thông điệp bí ẩn và chữa lành từ bài Clow.</p>
+        <div class="footer-links">
+          <h4>Liên hệ</h4>
+          <p class="footer-contact-text">Tìm hiểu thêm qua các nền tảng mạng xã hội của Clow Cat Patronus:</p>
+          <div class="social-icons">
+            <a href="#" class="social-icon" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="social-icon" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="social-icon" aria-label="Threads"><i class="fa-brands fa-threads"></i></a>
+            <a href="#" class="social-icon" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#" class="social-icon" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+        <div class="footer-brand" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+          <img src="hinh/logo.png" alt="ClowCat Logo" class="footer-logo-img" style="width: 140px; height: 140px; margin-bottom: 12px;" />
+          <p style="white-space: nowrap; font-size: 1.05rem; letter-spacing: 1px; color: var(--gold-light);">KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG</p>
         </div>
         <div class="footer-links">
           <h4>Dịch vụ</h4>
@@ -425,13 +450,6 @@
             <li><a href="#pricing">Gói Khám Phá</a></li>
             <li><a href="#pricing">Gói Kết Nối</a></li>
             <li><a href="#pricing">Gói Toàn Diện</a></li>
-          </ul>
-        </div>
-        <div class="footer-links">
-          <h4>Liên hệ</h4>
-          <ul>
-            <li>📍 TP.HCM</li>
-            <li>🌐 Online toàn quốc</li>
           </ul>
         </div>
       </div>

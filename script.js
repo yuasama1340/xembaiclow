@@ -138,17 +138,20 @@ function pickImages(count) {
 function spawnWave() {
   const mobile = isMobileViewport();
 
-  // Pick the right container and config
-  const container = mobile
-    ? document.querySelector('.hero-cards-mobile')
-    : document.querySelector('.hero-visual');
-  if (!container) return;
+  // Create or get global fixed container
+  let container = document.getElementById('global-cards-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'global-cards-container';
+    container.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; overflow: hidden;';
+    document.body.appendChild(container);
+  }
 
   // Desktop: 3 lanes across full viewport; Mobile: 2 lanes well-separated
-  const lanes        = mobile ? [8, 52]   : [4, 38, 72];   // vw
-  const fallDuration = mobile ? 8         : 14;             // seconds
-  const stagger      = mobile ? 700       : 500;            // ms between cards
-  const gap          = 3000;                                 // ms between waves
+  const lanes        = mobile ? [10, 60]  : [12, 45, 78];   // vw
+  const fallDuration = mobile ? 6         : 10;             // seconds
+  const stagger      = mobile ? 600       : 400;            // ms between cards
+  const gap          = 2500;                                 // ms between waves
   const maxLeft      = mobile ? 68        : 80;             // clamp vw
 
   const images = pickImages(lanes.length);
