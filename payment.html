@@ -490,12 +490,21 @@
         document.getElementById('redirect-label').textContent =
           'Đang chuyển hướng đến trang xác nhận...';
 
-        // Xóa dữ liệu đơn hàng khỏi session
-        sessionStorage.removeItem('pendingOrder');
-
-        // Redirect sau 3s
+        // Để thankyou.html tự dọn dẹp session sau khi đã hiển thị xong dữ liệu
+        
+        // Redirect sau 3s kèm query params dự phòng đề phòng mất session storage
         setTimeout(() => {
-          const redirectUrl = window._thankYouUrl || 'thankyou.html';
+          let redirectUrl = window._thankYouUrl || 'thankyou.html';
+          const params = new URLSearchParams({
+            orderId: orderId,
+            name: document.getElementById('display-name').textContent,
+            pkg: document.getElementById('display-package').textContent
+          });
+          if (redirectUrl.includes('?')) {
+            redirectUrl += '&' + params.toString();
+          } else {
+            redirectUrl += '?' + params.toString();
+          }
           window.location.href = redirectUrl;
         }, 3100);
       }, 500);
