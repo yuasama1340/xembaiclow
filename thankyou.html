@@ -195,6 +195,32 @@
       font-size: 0.85rem; letter-spacing: 1px;
     }
 
+    /* ===== BOOKING CARD ===== */
+    .booking-card {
+      background: var(--surface);
+      border: 1px solid rgba(123, 94, 167, 0.3);
+      border-radius: 20px;
+      padding: 28px 28px;
+      width: 100%;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(123, 94, 167, 0.15);
+      animation: fadeUp 0.8s 0.55s ease both;
+    }
+    .booking-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .booking-widget-container {
+      width: 100%;
+      min-height: 650px;
+      background: rgba(13, 11, 20, 0.5);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
     /* ===== NEXT STEPS ===== */
     .next-steps {
       background: linear-gradient(135deg, rgba(123,94,167,0.12), rgba(201,168,76,0.08));
@@ -344,6 +370,17 @@
       </div>
     </div>
 
+    <!-- Booking Widget Card -->
+    <div class="booking-card">
+      <div class="card-header">✦ Chọn Lịch Hẹn Ngay ✦</div>
+      <p class="booking-sub">
+        Vui lòng chọn ngày và giờ trống của bạn trên lịch dưới đây để đặt lịch xem bài Clow ngay:
+      </p>
+      <div class="booking-widget-container">
+        <script src="https://embed.ycb.me" async="true" data-domain="xembaiclow" data-displaymode="auto"></script>
+      </div>
+    </div>
+
     <!-- Next Steps -->
     <div class="next-steps">
       <div class="next-title">✦ Bước Tiếp Theo Của Bạn ✦</div>
@@ -351,19 +388,19 @@
         <div class="step-item">
           <div class="step-num">1</div>
           <div class="step-text">
-            <strong>Kiểm tra điện thoại</strong> – Chúng tôi sẽ nhắn tin hoặc gọi điện xác nhận lịch hẹn và gửi link Google Meet (nếu online).
+            <strong>Chọn lịch hẹn</strong> – Chọn một khung giờ trống trực tiếp trên lịch YouCanBookMe ở bên trên.
           </div>
         </div>
         <div class="step-item">
           <div class="step-num">2</div>
           <div class="step-text">
-            <strong>Chuẩn bị nội dung</strong> – Ghi ra 1–3 điều bạn muốn được tư vấn để buổi trò chuyện hiệu quả nhất.
+            <strong>Nhận email xác nhận</strong> – Hệ thống sẽ gửi email kèm link họp Google Meet (nếu online) ngay khi bạn đặt giờ thành công.
           </div>
         </div>
         <div class="step-item">
           <div class="step-num">3</div>
           <div class="step-text">
-            <strong>Giữ tâm trạng thoải mái</strong> – Đến với buổi tư vấn bằng tâm thế cởi mở, tất cả còn lại cứ để bài Clow dẫn đường ✨
+            <strong>Chuẩn bị tinh thần</strong> – Ghi lại 1–3 câu hỏi bạn muốn được tư vấn nhất để buổi xem bài Clow diễn ra trọn vẹn nhất ✨
           </div>
         </div>
       </div>
