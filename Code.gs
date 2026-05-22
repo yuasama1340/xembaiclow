@@ -46,10 +46,21 @@ const CONFIG = {
 };
 
 // ============================================================
-// 🗺️  LẤY SHEET — ưu tiên theo tên, fallback về sheet đầu tiên
+// 🗺️  LẤY SHEET — Sử dụng getActiveSpreadsheet() trực tiếp để tránh lỗi ID
 // ============================================================
 function getSheet() {
-  const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+  let ss;
+  try {
+    // Nếu script tạo từ chính Google Sheet (Tiện ích -> Apps Script), getActiveSpreadsheet() sẽ luôn đúng và 100% không bao giờ lỗi ID
+    ss = SpreadsheetApp.getActiveSpreadsheet();
+  } catch (e) {
+    Logger.log('⚠️ Không lấy được active sheet, thử openById...');
+  }
+  
+  if (!ss) {
+    ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+  }
+  
   if (CONFIG.SHEET_NAME) {
     const s = ss.getSheetByName(CONFIG.SHEET_NAME);
     if (s) return s;
