@@ -370,59 +370,19 @@
           <div class="section-label">Sẵn sàng bắt đầu?</div>
           <h2 class="section-title">Đặt Lịch <em>Ngay Hôm Nay</em></h2>
           <p>Đừng để những câu hỏi chưa có lời giải cứ mãi đeo bám. Hãy để bài Clow soi sáng con đường của bạn.</p>
-          <div class="booking-cards-container">
-            <!-- ONLINE CARD -->
-            <div class="booking-type-card" id="card-online">
-              <div class="card-header-simple">
-                <span class="card-type-icon">🌐</span>
-                <div class="card-header-info">
-                  <h4>Online</h4>
+            <div class="contact-methods">
+              <div class="contact-method" id="contact-google-meet">
+                <span class="cm-icon">🌐</span>
+                <div>
+                  <strong>Online</strong>
                   <p>Gặp gỡ tiện lợi qua Google Meet</p>
                 </div>
               </div>
-              <div class="card-packages">
-                <div class="card-package-row" data-package="Gói Khám Phá – 250k / 30 phút" data-format="Online (Google Meet)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Khám Phá</span>
-                  <span class="pkg-price">250k / 30p</span>
-                </div>
-                <div class="card-package-row" data-package="Gói Kết Nối – 350k / 45 phút" data-format="Online (Google Meet)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Kết Nối</span>
-                  <span class="pkg-price">350k / 45p</span>
-                </div>
-                <div class="card-package-row" data-package="Gói Toàn Diện – 500k / 60 phút" data-format="Online (Google Meet)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Toàn Diện</span>
-                  <span class="pkg-price">500k / 60p</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- OFFLINE CARD -->
-            <div class="booking-type-card" id="card-offline">
-              <div class="card-header-simple">
-                <span class="card-type-icon">📍</span>
-                <div class="card-header-info">
-                  <h4>Offline</h4>
+              <div class="contact-method" id="contact-offline">
+                <span class="cm-icon">📍</span>
+                <div>
+                  <strong>Offline</strong>
                   <p>Trải nghiệm trực tiếp tại TP.HCM</p>
-                </div>
-              </div>
-              <div class="card-packages">
-                <div class="card-package-row" data-package="Gói Khám Phá – 300k / 30 phút" data-format="Offline (TP.HCM)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Khám Phá</span>
-                  <span class="pkg-price">300k / 30p</span>
-                </div>
-                <div class="card-package-row" data-package="Gói Kết Nối – 400k / 45 phút" data-format="Offline (TP.HCM)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Kết Nối</span>
-                  <span class="pkg-price">400k / 45p</span>
-                </div>
-                <div class="card-package-row" data-package="Gói Toàn Diện – 550k / 60 phút" data-format="Offline (TP.HCM)">
-                  <span class="pkg-bullet">✦</span>
-                  <span class="pkg-name">Gói Toàn Diện</span>
-                  <span class="pkg-price">550k / 60p</span>
                 </div>
               </div>
             </div>
@@ -443,25 +403,25 @@
             <select id="format" name="format" required>
               <option value="">-- Chọn hình thức --</option>
               <option value="Online (Google Meet)">Online (Google Meet)</option>
-              <option value="Offline (TP.HCM)">Offline (TP.HCM)</option>
-            </select>
-          </div>
-          <div class="form-group" id="cafe-location-group" style="display: none;">
-            <label for="cafe-location">Địa điểm quán cafe (Quý khách tự thanh toán nước) *</label>
-            <select id="cafe-location" name="cafe-location">
-              <option value="">-- Chọn địa điểm quán cafe --</option>
-              <option value="The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận">The Comma Coffee - 21 Hoa Mai, Q. Phú Nhuận</option>
-              <option value="Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1">Barxiu Coffee - Lầu 1 chung cư 143 Nguyễn Trãi, Q1</option>
-              <option value="Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2">Le'Monet Art Cafe - 29 đường R, KĐT Lakeview City, Q2</option>
+              <option value="Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận">Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận</option>
+              <option value="Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1">Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1</option>
+              <option value="Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2">Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2</option>
             </select>
           </div>
           <div class="form-group">
             <label for="package">Gói dịch vụ *</label>
             <select id="package" name="package" required>
               <option value="">-- Chọn gói --</option>
-              <option value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
-              <option value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
-              <option value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
+              <optgroup label="Online">
+                <option value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
+                <option value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
+                <option value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
+              </optgroup>
+              <optgroup label="Offline">
+                <option value="Gói Khám Phá – 300k / 30 phút">Gói Khám Phá – 300k / 30 phút</option>
+                <option value="Gói Kết Nối – 400k / 45 phút">Gói Kết Nối – 400k / 45 phút</option>
+                <option value="Gói Toàn Diện – 550k / 60 phút">Gói Toàn Diện – 550k / 60 phút</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group">

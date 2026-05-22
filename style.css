@@ -189,89 +189,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .contact-wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
 .contact-info .section-title { margin-bottom: 20px; white-space: nowrap; font-size: clamp(1.8rem, 3.5vw, 2.4rem); }
 .contact-info > p { font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 32px; }
-.booking-cards-container { display: flex; flex-direction: column; gap: 20px; }
-.booking-type-card {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  cursor: pointer;
-}
-.booking-type-card:hover {
-  border-color: rgba(201,168,76,0.4);
-  box-shadow: 0 4px 20px rgba(123,94,167,0.15);
-}
-.booking-type-card.active {
-  border-color: var(--gold);
-  background: rgba(123,94,167,0.15);
-  box-shadow: 0 4px 25px rgba(201,168,76,0.15);
-}
-.card-header-simple {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.card-type-icon { font-size: 1.8rem; }
-.card-header-info h4 { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px 0; color: #fff; }
-.card-header-info p { font-size: 0.95rem; color: var(--text-muted); margin: 0; }
-
-.card-packages {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.card-package-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.card-package-row:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(123,94,167,0.4);
-  transform: translateX(4px);
-}
-.card-package-row.selected {
-  background: linear-gradient(90deg, rgba(123,94,167,0.25), rgba(201,168,76,0.2));
-  border-color: var(--gold-light);
-  box-shadow: 0 0 10px rgba(201,168,76,0.1);
-}
-.pkg-bullet {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  margin-right: 8px;
-  transition: color 0.2s;
-}
-.card-package-row.selected .pkg-bullet {
-  color: var(--gold-light);
-  text-shadow: 0 0 8px var(--gold);
-}
-.pkg-name {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text);
-  flex-grow: 1;
-}
-.pkg-price {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--gold-light);
-}
-
-/* Cafe Dropdown smooth animation transition helper */
-#cafe-location-group {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
+.contact-methods { display: flex; flex-direction: column; gap: 16px; }
+.contact-method { display: flex; align-items: flex-start; gap: 16px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px 20px; }
+.cm-icon { font-size: 1.8rem; }
+.contact-method strong { display: block; margin-bottom: 4px; font-size: 1.1rem; }
+.contact-method p { font-size: 1rem; color: var(--text-muted); margin: 0; }
 .contact-form { background: rgba(17,14,31,.8); border: 1px solid var(--glass-border); border-radius: 20px; padding: 40px; }
 .contact-form h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 28px; text-align: center; }
 .form-group { margin-bottom: 20px; }
