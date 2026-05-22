@@ -4,50 +4,76 @@ window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 40);
 });
 
-// Thay thế đường link Web App của Google Apps Script vào đây
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywtGWPA0Pkwcf9pcIBtMeAOfQ5xtkoGgTxLGoBaBSB14tFWj3JsCUK-GFqSar5mwChfA/exec';
+// ============================================================
+// ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy
+// ============================================================
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUfwXxRlW90ei0OQiYDnZC-RzTYQWsJeCRc3THksKBJ2aQza6aJmFC-yX_EEn7PbobYQ/exec';
 
-// Form submit
+// ============================================================
+// 📝  FLOW MỚI: Đăng ký đơn → Chuyển trang QR (SePay)
+// ============================================================
 async function handleSubmit(e) {
   e.preventDefault();
-  
-  const form = document.getElementById('booking-form');
-  const submitBtn = document.getElementById('submit-btn');
-  const originalBtnText = submitBtn.innerHTML;
-  
-  // Show loading state
-  submitBtn.innerHTML = '✦ Đang gửi...';
-  submitBtn.disabled = true;
 
-  if (GOOGLE_SCRIPT_URL === 'THAY_URL_CUA_BAN_VAO_DAY') {
-    // Nếu chưa cấu hình link thật, giả lập thành công sau 1.5s (dành cho lúc test giao diện)
-    setTimeout(() => {
-      document.getElementById('success-modal').classList.add('active');
-      submitBtn.innerHTML = originalBtnText;
-      submitBtn.disabled = false;
-    }, 1500);
+  const form          = document.getElementById('booking-form');
+  const submitBtn     = document.getElementById('submit-btn');
+  const originalText  = submitBtn.innerHTML;
+
+  // UI: loading state
+  submitBtn.innerHTML = '✦ Đang xử lý...';
+  submitBtn.disabled  = true;
+
+  // Chế độ demo khi chưa cấu hình GAS URL
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('THAY_URL')) {
+    console.warn('⚠️ Chưa cấu hình GOOGLE_SCRIPT_URL. Chạy chế độ demo.');
+    const demoOrder = {
+      orderId:    'CLOW-DEMO',
+      amount:     350000,
+      name:       document.getElementById('name').value || 'Khách Demo',
+      package:    document.getElementById('package').value || 'Demo Package',
+      thankYouUrl: 'thankyou.html',
+    };
+    sessionStorage.setItem('pendingOrder', JSON.stringify(demoOrder));
+    window.location.href = 'payment.html';
     return;
   }
 
   try {
-    const formData = new FormData(form);
-
-    // Gửi data tới Google Apps Script (sử dụng mode no-cors để tránh lỗi CORS)
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
+    // Thu thập dữ liệu form
+    const params = new URLSearchParams({
+      action:  'register',
+      name:    document.getElementById('name').value.trim(),
+      phone:   document.getElementById('phone').value.trim(),
+      package: document.getElementById('package').value,
+      format:  document.getElementById('format').value,
+      topic:   document.getElementById('topic').value.trim(),
     });
 
-    // Hiện popup thông báo thành công
-    document.getElementById('success-modal').classList.add('active');
-    form.reset();
+    // Gọi GAS action=register (GET với query params để tránh CORS preflight)
+    const res  = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const data = await res.json();
+
+    if (data.success && data.orderId) {
+      // Lưu thông tin đơn vào sessionStorage để payment.html đọc
+      sessionStorage.setItem('pendingOrder', JSON.stringify({
+        orderId:    data.orderId,
+        amount:     data.amount,
+        name:       document.getElementById('name').value.trim(),
+        package:    document.getElementById('package').value,
+        thankYouUrl: data.thankYouUrl || 'thankyou.html',
+      }));
+
+      // Chuyển sang trang QR thanh toán
+      window.location.href = 'payment.html';
+    } else {
+      throw new Error(data.error || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+    }
+
   } catch (error) {
-    console.error('Lỗi khi gửi form:', error);
-    alert('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng và thử lại.');
-  } finally {
-    submitBtn.innerHTML = originalBtnText;
-    submitBtn.disabled = false;
+    console.error('Lỗi đăng ký:', error);
+    alert('❌ ' + (error.message || 'Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.'));
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled  = false;
   }
 }
 

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanh Toán | Clow Cat Patronus</title>
+  <meta name="description" content="Quét mã QR để hoàn tất thanh toán dịch vụ tư vấn Clow Cat Patronus." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== TOKENS ===== */
+    :root {
+      --bg:          #0d0b14;
+      --surface:     #16121f;
+      --surface2:    #1e1828;
+      --gold:        #c9a84c;
+      --gold-light:  #e8c96a;
+      --gold-dim:    rgba(201,168,76,0.15);
+      --purple:      #7b5ea7;
+      --purple-glow: rgba(123,94,167,0.3);
+      --text:        #e8e0d0;
+      --text-muted:  #9a8fa0;
+      --success:     #4caf7d;
+      --radius:      16px;
+      --shadow-gold: 0 0 30px rgba(201,168,76,0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      overflow-x: hidden;
+    }
+
+    /* ===== ANIMATED BACKGROUND ===== */
+    .bg-orbs {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+      animation: float 8s ease-in-out infinite;
+    }
+    .orb1 { width: 400px; height: 400px; background: var(--purple); top: -100px; right: -100px; }
+    .orb2 { width: 300px; height: 300px; background: var(--gold); bottom: -80px; left: -80px; animation-delay: -4s; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+
+    /* ===== LOGO ===== */
+    .logo-area {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      margin-bottom: 28px;
+    }
+    .logo-area img { width: 72px; height: 72px; object-fit: contain; }
+    .logo-area span {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; letter-spacing: 3px; color: var(--gold-light);
+      text-transform: uppercase;
+    }
+
+    /* ===== CARD ===== */
+    .payment-card {
+      position: relative; z-index: 1;
+      background: var(--surface);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 24px;
+      padding: 36px 32px;
+      max-width: 440px; width: 100%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6), var(--shadow-gold);
+      text-align: center;
+    }
+    .card-badge {
+      display: inline-block;
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold-light);
+      font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 99px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 800;
+      color: #fff; margin-bottom: 6px;
+    }
+    .card-sub {
+      font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6;
+    }
+
+    /* ===== ORDER INFO ===== */
+    .order-info {
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      text-align: left;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      font-size: 0.88rem;
+    }
+    .info-label { color: var(--text-muted); flex-shrink: 0; }
+    .info-value { color: var(--text); font-weight: 600; text-align: right; }
+    .info-value.highlight {
+      color: var(--gold-light);
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+    }
+    .info-value.order-id {
+      color: var(--gold);
+      font-size: 0.95rem; letter-spacing: 1px;
+      background: var(--gold-dim);
+      padding: 3px 10px; border-radius: 6px;
+    }
+
+    /* ===== QR CODE AREA ===== */
+    .qr-wrapper {
+      position: relative;
+      margin: 0 auto 20px;
+      width: 220px; height: 220px;
+    }
+    .qr-image {
+      width: 100%; height: 100%;
+      border-radius: 12px;
+      border: 3px solid rgba(201,168,76,0.3);
+      object-fit: contain;
+      background: #fff;
+      padding: 8px;
+    }
+    /* Scanning animation overlay */
+    .qr-scan-line {
+      position: absolute;
+      left: 8px; right: 8px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      animation: scan 2.5s ease-in-out infinite;
+      border-radius: 99px;
+    }
+    @keyframes scan {
+      0%   { top: 12px; opacity: 1; }
+      50%  { top: calc(100% - 12px); opacity: 0.7; }
+      100% { top: 12px; opacity: 1; }
+    }
+    /* Corner decorations */
+    .qr-corner {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-color: var(--gold);
+      border-style: solid;
+    }
+    .qr-corner.tl { top: 2px; left: 2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .qr-corner.tr { top: 2px; right: 2px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .qr-corner.bl { bottom: 2px; left: 2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .qr-corner.br { bottom: 2px; right: 2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    /* ===== TRANSFER INSTRUCTIONS ===== */
+    .transfer-hint {
+      background: linear-gradient(135deg, rgba(123,94,167,0.15), rgba(201,168,76,0.08));
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 0.83rem; color: var(--text-muted);
+      line-height: 1.7; margin-bottom: 22px; text-align: left;
+    }
+    .transfer-hint strong { color: var(--gold-light); }
+
+    /* ===== STATUS INDICATOR ===== */
+    .status-area {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 12px 20px;
+      border-radius: 99px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.88rem;
+      transition: all 0.4s ease;
+    }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 1.8s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.7); }
+      50%      { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+    }
+    .status-area.success {
+      background: rgba(76,175,125,0.12);
+      border-color: var(--success);
+    }
+    .status-area.success .status-dot {
+      background: var(--success);
+      animation: none;
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    /* ===== SUCCESS OVERLAY ===== */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(13,11,20,0.95);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; text-align: center; padding: 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    .success-overlay.visible { opacity: 1; pointer-events: all; }
+    .success-icon {
+      font-size: 4rem;
+      animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+    @keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+    .success-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; color: var(--gold-light);
+    }
+    .success-sub { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+    .redirect-bar {
+      width: 200px; height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px; overflow: hidden;
+    }
+    .redirect-progress {
+      height: 100%; background: var(--gold);
+      border-radius: 99px; width: 0%;
+      transition: width 3s linear;
+    }
+    .redirect-label { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* ===== FOOTER NOTE ===== */
+    .footer-note {
+      position: relative; z-index: 1;
+      margin-top: 20px; font-size: 0.78rem;
+      color: var(--text-muted); text-align: center; line-height: 1.6;
+    }
+    .footer-note a { color: var(--gold); text-decoration: none; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .payment-card { padding: 28px 20px; }
+      .card-title { font-size: 1.35rem; }
+      .qr-wrapper { width: 190px; height: 190px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+  </div>
+
+  <!-- Logo -->
+  <div class="logo-area">
+    <img src="hinh/logo.png" alt="Clow Cat Patronus" />
+    <span>Clow Cat Patronus</span>
+  </div>
+
+  <!-- Payment Card -->
+  <div class="payment-card" id="payment-card">
+    <div class="card-badge">✦ Xác nhận thanh toán</div>
+    <h1 class="card-title">Quét QR Chuyển Khoản</h1>
+    <p class="card-sub">Hệ thống sẽ tự động xác nhận ngay khi nhận được thanh toán</p>
+
+    <!-- Order Info -->
+    <div class="order-info">
+      <div class="info-row">
+        <span class="info-label">Mã đơn hàng</span>
+        <span class="info-value order-id" id="display-order-id">Đang tải...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Khách hàng</span>
+        <span class="info-value" id="display-name">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Gói dịch vụ</span>
+        <span class="info-value" id="display-package">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Số tiền cần CK</span>
+        <span class="info-value highlight" id="display-amount">—</span>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="qr-wrapper" id="qr-wrapper">
+      <img id="qr-image" class="qr-image" src="" alt="QR Code Thanh Toán SePay" />
+      <div class="qr-scan-line"></div>
+      <div class="qr-corner tl"></div>
+      <div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div>
+      <div class="qr-corner br"></div>
+    </div>
+
+    <!-- Transfer Instruction -->
+    <div class="transfer-hint" id="transfer-hint">
+      📌 Khi chuyển khoản, vui lòng ghi <strong>đúng nội dung</strong> là mã đơn hàng:<br/>
+      <strong id="hint-order-id" style="color: var(--gold); font-size: 1rem; letter-spacing: 1px;">CLOW-XXX</strong><br/>
+      để hệ thống xác nhận tự động.
+    </div>
+
+    <!-- Status -->
+    <div class="status-area" id="status-area">
+      <div class="status-dot"></div>
+      <span id="status-text">Đang chờ thanh toán...</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <p class="footer-note">
+    Gặp sự cố? <a href="#" onclick="window.history.back()">← Quay lại</a> hoặc liên hệ hỗ trợ.
+  </p>
+
+  <!-- Success Overlay -->
+  <div class="success-overlay" id="success-overlay">
+    <div class="success-icon">✨</div>
+    <h2 class="success-title">Thanh Toán Thành Công!</h2>
+    <p class="success-sub">
+      Cảm ơn bạn đã đặt lịch tư vấn.<br />
+      Chúng tôi sẽ liên hệ xác nhận trong vòng 24 giờ.
+    </p>
+    <div class="redirect-bar">
+      <div class="redirect-progress" id="redirect-progress"></div>
+    </div>
+    <p class="redirect-label" id="redirect-label">Đang chuyển hướng...</p>
+  </div>
+
+  <script>
+    // ============================================================
+    // ⚙️  CẤU HÌNH PHÍA CLIENT
+    // ============================================================
+    const CLIENT_CONFIG = {
+      // URL Web App GAS của bạn (sau khi deploy)
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxUfwXxRlW90ei0OQiYDnZC-RzTYQWsJeCRc3THksKBJ2aQza6aJmFC-yX_EEn7PbobYQ/exec',
+
+      // Khoảng thời gian polling (ms) – check SePay mỗi X ms
+      POLL_INTERVAL: 4000,
+
+      // Thời gian chờ tối đa (phút) trước khi dừng polling
+      MAX_WAIT_MINUTES: 30,
+
+      // SePay QR — điền sau khi có thông tin ngân hàng
+      SEPAY_BANK_CODE:   'TPB',   // VD: 'VCB', 'TCB', 'MB', 'ACB'
+      SEPAY_ACCOUNT_NO:  '05480409',   // Số tài khoản của bạn
+    };
+
+    // ============================================================
+    // 🔧  KHỞI TẠO TRANG
+    // ============================================================
+    let orderId      = '';
+    let orderAmount  = 0;
+    let pollTimer    = null;
+    let pollCount    = 0;
+    const MAX_POLLS  = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
+
+    function init() {
+      // Đọc thông tin đơn từ sessionStorage (được lưu bởi script.js sau khi đăng ký thành công)
+      const stored = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
+
+      orderId     = stored.orderId     || getUrlParam('orderId') || '';
+      orderAmount = stored.amount      || parseInt(getUrlParam('amount') || '0');
+      const name     = stored.name    || getUrlParam('name') || '—';
+      const pkg      = stored.package || getUrlParam('pkg')  || '—';
+      const thankUrl = stored.thankYouUrl || CLIENT_CONFIG.GAS_URL; // fallback
+
+      // Lưu thankYouUrl để dùng sau
+      window._thankYouUrl = stored.thankYouUrl || '';
+
+      if (!orderId) {
+        document.getElementById('status-text').textContent = '⚠️ Không tìm thấy thông tin đơn hàng.';
+        return;
+      }
+
+      // Hiển thị thông tin
+      document.getElementById('display-order-id').textContent = orderId;
+      document.getElementById('display-name').textContent     = name;
+      document.getElementById('display-package').textContent  = shortenPackage(pkg);
+      document.getElementById('display-amount').textContent   = formatCurrency(orderAmount);
+      document.getElementById('hint-order-id').textContent    = orderId;
+      document.title = `Thanh Toán ${orderId} | Clow Cat Patronus`;
+
+      // Tạo QR Code từ SePay
+      buildQrCode(orderId, orderAmount);
+
+      // Bắt đầu polling
+      startPolling();
+    }
+
+    function getUrlParam(key) {
+      return new URLSearchParams(window.location.search).get(key) || '';
+    }
+
+    function shortenPackage(pkg) {
+      // Rút gọn tên gói cho gọn
+      return pkg.replace('Gói ', '').split('–')[0].trim() || pkg;
+    }
+
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    // ============================================================
+    // 🔳  TẠO QR CODE SEPAY
+    // ============================================================
+    function buildQrCode(orderId, amount) {
+      const bank    = CLIENT_CONFIG.SEPAY_BANK_CODE;
+      const account = CLIENT_CONFIG.SEPAY_ACCOUNT_NO;
+
+      if (bank === 'THAY_MA_NGAN_HANG' || account === 'THAY_SO_TAI_KHOAN') {
+        // Chế độ demo: dùng QR placeholder đẹp
+        document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('DEMO:' + orderId + ':' + amount)}&bgcolor=ffffff&color=1a0a2e&margin=10`;
+        return;
+      }
+
+      // QR thực từ SePay VietQR
+      const qrUrl = `https://qr.sepay.vn/img?bank=${bank}&acc=${account}&template=compact&amount=${amount}&des=${encodeURIComponent(orderId)}`;
+      document.getElementById('qr-image').src = qrUrl;
+    }
+
+    // ============================================================
+    // 🔄  POLLING – Liên tục check trạng thái đơn
+    // ============================================================
+    function startPolling() {
+      pollTimer = setInterval(checkPaymentStatus, CLIENT_CONFIG.POLL_INTERVAL);
+      // Gọi ngay lần đầu sau 1s
+      setTimeout(checkPaymentStatus, 1000);
+    }
+
+    async function checkPaymentStatus() {
+      pollCount++;
+
+      if (pollCount > MAX_POLLS) {
+        clearInterval(pollTimer);
+        document.getElementById('status-text').textContent = '⏰ Hết thời gian chờ. Vui lòng liên hệ hỗ trợ.';
+        return;
+      }
+
+      try {
+        const url = `${CLIENT_CONFIG.GAS_URL}?action=check&orderId=${encodeURIComponent(orderId)}`;
+        const res  = await fetch(url, { cache: 'no-cache' });
+        const data = await res.json();
+
+        if (data.paid === true) {
+          clearInterval(pollTimer);
+          handlePaymentSuccess();
+        } else {
+          // Cập nhật UI – countdown đến lần check tiếp
+          updateStatusDisplay(pollCount);
+        }
+      } catch (err) {
+        console.warn('Lỗi polling:', err);
+        // Tiếp tục polling dù có lỗi mạng tạm thời
+      }
+    }
+
+    function updateStatusDisplay(count) {
+      const seconds = Math.ceil(CLIENT_CONFIG.POLL_INTERVAL / 1000);
+      document.getElementById('status-text').textContent =
+        `Đang chờ thanh toán... (kiểm tra lần ${count})`;
+    }
+
+    // ============================================================
+    // 🎉  XỬ LÝ THANH TOÁN THÀNH CÔNG
+    // ============================================================
+    function handlePaymentSuccess() {
+      // Hiện status success
+      const statusArea = document.getElementById('status-area');
+      statusArea.classList.add('success');
+      document.getElementById('status-text').textContent = '✅ Đã xác nhận thanh toán!';
+
+      // Hiện overlay thành công
+      const overlay = document.getElementById('success-overlay');
+      overlay.classList.add('visible');
+
+      // Animate progress bar rồi redirect
+      setTimeout(() => {
+        const bar = document.getElementById('redirect-progress');
+        bar.style.width = '100%';
+
+        document.getElementById('redirect-label').textContent =
+          'Đang chuyển hướng đến trang xác nhận...';
+
+        // Xóa dữ liệu đơn hàng khỏi session
+        sessionStorage.removeItem('pendingOrder');
+
+        // Redirect sau 3s
+        setTimeout(() => {
+          const redirectUrl = window._thankYouUrl || 'thankyou.html';
+          window.location.href = redirectUrl;
+        }, 3100);
+      }, 500);
+    }
+
+    // ============================================================
+    // 🚀  KHỞI CHẠY
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
