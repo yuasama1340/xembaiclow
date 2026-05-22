@@ -422,8 +422,8 @@
         return;
       }
 
-      // QR thực từ SePay VietQR
-      const qrUrl = `https://qr.sepay.vn/img?bank=${bank}&acc=${account}&template=compact&amount=${amount}&des=${encodeURIComponent(orderId)}`;
+      // QR thực từ VietQR (ổn định, không bị chặn CORS)
+      const qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderId)}&accountName=PHAN%20THAI%20BAO`;
       document.getElementById('qr-image').src = qrUrl;
     }
 
