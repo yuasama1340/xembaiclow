@@ -4,7 +4,7 @@
 const CONFIG = {
 
   // ① ID Spreadsheet — lấy từ URL của Google Sheet bạn gửi
-  SHEET_ID: '1O-B-hdT7J2szsJNZPN31y7jxo_yx6F2clBpUSbki4sq',
+  SHEET_ID: '1O-B-hdT7J2szsJNZPN31y7jxo_yx6F2cIBpUSbki4so',
 
   // ② Tên tab sheet (xem ở thanh tab dưới cùng của Google Sheet)
   //    Nếu không chắc, để '' → code sẽ tự lấy sheet đầu tiên
