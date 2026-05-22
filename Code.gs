@@ -303,6 +303,8 @@ function doPost(e) {
     const statusOffset = statusIdx - 1;
 
     const contentUpper = content.toUpperCase();
+    // Loại bỏ mọi ký tự đặc biệt (khoảng trắng, dấu gạch ngang, v.v.) để so khớp chính xác
+    const cleanContent = contentUpper.replace(/[^A-Z0-9]/g, '');
     let matchRow = -1, matchId = '';
 
     // 5. So khớp linh hoạt: nội dung CK có chứa mã đơn không?
@@ -313,7 +315,10 @@ function doPost(e) {
       if (!cellId) continue;
       if (cellStatus.includes('Đã thanh toán')) continue; // bỏ qua đơn đã thanh toán
 
-      if (contentUpper.includes(cellId.toUpperCase())) {
+      // Loại bỏ dấu gạch ngang trong mã đơn (ví dụ CLOW-002 -> CLOW002) trước khi so khớp
+      const cleanCellId = cellId.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      if (cleanContent.includes(cleanCellId)) {
         matchRow = i + 2; // +2: header ở dòng 1, data từ dòng 2, i là 0-based
         matchId  = cellId;
         break;
