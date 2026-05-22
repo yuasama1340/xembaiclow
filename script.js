@@ -26,11 +26,20 @@ async function handleSubmit(e) {
   // Chế độ demo khi chưa cấu hình GAS URL
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('THAY_URL')) {
     console.warn('⚠️ Chưa cấu hình GOOGLE_SCRIPT_URL. Chạy chế độ demo.');
+    const pkgVal = document.getElementById('package').value || 'Demo Package';
+    let amount = 350000;
+    if (pkgVal.includes('250')) amount = 250000;
+    else if (pkgVal.includes('300')) amount = 300000;
+    else if (pkgVal.includes('350')) amount = 350000;
+    else if (pkgVal.includes('400')) amount = 400000;
+    else if (pkgVal.includes('500')) amount = 500000;
+    else if (pkgVal.includes('550')) amount = 550000;
+
     const demoOrder = {
       orderId:    'CLOW-DEMO',
-      amount:     350000,
+      amount:     amount,
       name:       document.getElementById('name').value || 'Khách Demo',
-      package:    document.getElementById('package').value || 'Demo Package',
+      package:    pkgVal,
       thankYouUrl: 'thankyou.html',
     };
     sessionStorage.setItem('pendingOrder', JSON.stringify(demoOrder));
@@ -40,12 +49,22 @@ async function handleSubmit(e) {
 
   try {
     // Thu thập dữ liệu form
+    let formatVal = document.getElementById('format').value;
+    const selectedPkg = document.getElementById('package').value;
+
+    if (formatVal === 'Offline (TP.HCM)') {
+      const cafeVal = document.getElementById('cafe-location').value;
+      if (cafeVal) {
+        formatVal = `Offline - ${cafeVal}`;
+      }
+    }
+
     const params = new URLSearchParams({
       action:  'register',
       name:    document.getElementById('name').value.trim(),
       phone:   document.getElementById('phone').value.trim(),
-      package: document.getElementById('package').value,
-      format:  document.getElementById('format').value,
+      package: selectedPkg,
+      format:  formatVal,
       topic:   document.getElementById('topic').value.trim(),
     });
 
@@ -59,7 +78,7 @@ async function handleSubmit(e) {
         orderId:    data.orderId,
         amount:     data.amount,
         name:       document.getElementById('name').value.trim(),
-        package:    document.getElementById('package').value,
+        package:    selectedPkg,
         thankYouUrl: data.thankYouUrl || 'thankyou.html',
       }));
 
@@ -287,4 +306,200 @@ audioBtn.addEventListener('click', () => {
     audioBtn.classList.add('playing');
   }
   isAudioPlaying = !isAudioPlaying;
+});
+
+// ============================================================
+// 🔮 DYNAMIC BOOKING SYSTEM & LINKAGE LOGIC
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const formatSelect = document.getElementById('format');
+  const packageSelect = document.getElementById('package');
+  const cafeLocationGroup = document.getElementById('cafe-location-group');
+  const cafeLocationSelect = document.getElementById('cafe-location');
+
+  const cardOnline = document.getElementById('card-online');
+  const cardOffline = document.getElementById('card-offline');
+  const packageRows = document.querySelectorAll('.card-package-row');
+
+  const PACKAGES_BY_FORMAT = {
+    'Online (Google Meet)': [
+      { val: 'Gói Khám Phá – 250k / 30 phút', text: 'Gói Khám Phá – 250k / 30 phút' },
+      { val: 'Gói Kết Nối – 350k / 45 phút', text: 'Gói Kết Nối – 350k / 45 phút' },
+      { val: 'Gói Toàn Diện – 500k / 60 phút', text: 'Gói Toàn Diện – 500k / 60 phút' }
+    ],
+    'Offline (TP.HCM)': [
+      { val: 'Gói Khám Phá – 300k / 30 phút', text: 'Gói Khám Phá – 300k / 30 phút' },
+      { val: 'Gói Kết Nối – 400k / 45 phút', text: 'Gói Kết Nối – 400k / 45 phút' },
+      { val: 'Gói Toàn Diện – 550k / 60 phút', text: 'Gói Toàn Diện – 550k / 60 phút' }
+    ]
+  };
+
+  // Function to update package options in dropdown dynamically
+  function updatePackageDropdown(format, selectedValue = '') {
+    // Clear previous options
+    packageSelect.innerHTML = '<option value="">-- Chọn gói --</option>';
+    
+    const list = PACKAGES_BY_FORMAT[format] || [];
+    list.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.val;
+      opt.textContent = item.text;
+      if (item.val === selectedValue) {
+        opt.selected = true;
+      }
+      packageSelect.appendChild(opt);
+    });
+  }
+
+  // Update layout active styling and show/hide fields on format change
+  function handleFormatChange(format, autoUpdatePackage = true) {
+    if (format === 'Online (Google Meet)') {
+      // Toggle cafe group visibility
+      if (cafeLocationGroup) cafeLocationGroup.style.display = 'none';
+      if (cafeLocationSelect) {
+        cafeLocationSelect.removeAttribute('required');
+        cafeLocationSelect.value = '';
+      }
+
+      // Set active cards style
+      if (cardOnline) cardOnline.classList.add('active');
+      if (cardOffline) cardOffline.classList.remove('active');
+
+      if (autoUpdatePackage) {
+        updatePackageDropdown(format);
+      }
+    } else if (format === 'Offline (TP.HCM)') {
+      // Toggle cafe group visibility
+      if (cafeLocationGroup) cafeLocationGroup.style.display = 'block';
+      if (cafeLocationSelect) {
+        cafeLocationSelect.setAttribute('required', 'required');
+      }
+
+      // Set active cards style
+      if (cardOffline) cardOffline.classList.add('active');
+      if (cardOnline) cardOnline.classList.remove('active');
+
+      if (autoUpdatePackage) {
+        updatePackageDropdown(format);
+      }
+    } else {
+      // No format selected
+      if (cafeLocationGroup) cafeLocationGroup.style.display = 'none';
+      if (cafeLocationSelect) {
+        cafeLocationSelect.removeAttribute('required');
+        cafeLocationSelect.value = '';
+      }
+      if (cardOnline) cardOnline.classList.remove('active');
+      if (cardOffline) cardOffline.classList.remove('active');
+      if (autoUpdatePackage) {
+        packageSelect.innerHTML = '<option value="">-- Chọn gói --</option>';
+      }
+    }
+  }
+
+  // Watch dropdown format select change
+  if (formatSelect) {
+    formatSelect.addEventListener('change', (e) => {
+      handleFormatChange(e.target.value);
+      syncLeftCardsFromForm();
+    });
+  }
+
+  // Watch dropdown package select change
+  if (packageSelect) {
+    packageSelect.addEventListener('change', () => {
+      syncLeftCardsFromForm();
+    });
+  }
+
+  // Watch dropdown cafe location select change
+  if (cafeLocationSelect) {
+    cafeLocationSelect.addEventListener('change', () => {
+      // Auto active offline card if location is selected
+      if (cafeLocationSelect.value && formatSelect.value !== 'Offline (TP.HCM)') {
+        formatSelect.value = 'Offline (TP.HCM)';
+        handleFormatChange('Offline (TP.HCM)', true);
+      }
+    });
+  }
+
+  // Click handler on Left Cards (header only, avoid interfering with package row clicks)
+  if (cardOnline) {
+    const cardOnlineHeader = cardOnline.querySelector('.card-header-simple');
+    if (cardOnlineHeader) {
+      cardOnlineHeader.addEventListener('click', (e) => {
+        formatSelect.value = 'Online (Google Meet)';
+        formatSelect.dispatchEvent(new Event('change'));
+      });
+    }
+  }
+
+  if (cardOffline) {
+    const cardOfflineHeader = cardOffline.querySelector('.card-header-simple');
+    if (cardOfflineHeader) {
+      cardOfflineHeader.addEventListener('click', (e) => {
+        formatSelect.value = 'Offline (TP.HCM)';
+        formatSelect.dispatchEvent(new Event('change'));
+      });
+    }
+  }
+
+  // Click handler on package rows inside Left Cards
+  packageRows.forEach(row => {
+    row.addEventListener('click', (e) => {
+      e.stopPropagation(); // Stop bubbling to card header
+
+      const format = row.getAttribute('data-format');
+      const pkg = row.getAttribute('data-package');
+
+      // 1. Select the format
+      formatSelect.value = format;
+      handleFormatChange(format, false); // Update visibility and card highlight without overwriting package
+
+      // 2. Select the package in dropdown
+      updatePackageDropdown(format, pkg);
+
+      // 3. Highlight the selected row
+      packageRows.forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+
+      // 4. Focus next field or scroll to name input for UX
+      const nameInput = document.getElementById('name');
+      if (nameInput) {
+        nameInput.focus();
+        nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  });
+
+  // Highlight left cards and rows based on current form dropdown values
+  function syncLeftCardsFromForm() {
+    const currentFormat = formatSelect.value;
+    const currentPackage = packageSelect.value;
+
+    // Reset all row selections first
+    packageRows.forEach(row => row.classList.remove('selected'));
+
+    if (currentFormat === 'Online (Google Meet)') {
+      if (cardOnline) cardOnline.classList.add('active');
+      if (cardOffline) cardOffline.classList.remove('active');
+    } else if (currentFormat === 'Offline (TP.HCM)') {
+      if (cardOffline) cardOffline.classList.add('active');
+      if (cardOnline) cardOnline.classList.remove('active');
+    } else {
+      if (cardOnline) cardOnline.classList.remove('active');
+      if (cardOffline) cardOffline.classList.remove('active');
+    }
+
+    if (currentPackage) {
+      packageRows.forEach(row => {
+        if (row.getAttribute('data-package') === currentPackage) {
+          row.classList.add('selected');
+        }
+      });
+    }
+  }
+
+  // Initial sync in case page loads with values (or is reset)
+  syncLeftCardsFromForm();
 });
