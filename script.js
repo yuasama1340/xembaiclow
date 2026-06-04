@@ -253,28 +253,77 @@ if (!prefersReducedMotion) {
 
 
 
-// Custom Magic Cursor Trail
+// ============================================================
+// 🖱️ CUSTOM GLOWING CURSOR
+// ============================================================
 if (!hasTouchPointer && !prefersReducedMotion) {
-  const cursorTrail = document.createElement('div');
-  cursorTrail.className = 'cursor-trail';
-  document.body.appendChild(cursorTrail);
+  // Create cursor image element
+  const customCursor = document.createElement('div');
+  customCursor.className = 'custom-cursor';
+  const cursorImg = document.createElement('img');
+  cursorImg.src = 'hinh/chuot_cursor.png';
+  cursorImg.alt = '';
+  customCursor.appendChild(cursorImg);
+  document.body.appendChild(customCursor);
+
+  // Create aura ring
+  const cursorAura = document.createElement('div');
+  cursorAura.className = 'cursor-aura';
+  document.body.appendChild(cursorAura);
+
+  let mouseX = -200, mouseY = -200;
+  let auraX = -200, auraY = -200;
+  let auraVisible = false;
 
   document.addEventListener('mousemove', (e) => {
-    cursorTrail.style.left = e.clientX + 'px';
-    cursorTrail.style.top = e.clientY + 'px';
+    mouseX = e.clientX;
+    mouseY = e.clientY;
 
-    if(Math.random() > 0.85) {
+    // Cursor image: position instantly (hotspot tại đầu nhọn)
+    customCursor.style.left = mouseX + 'px';
+    customCursor.style.top  = mouseY + 'px';
+
+    // Fade in aura lần đầu
+    if (!auraVisible) {
+      auraVisible = true;
+      setTimeout(() => { cursorAura.style.opacity = '1'; }, 300);
+    }
+
+    // Spark effect (occasional)
+    if (Math.random() > 0.88) {
       const spark = document.createElement('div');
       spark.className = 'spark';
       spark.style.left = e.clientX + 'px';
-      spark.style.top = e.clientY + 'px';
+      spark.style.top  = e.clientY + 'px';
       spark.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
       spark.style.setProperty('--dy', (Math.random() * 60 - 30) + 'px');
       document.body.appendChild(spark);
       setTimeout(() => spark.remove(), 800);
     }
   });
+
+  // Aura lags behind for fluid feel
+  function animateAura() {
+    auraX += (mouseX - auraX) * 0.1;
+    auraY += (mouseY - auraY) * 0.1;
+    cursorAura.style.left = auraX + 'px';
+    cursorAura.style.top  = auraY + 'px';
+    requestAnimationFrame(animateAura);
+  }
+  animateAura();
+
+  // Scale up cursor on hover over interactive elements
+  document.querySelectorAll('a, button, .price-card, .pain-card, .benefit-item').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      customCursor.style.transform = 'translate(-14px, -46px) scale(1.25) rotate(-10deg)';
+    });
+    el.addEventListener('mouseleave', () => {
+      customCursor.style.transform = 'translate(-14px, -46px) scale(1) rotate(0deg)';
+    });
+  });
 }
+
+
 
 // --- BACKGROUND AUDIO (HTML5) ---
 const bgMusic = document.getElementById('bg-music');
@@ -302,3 +351,101 @@ audioBtn.addEventListener('click', () => {
 });
 
 
+
+// ============================================================
+// 🌟 TESTIMONIALS SLIDER
+// ============================================================
+(function () {
+  const wrap       = document.getElementById('testimonials-slider-wrap');
+  const track      = document.getElementById('testimonials-track');
+  const cards      = track ? track.querySelectorAll('.testimonial-card') : [];
+  const dots       = document.querySelectorAll('.test-dot');
+  const total      = cards.length;
+  let current      = 0;
+  let autoPlayTimer = null;
+  const INTERVAL   = 4000; // ms between slides
+
+  function goToTestimonial(idx) {
+    if (total === 0) return;
+    
+    // Clamp
+    current = ((idx % total) + total) % total;
+
+    // Toggle active class on cards
+    cards.forEach((card, i) => {
+      card.classList.toggle('active', i === current);
+    });
+
+    // Move track to center the active card
+    const activeCard = cards[current];
+    if (activeCard && wrap && track) {
+      const wrapWidth = wrap.offsetWidth;
+      const cardLeft = activeCard.offsetLeft;
+      const cardWidth = activeCard.offsetWidth;
+      const translateX = (wrapWidth / 2) - (cardLeft + cardWidth / 2);
+      track.style.transform = `translateX(${translateX}px)`;
+    }
+
+    // Update dots
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  // Expose globally so onclick="" attributes work
+  window.goToTestimonial = goToTestimonial;
+  window.prevTestimonial = () => { goToTestimonial(current - 1); resetAutoPlay(); };
+  window.nextTestimonial = () => { goToTestimonial(current + 1); resetAutoPlay(); };
+
+  function startAutoPlay() {
+    if (total === 0) return;
+    autoPlayTimer = setInterval(() => {
+      goToTestimonial(current + 1);
+    }, INTERVAL);
+  }
+
+  function resetAutoPlay() {
+    clearInterval(autoPlayTimer);
+    startAutoPlay();
+  }
+
+  // Click on any card to slide to it
+  cards.forEach((card, idx) => {
+    card.addEventListener('click', () => {
+      if (current !== idx) {
+        goToTestimonial(idx);
+        resetAutoPlay();
+      }
+    });
+  });
+
+  // Pause on hover
+  if (wrap) {
+    wrap.addEventListener('mouseenter', () => clearInterval(autoPlayTimer));
+    wrap.addEventListener('mouseleave', startAutoPlay);
+  }
+
+  // Swipe support (touch devices)
+  let touchStartX = 0;
+  if (wrap) {
+    wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        dx < 0 ? window.nextTestimonial() : window.prevTestimonial();
+      }
+    });
+  }
+
+  // Recalculate centering on resize
+  window.addEventListener('resize', () => {
+    goToTestimonial(current);
+  });
+
+  // Kick off
+  if (total > 0) {
+    // Wait a tiny bit for layout calculations to finalize (e.g. image loads or rendering)
+    setTimeout(() => {
+      goToTestimonial(0);
+    }, 100);
+    startAutoPlay();
+  }
+})();
