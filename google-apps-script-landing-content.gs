@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-flexible-3in1-full';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-flexible-3in1-cta';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -20,8 +20,8 @@ const SESSION_TTL_SECONDS = 21600;
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
-const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v5';
-const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v5';
+const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v6';
+const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v6';
 const PUBLIC_CACHE_SECONDS = 60;
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
@@ -144,6 +144,7 @@ function buildDefaultLandingContentRows() {
     lc(true, 'flexible.num.backTitle', 'Gói 3 trong 1', 'Nhân số - tiêu đề mặt sau', '#flex-card-num .back-title', 'text', '', 'Giải mã bản thiết kế nội tại'),
     lc(true, 'flexible.num.back', 'Gói 3 trong 1', 'Nhân số - nội dung mặt sau', '#flex-card-num .back-copy', 'text', '', 'Nhân số giúp bạn hiểu nhịp phát triển, động lực sâu bên trong và những bài học lặp lại trong học tập, công việc, tình cảm hoặc tài chính.'),
     lc(true, 'flexible.num.list', 'Gói 3 trong 1', 'Nhân số - gạch đầu dòng mặt sau', '#flex-card-num .back-list', 'html', '', '<li>Đọc con số chủ đạo và năm cá nhân</li><li>Nhận diện mẫu hành vi lặp lại</li><li>Chọn hướng phát triển bền vững</li>'),
+    lc(true, 'flexible.cta', 'Gói 3 trong 1', 'Nút đặt lịch dưới section', '#flexible-cta', 'text', '', 'Đặt lịch ngay'),
 
     lc(true, 'testimonials.1.image_url', 'Feedback', 'Ảnh feedback 1', '', 'image', '', ''),
     lc(true, 'testimonials.2.image_url', 'Feedback', 'Ảnh feedback 2', '', 'image', '', ''),

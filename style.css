@@ -643,6 +643,12 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .flex-card:hover .flex-card-inner { transform: translateY(-8px) rotateZ(-1deg); }
 .flex-card.is-flipped:hover .flex-card-inner { transform: translateY(-8px) rotateY(180deg) rotateZ(1deg); }
 
+.flexible-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 42px;
+}
+
 /* OFFER */
 .offer { padding: 80px 0; }
 .offer-card { background: linear-gradient(135deg, rgba(45,27,94,.55), rgba(15,5,40,.85)), url('hinh/background.jpg') center/cover no-repeat; border: 1px solid var(--glass-border); border-radius: 28px; padding: 60px; display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; position: relative; overflow: hidden; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
