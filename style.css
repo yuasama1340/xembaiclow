@@ -593,17 +593,17 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 /* Vùng chứa back-copy + back-list: tự co giãn, scroll khi tràn */
 .flex-card-back-scroll {
   flex: 1;
-  /* BẮT BUỘC có min-height: 0 để flex item không bị tràn ra ngoài container khi content quá dài */
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(201,168,76,0.25) transparent;
-  padding-right: 12px; /* Tăng padding để thanh cuộn rõ ràng không đè chữ */
+  scrollbar-color: var(--gold) transparent;
+  padding-right: 14px; /* Tăng padding để thanh cuộn rõ ràng không đè chữ */
   padding-bottom: 16px;
 }
-.flex-card-back-scroll::-webkit-scrollbar { width: 4px; }
-.flex-card-back-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+.flex-card-back-scroll::-webkit-scrollbar { width: 6px; }
+.flex-card-back-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+.flex-card-back-scroll::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
 
 .flex-card-face::before {
   content: '';
@@ -681,7 +681,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   z-index: 1;
   color: rgba(255,255,255,0.78);
   line-height: 1.58;
-  font-size: .96rem;
+  font-size: .9rem; /* Giảm nhẹ font-size để chứa được nhiều chữ hơn */
 }
 
 .front-tags {
