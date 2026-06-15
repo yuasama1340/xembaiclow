@@ -436,6 +436,213 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .extra-text { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; }
 .gold { color: var(--gold); font-weight: 700; }
 
+/* FLEXIBLE 3-IN-1 */
+.flexible-3in1 {
+  position: relative;
+  overflow: hidden;
+  padding: 100px 0;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(201,168,76,0.12), transparent 32%),
+    linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-dark) 100%);
+}
+
+.flexible-bg { position: absolute; inset: 0; pointer-events: none; }
+.flex-orbit {
+  position: absolute;
+  width: min(620px, 82vw);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(201,168,76,0.24);
+  border-radius: 50%;
+  opacity: 0.55;
+}
+.flex-orb-1 { width: 260px; height: 260px; background: radial-gradient(circle, rgba(107,63,160,.28), transparent 70%); left: 8%; top: 14%; }
+.flex-orb-2 { width: 220px; height: 220px; background: radial-gradient(circle, rgba(201,168,76,.14), transparent 70%); right: 6%; bottom: 8%; }
+
+.flexible-3in1 .container { position: relative; z-index: 1; text-align: center; }
+.flexible-intro {
+  max-width: 780px;
+  margin: -22px auto 42px;
+  color: var(--text-muted);
+  font-size: 1.12rem;
+  line-height: 1.75;
+}
+
+.flex-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  perspective: 1400px;
+}
+
+.flex-card {
+  min-height: 410px;
+  border-radius: 24px;
+  cursor: none;
+  outline: none;
+  perspective: 1200px;
+}
+
+.flex-card:focus-visible .flex-card-inner {
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.45), 0 24px 70px rgba(0,0,0,0.45);
+}
+
+.flex-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 410px;
+  transform-style: preserve-3d;
+  transition: transform .72s cubic-bezier(.2,.75,.2,1);
+}
+
+.flex-card.is-flipped .flex-card-inner { transform: rotateY(180deg); }
+
+.flex-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  backface-visibility: hidden;
+  border-radius: 24px;
+  padding: 34px 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 22px 70px rgba(0,0,0,0.36);
+}
+
+.flex-card-face::before {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.flex-card-front::after {
+  content: '';
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  right: -34px;
+  top: -34px;
+  background: radial-gradient(circle, rgba(255,255,255,0.24), transparent 68%);
+  opacity: 0.55;
+}
+
+.flex-card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(145deg, rgba(22,16,34,0.96), rgba(45,27,94,0.9));
+}
+
+.flex-card-clow .flex-card-front { background: linear-gradient(145deg, #5a1433 0%, #2a1235 100%); }
+.flex-card-astro .flex-card-front { background: linear-gradient(145deg, #7a5b15 0%, #2b1f30 100%); }
+.flex-card-num .flex-card-front { background: linear-gradient(145deg, #123d48 0%, #201832 100%); }
+.flex-card-clow .flex-card-back { border-color: rgba(219,98,124,0.42); }
+.flex-card-astro .flex-card-back { border-color: rgba(201,168,76,0.5); }
+.flex-card-num .flex-card-back { border-color: rgba(109,207,213,0.42); }
+
+.flex-card-mark {
+  position: relative;
+  z-index: 1;
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem;
+  line-height: .82;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 10px 26px rgba(0,0,0,0.35);
+  margin-bottom: 30px;
+}
+
+.flex-eyebrow,
+.back-label {
+  position: relative;
+  z-index: 1;
+  color: var(--gold-light);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: 800;
+  font-size: .75rem;
+  margin-bottom: 12px;
+}
+
+.flex-card h3 {
+  position: relative;
+  z-index: 1;
+  font-size: 1.7rem;
+  line-height: 1.18;
+  margin-bottom: 16px;
+}
+
+.front-copy,
+.back-copy {
+  position: relative;
+  z-index: 1;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+.front-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.front-tags span {
+  color: #fff;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: .88rem;
+}
+
+.flip-hint {
+  position: absolute;
+  right: 28px;
+  bottom: 24px;
+  color: rgba(255,255,255,0.68);
+  font-size: .8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.back-list {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin-top: auto;
+  padding-top: 22px;
+  width: 100%;
+}
+
+.back-list li {
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255,255,255,0.09);
+  padding: 11px 0;
+  line-height: 1.45;
+}
+
+.back-list li::before {
+  content: '✦';
+  color: var(--gold);
+  margin-right: 8px;
+}
+
+.flex-card:hover .flex-card-inner { transform: translateY(-8px) rotateZ(-1deg); }
+.flex-card.is-flipped:hover .flex-card-inner { transform: translateY(-8px) rotateY(180deg) rotateZ(1deg); }
+
 /* OFFER */
 .offer { padding: 80px 0; }
 .offer-card { background: linear-gradient(135deg, rgba(45,27,94,.55), rgba(15,5,40,.85)), url('hinh/background.jpg') center/cover no-repeat; border: 1px solid var(--glass-border); border-radius: 28px; padding: 60px; display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; position: relative; overflow: hidden; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
@@ -579,13 +786,17 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .card-fall { pointer-events: none; }
   .card-img { width: clamp(64px, 18vw, 86px); border-radius: 10px; opacity: .78; }
   .hero-center-glow { top: 48%; width: 260px; height: 260px; opacity: .65; }
-  .about, .benefits, .pricing, .process, .contact { padding: 72px 0; }
+  .about, .benefits, .pricing, .flexible-3in1, .process, .contact { padding: 72px 0; }
   .testimonials { padding: 52px 0; }
   .testimonials-slider-wrap { max-height: 65vh; }
   .testimonial-card { flex: 0 0 290px; margin: 0 10px; }
   .test-img { max-height: 480px; }
   .section-title { margin-bottom: 32px; }
   .pricing-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .flex-card-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+  .flex-card, .flex-card-inner { min-height: 360px; }
+  .flex-card-face { padding: 30px 26px; }
+  .flexible-intro { margin-top: -16px; margin-bottom: 30px; }
   .contact-wrap { grid-template-columns: 1fr; gap: 32px; }
   .solution-banner { grid-template-columns: 1fr; gap: 28px; padding: 34px 28px; }
   .solution-visual { display: flex; justify-content: center; }
@@ -614,6 +825,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .contact-info .section-title { white-space: normal; }
   .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
   .pain-card, .benefit-item, .price-card { padding: 24px 20px; border-radius: 14px; }
+  .flex-card, .flex-card-inner { min-height: 390px; }
+  .flex-card-face { border-radius: 18px; padding: 28px 22px; }
+  .flex-card-face::before { inset: 16px; border-radius: 14px; }
+  .flex-card-mark { font-size: 4.2rem; margin-bottom: 24px; }
+  .flex-card h3 { font-size: 1.45rem; }
+  .front-copy, .back-copy { font-size: .96rem; }
+  .flip-hint { right: 22px; bottom: 20px; }
+  .flexible-intro { font-size: 1rem; line-height: 1.65; }
   .price-popular { position: static; display: inline-block; width: fit-content; margin-bottom: 18px; }
   .price-amount { font-size: 2.35rem; }
   .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
@@ -654,7 +873,9 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 @media (hover: none), (pointer: coarse) {
   body, a, button, .audio-btn { cursor: auto !important; }
   .custom-cursor, .cursor-aura, .spark { display: none !important; }
-  .pain-card:hover, .benefit-item:hover, .price-card:hover, .btn-primary:hover, .btn-outline:hover, .audio-btn:hover { transform: none; }
+  .pain-card:hover, .benefit-item:hover, .price-card:hover, .flex-card:hover .flex-card-inner, .btn-primary:hover, .btn-outline:hover, .audio-btn:hover { transform: none; }
+  .flex-card.is-flipped .flex-card-inner,
+  .flex-card.is-flipped:hover .flex-card-inner { transform: rotateY(180deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }

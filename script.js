@@ -488,6 +488,24 @@ function initPricingSlider() {
 
 initPricingSlider();
 
+function initFlexibleCards() {
+  document.querySelectorAll('.flex-card').forEach(card => {
+    const toggle = () => {
+      const isFlipped = card.classList.toggle('is-flipped');
+      card.setAttribute('aria-pressed', isFlipped ? 'true' : 'false');
+    };
+
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      toggle();
+    });
+  });
+}
+
+initFlexibleCards();
+
 // Intersection Observer for fade-in animations (exclude price-card, handled by slider now)
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -498,7 +516,7 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 
-document.querySelectorAll('.pain-card, .benefit-item, .step').forEach(el => {
+document.querySelectorAll('.pain-card, .benefit-item, .flex-card, .step').forEach(el => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(30px)';
   el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
@@ -692,7 +710,7 @@ if (!hasTouchPointer && !prefersReducedMotion) {
   animateAura();
 
   // Scale up cursor on hover over interactive elements
-  document.querySelectorAll('a, button, .price-card, .pain-card, .benefit-item').forEach(el => {
+  document.querySelectorAll('a, button, .price-card, .flex-card, .pain-card, .benefit-item').forEach(el => {
     el.addEventListener('mouseenter', () => {
       customCursor.style.transform = 'translate(-14px, -46px) scale(1.25) rotate(-10deg)';
     });

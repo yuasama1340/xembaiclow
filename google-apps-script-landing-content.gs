@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-security-feedback';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-flexible-3in1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -20,8 +20,8 @@ const SESSION_TTL_SECONDS = 21600;
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
-const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v3';
-const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v3';
+const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v4';
+const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v4';
 const PUBLIC_CACHE_SECONDS = 60;
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
@@ -110,6 +110,31 @@ function buildDefaultLandingContentRows() {
     lc(true, 'pricing.package.offline.1', 'Bảng giá', 'Form - lựa chọn offline gói 1', '#pkg-offline-discovery', 'text', '', 'Gói Khám Phá – 300k / 30 phút'),
     lc(true, 'pricing.package.offline.2', 'Bảng giá', 'Form - lựa chọn offline gói 2', '#pkg-offline-connect', 'text', '', 'Gói Kết Nối – 400k / 45 phút'),
     lc(true, 'pricing.package.offline.3', 'Bảng giá', 'Form - lựa chọn offline gói 3', '#pkg-offline-full', 'text', '', 'Gói Toàn Diện – 550k / 60 phút'),
+
+    lc(true, 'flexible.label', 'Gói 3 trong 1', 'Nhãn section', '#flexible-3in1 .section-label', 'text', '', 'Gói tư vấn linh hoạt 3 trong 1'),
+    lc(true, 'flexible.title', 'Gói 3 trong 1', 'Tiêu đề section', '#flexible-3in1 .section-title', 'html', '', 'Một Buổi Tư Vấn, <em>Ba Lăng Kính Soi Chiếu</em>'),
+    lc(true, 'flexible.intro', 'Gói 3 trong 1', 'Mô tả section', '#flexible-3in1 .flexible-intro', 'text', '', 'Chọn góc nhìn bạn muốn đào sâu hoặc kết hợp cả ba hệ quy chiếu để nhận được bức tranh rõ hơn về câu chuyện hiện tại của mình.'),
+    lc(true, 'flexible.clow.eyebrow', 'Gói 3 trong 1', 'Bài Clow - nhãn mặt trước', '#flex-card-clow .flex-eyebrow', 'text', '', 'Clow Guidance'),
+    lc(true, 'flexible.clow.title', 'Gói 3 trong 1', 'Bài Clow - tiêu đề mặt trước', '#flex-card-clow .flex-card-front h3', 'text', '', 'Bài Clow'),
+    lc(true, 'flexible.clow.front', 'Gói 3 trong 1', 'Bài Clow - nội dung mặt trước', '#flex-card-clow .front-copy', 'text', '', 'Lắng nghe thông điệp từ từng lá bài để nhìn rõ điều đang mắc kẹt.'),
+    lc(true, 'flexible.clow.tags', 'Gói 3 trong 1', 'Bài Clow - nhãn nhỏ mặt trước', '#flex-card-clow .front-tags', 'html', '', '<span>Chữa lành</span><span>Định hướng</span>'),
+    lc(true, 'flexible.clow.backTitle', 'Gói 3 trong 1', 'Bài Clow - tiêu đề mặt sau', '#flex-card-clow .back-title', 'text', '', 'Thông điệp và lộ trình hành động'),
+    lc(true, 'flexible.clow.back', 'Gói 3 trong 1', 'Bài Clow - nội dung mặt sau', '#flex-card-clow .back-copy', 'text', '', 'Bài Clow giúp bạn gọi tên năng lượng hiện tại, nhận diện rào cản cảm xúc và chọn bước đi gần nhất phù hợp với hoàn cảnh thật.'),
+    lc(true, 'flexible.clow.list', 'Gói 3 trong 1', 'Bài Clow - gạch đầu dòng mặt sau', '#flex-card-clow .back-list', 'html', '', '<li>Phân tích chủ đề trọng tâm</li><li>Gợi ý hành động dễ áp dụng</li><li>Thông điệp chữa lành cá nhân</li>'),
+    lc(true, 'flexible.astro.eyebrow', 'Gói 3 trong 1', 'Chiêm tinh - nhãn mặt trước', '#flex-card-astro .flex-eyebrow', 'text', '', 'Astrology Map'),
+    lc(true, 'flexible.astro.title', 'Gói 3 trong 1', 'Chiêm tinh - tiêu đề mặt trước', '#flex-card-astro .flex-card-front h3', 'text', '', 'Chiêm tinh'),
+    lc(true, 'flexible.astro.front', 'Gói 3 trong 1', 'Chiêm tinh - nội dung mặt trước', '#flex-card-astro .front-copy', 'text', '', 'Quan sát nhịp vận hành, xu hướng tính cách và thời điểm chuyển mình.'),
+    lc(true, 'flexible.astro.tags', 'Gói 3 trong 1', 'Chiêm tinh - nhãn nhỏ mặt trước', '#flex-card-astro .front-tags', 'html', '', '<span>Bản đồ sao</span><span>Chu kỳ</span>'),
+    lc(true, 'flexible.astro.backTitle', 'Gói 3 trong 1', 'Chiêm tinh - tiêu đề mặt sau', '#flex-card-astro .back-title', 'text', '', 'Hiểu nhịp vận hành cá nhân'),
+    lc(true, 'flexible.astro.back', 'Gói 3 trong 1', 'Chiêm tinh - nội dung mặt sau', '#flex-card-astro .back-copy', 'text', '', 'Chiêm tinh bổ sung góc nhìn về khí chất, cách phản ứng, nhu cầu cảm xúc và những giai đoạn nên tiến, nên lùi hoặc nên chuẩn bị kỹ hơn.'),
+    lc(true, 'flexible.astro.list', 'Gói 3 trong 1', 'Chiêm tinh - gạch đầu dòng mặt sau', '#flex-card-astro .back-list', 'html', '', '<li>Nhận diện thế mạnh tự nhiên</li><li>Đọc xu hướng giai đoạn hiện tại</li><li>Gợi ý cách ra quyết định hài hòa</li>'),
+    lc(true, 'flexible.num.eyebrow', 'Gói 3 trong 1', 'Nhân số - nhãn mặt trước', '#flex-card-num .flex-eyebrow', 'text', '', 'Numerology Code'),
+    lc(true, 'flexible.num.title', 'Gói 3 trong 1', 'Nhân số - tiêu đề mặt trước', '#flex-card-num .flex-card-front h3', 'text', '', 'Nhân số'),
+    lc(true, 'flexible.num.front', 'Gói 3 trong 1', 'Nhân số - nội dung mặt trước', '#flex-card-num .front-copy', 'text', '', 'Giải mã con số chủ đạo, bài học linh hồn và kiểu phát triển phù hợp.'),
+    lc(true, 'flexible.num.tags', 'Gói 3 trong 1', 'Nhân số - nhãn nhỏ mặt trước', '#flex-card-num .front-tags', 'html', '', '<span>Năng lực</span><span>Bài học</span>'),
+    lc(true, 'flexible.num.backTitle', 'Gói 3 trong 1', 'Nhân số - tiêu đề mặt sau', '#flex-card-num .back-title', 'text', '', 'Giải mã bản thiết kế nội tại'),
+    lc(true, 'flexible.num.back', 'Gói 3 trong 1', 'Nhân số - nội dung mặt sau', '#flex-card-num .back-copy', 'text', '', 'Nhân số giúp bạn hiểu nhịp phát triển, động lực sâu bên trong và những bài học lặp lại trong học tập, công việc, tình cảm hoặc tài chính.'),
+    lc(true, 'flexible.num.list', 'Gói 3 trong 1', 'Nhân số - gạch đầu dòng mặt sau', '#flex-card-num .back-list', 'html', '', '<li>Đọc con số chủ đạo và năm cá nhân</li><li>Nhận diện mẫu hành vi lặp lại</li><li>Chọn hướng phát triển bền vững</li>'),
 
     lc(true, 'testimonials.1.image_url', 'Feedback', 'Ảnh feedback 1', '', 'image', '', ''),
     lc(true, 'testimonials.2.image_url', 'Feedback', 'Ảnh feedback 2', '', 'image', '', ''),
