@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -31,6 +29,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .navbar.scrolled { background: rgba(10,8,18,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--glass-border); }
 .nav-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
 .logo { display: inline-flex; align-items: center; text-decoration: none; }
+.logo picture, .hero-content > picture, .magic-center picture, .test-card-inner picture, .footer-brand picture { display: contents; }
 .nav-logo-img { height: 48px; width: auto; object-fit: contain; }
 .hero-logo-img { display: block; width: 180px; height: 180px; object-fit: contain; margin-bottom: 24px; z-index: 3; mix-blend-mode: screen; animation: logoGlow 4s ease-in-out infinite alternate; }
 @keyframes logoGlow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(201,168,76,0.4)); } 50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(201,168,76,0.8)); } }
@@ -75,13 +74,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .stat-divider { width: 1px; height: 40px; background: var(--glass-border); }
 .hero-visual { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .card-fall { position: absolute; top: 0; pointer-events: auto; }
-.card-fall-1 { left: 5%; animation: fallCard1 9s linear infinite; }
-.card-fall-2 { left: 43%; animation: fallCard2 12s linear infinite; animation-delay: -5s; }
-.card-fall-3 { right: 5%; animation: fallCard3 10s linear infinite; animation-delay: -8s; }
 .card-img { width: 140px; height: auto; border-radius: 14px; border: 2px solid rgba(201,168,76,0.5); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(201,168,76,0.15); display: block; opacity: 0.35; }
-@keyframes fallCard1 { 0% { transform: translateY(-220px) rotate(-20deg); opacity: 0; } 8% { opacity: 0.35; } 88% { opacity: 0.2; } 100% { transform: translateY(105vh) rotate(-8deg); opacity: 0; } }
-@keyframes fallCard2 { 0% { transform: translateY(-220px) rotate(6deg); opacity: 0; } 8% { opacity: 0.3; } 88% { opacity: 0.15; } 100% { transform: translateY(105vh) rotate(-4deg); opacity: 0; } }
-@keyframes fallCard3 { 0% { transform: translateY(-220px) rotate(20deg); opacity: 0; } 8% { opacity: 0.35; } 88% { opacity: 0.2; } 100% { transform: translateY(105vh) rotate(28deg); opacity: 0; } }
 .hero-center-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(107,63,160,.3) 0%, transparent 70%); border-radius: 50%; animation: pulse 3s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .5; } 50% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; } }
 
@@ -98,11 +91,6 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .solution-text h3 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; }
 .solution-text p { color: var(--text-muted); line-height: 1.7; }
 .magic-circle { position: relative; width: 160px; height: 160px; }
-.magic-ring { position: absolute; border-radius: 50%; border: 1px solid; }
-.ring1 { inset: 0; border-color: var(--gold); opacity: .6; animation: spin 8s linear infinite; }
-.ring2 { inset: 16px; border-color: var(--purple-bright); opacity: .4; animation: spin 12s linear infinite reverse; }
-.ring3 { inset: 32px; border-color: var(--gold-light); opacity: .3; animation: spin 16s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .magic-center { display: flex; align-items: center; justify-content: center; }
 .magic-center-logo { width: 180px; height: 180px; object-fit: contain; animation: logoPulse 4s ease-in-out infinite alternate; filter: drop-shadow(0 0 16px rgba(201,168,76,0.7)); }
 @keyframes logoPulse { 0% { transform: scale(0.95); opacity: 0.85; } 100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 28px rgba(201,168,76,1)); } }
@@ -451,6 +439,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 /* OFFER */
 .offer { padding: 80px 0; }
 .offer-card { background: linear-gradient(135deg, rgba(45,27,94,.55), rgba(15,5,40,.85)), url('hinh/background.jpg') center/cover no-repeat; border: 1px solid var(--glass-border); border-radius: 28px; padding: 60px; display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; position: relative; overflow: hidden; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); }
+@supports (background-image: image-set(url('hinh/background.webp') type('image/webp'))) {
+  .offer-card {
+    background-image: linear-gradient(135deg, rgba(45,27,94,.55), rgba(15,5,40,.85)), image-set(url('hinh/background.webp') type('image/webp'), url('hinh/background.jpg') type('image/jpeg'));
+  }
+}
 .offer-glow { position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(201,168,76,.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
 .offer-badge { display: inline-block; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a0a3e; padding: 8px 20px; border-radius: 50px; font-size: .85rem; font-weight: 800; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .offer-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; line-height: 1.2; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
@@ -623,7 +616,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .pain-card, .benefit-item, .price-card { padding: 24px 20px; border-radius: 14px; }
   .price-popular { position: static; display: inline-block; width: fit-content; margin-bottom: 18px; }
   .price-amount { font-size: 2.35rem; }
-  .pricing-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
+  .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
   .toggle-btn { flex: 1; padding: 12px 10px; font-size: .9rem; letter-spacing: 0; border-radius: 14px; }
   .extra-fee { align-items: flex-start; padding: 18px; gap: 14px; }
   .extra-text { font-size: .95rem; }

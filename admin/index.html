@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Quản trị ClowCat | Trang giới thiệu</title>
   <script>
     if (location.protocol !== 'file:' && /\/admin$/i.test(location.pathname)) {
@@ -14,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="../hinh/favicon.png" />
-  <link rel="stylesheet" href="./style.css?v=20260615-admin-path" />
+  <link rel="stylesheet" href="./style.css?v=20260615-security-feedback" />
 </head>
 <body>
   <div class="admin-bg">
@@ -26,13 +27,16 @@
   <!-- LOGIN -->
   <main class="login-view" id="login-view">
     <section class="login-panel">
-      <img src="../hinh/logo.png" alt="ClowCat" class="login-logo" />
+      <picture>
+        <source srcset="../hinh/logo.webp" type="image/webp" />
+        <img src="../hinh/logo.png" alt="ClowCat" class="login-logo" />
+      </picture>
       <div class="eyebrow">ClowCat Patronus</div>
       <h1>Quản Trị Trang Giới Thiệu</h1>
       <form id="login-form" class="stack-form">
         <label>
           <span>Tài khoản</span>
-          <input type="text" id="login-username" value="admin" autocomplete="username" required />
+          <input type="text" id="login-username" autocomplete="username" required />
         </label>
         <label>
           <span>Mật khẩu</span>
@@ -51,7 +55,10 @@
   <main class="admin-shell is-hidden" id="admin-shell">
     <aside class="sidebar">
       <a href="../index.html" class="brand">
-        <img src="../hinh/logo.png" alt="ClowCat" />
+        <picture>
+          <source srcset="../hinh/logo.webp" type="image/webp" />
+          <img src="../hinh/logo.png" alt="ClowCat" />
+        </picture>
         <span>Quản trị ClowCat</span>
       </a>
       <nav class="side-nav" id="section-nav"></nav>
@@ -177,6 +184,6 @@
 
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=20260615-dynamic-packages"></script>
+  <script src="./app.js?v=20260615-security-feedback"></script>
 </body>
 </html>

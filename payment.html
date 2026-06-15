@@ -76,6 +76,7 @@
       display: flex; flex-direction: column; align-items: center; gap: 8px;
       margin-bottom: 28px;
     }
+    .logo-area picture { display: contents; }
     .logo-area img { width: 72px; height: 72px; object-fit: contain; }
     .logo-area span {
       font-family: 'Playfair Display', serif;
@@ -315,7 +316,10 @@
 
   <!-- Logo -->
   <div class="logo-area">
-    <img src="hinh/logo.png" alt="Clow Cat Patronus" />
+    <picture>
+      <source srcset="hinh/logo.webp" type="image/webp" />
+      <img src="hinh/logo.png" alt="Clow Cat Patronus" />
+    </picture>
     <span>Clow Cat Patronus</span>
   </div>
 
@@ -442,10 +446,10 @@
       orderAmount = stored.amount      || parseInt(getUrlParam('amount') || '0');
       const name     = stored.name    || getUrlParam('name') || '—';
       const pkg      = stored.package || getUrlParam('pkg')  || '—';
-      const thankUrl = stored.thankYouUrl || CLIENT_CONFIG.GAS_URL; // fallback
+      const thankUrl = stored.thankYouUrl || 'thankyou.html';
 
       // Lưu thankYouUrl để dùng sau
-      window._thankYouUrl = stored.thankYouUrl || '';
+      window._thankYouUrl = thankUrl;
 
       if (!orderId) {
         document.getElementById('status-text').textContent = '⚠️ Không tìm thấy thông tin đơn hàng.';
@@ -594,10 +598,19 @@
       btn.innerHTML = '<span>✓</span><span>Đang ghi nhận...</span>';
 
       try {
-        const url = `${CLIENT_CONFIG.GAS_URL}?action=manualConfirm&orderId=${encodeURIComponent(orderId)}`;
-        await fetch(url, { cache: 'no-cache' });
+        const res = await fetch(CLIENT_CONFIG.GAS_URL, {
+          method: 'POST',
+          cache: 'no-cache',
+          body: JSON.stringify({ action: 'manualConfirm', orderId }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Không thể ghi nhận xác nhận chuyển khoản.');
       } catch (err) {
         console.warn('Không thể ghi nhận xác nhận thủ công:', err);
+        alert('❌ ' + (err.message || 'Không thể ghi nhận xác nhận chuyển khoản. Vui lòng thử lại.'));
+        btn.disabled = false;
+        btn.innerHTML = '<span>✓</span><span>Tôi Đã Chuyển Khoản Thành Công</span>';
+        return;
       }
 
       handlePaymentSuccess(true);

@@ -1,12 +1,14 @@
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM_j_XyRS2g0kLCytzDU5ESQ-s6Bavy8W4D5XODBLFFzG_yngH53LV7ZYrt6lx9TjO/exec';
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
+const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
+const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null') || {};
 
 // ============================================================
 // STATE
 // ============================================================
 const state = {
-  token: JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')?.token || '',
-  user:  JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')?.user  || null,
+  token: storedSession.token || '',
+  user:  storedSession.user  || null,
   items: [],
   packages: [],
   activeSection: '',
@@ -39,20 +41,19 @@ function formatMoney(val) {
   return Number(val).toLocaleString('vi-VN') + 'đ';
 }
 
-function formatPackagePrice(value) {
-  const amount = Number(value || 0);
-  if (!amount) return '--';
-  return amount.toLocaleString('vi-VN') + 'đ';
-}
-
 function packageOptionText(pkg, mode) {
   const amount = mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice;
-  return `${pkg.name} – ${formatPackagePrice(amount)} / ${pkg.duration || 'theo lịch'}`;
+  return `${pkg.name} – ${formatMoney(amount)} / ${pkg.duration || 'theo lịch'}`;
 }
 
 function isPricingSection(section) {
   const raw = String(section || '').toLowerCase();
   return raw.includes('bảng giá') || raw.includes('bang gia');
+}
+
+function isFeedbackSection(section) {
+  const raw = String(section || '').toLowerCase();
+  return raw.includes('feedback') || raw.includes('khách hàng') || raw.includes('khach hang');
 }
 
 function escHtml(str) {
@@ -72,12 +73,49 @@ async function api(action, params = {}) {
   if (!ADMIN_SCRIPT_URL || ADMIN_SCRIPT_URL.includes('THAY_URL')) {
     throw new Error('Chưa cấu hình ADMIN_SCRIPT_URL trong admin/app.js.');
   }
-  const query = new URLSearchParams({ action, ...params });
-  if (state.token && !query.has('token')) query.set('token', state.token);
-  const response = await fetch(`${ADMIN_SCRIPT_URL}?${query.toString()}`, { cache: 'no-store' });
+  const payload = { action, ...params };
+  if (state.token && !payload.token) payload.token = state.token;
+  const isReadOnly = ADMIN_READ_ACTIONS.has(action);
+  const response = isReadOnly
+    ? await fetch(`${ADMIN_SCRIPT_URL}?${new URLSearchParams(payload).toString()}`, { cache: 'no-store' })
+    : await fetch(ADMIN_SCRIPT_URL, {
+        method: 'POST',
+        cache: 'no-store',
+        body: JSON.stringify(payload),
+      });
   const data = await response.json();
-  if (!data.success) throw new Error(data.error || 'Không thể xử lý yêu cầu.');
+  if (!response.ok || !data.success) {
+    const error = new Error(data.error || 'Không thể xử lý yêu cầu.');
+    error.status = response.status;
+    if (isSessionError(error)) {
+      clearSession();
+      showLogin();
+    }
+    throw error;
+  }
   return data;
+}
+
+function isSessionError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return error?.status === 401
+    || message.includes('phiên đăng nhập')
+    || message.includes('session')
+    || message.includes('token');
+}
+
+async function withButtonPending(button, task) {
+  if (!button || button.disabled) return;
+  const originalHtml = button.innerHTML;
+  button.disabled = true;
+  button.classList.add('is-loading');
+  try {
+    return await task();
+  } finally {
+    button.disabled = false;
+    button.classList.remove('is-loading');
+    button.innerHTML = originalHtml;
+  }
 }
 
 // ============================================================
@@ -86,13 +124,13 @@ async function api(action, params = {}) {
 function setSession(token, user) {
   state.token = token;
   state.user  = user;
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ token, user }));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, user }));
 }
 
 function clearSession() {
   state.token = '';
   state.user  = null;
-  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
 }
 
 function showLogin() {
@@ -277,6 +315,12 @@ function renderContent() {
     return;
   }
 
+  if (isFeedbackSection(state.activeSection)) {
+    renderFeedbackPanel(panel);
+    board.appendChild(panel);
+    return;
+  }
+
   panel.innerHTML = `
     <div class="section-heading">
       <div>
@@ -291,7 +335,7 @@ function renderContent() {
   `;
   const grid = $('.field-grid', panel);
   groups[state.activeSection].forEach(item => grid.appendChild(createField(item)));
-  $('.js-save-section', panel).addEventListener('click', () => saveSection(state.activeSection));
+  $('.js-save-section', panel).addEventListener('click', event => withButtonPending(event.currentTarget, () => saveSection(state.activeSection)));
   board.appendChild(panel);
 }
 
@@ -342,7 +386,7 @@ function renderPackagesPanel(panel) {
   }
 
   $('.js-add-package', panel).addEventListener('click', () => openPackageModal());
-  $('.js-save-package-order', panel).addEventListener('click', savePackageOrder);
+  $('.js-save-package-order', panel).addEventListener('click', event => withButtonPending(event.currentTarget, savePackageOrder));
 }
 
 function createPackageCard(pkg, index, total, canEdit) {
@@ -374,8 +418,8 @@ function createPackageCard(pkg, index, total, canEdit) {
       <span class="pkg-order-badge">#${index + 1}</span>
     </div>
     <div class="pkg-prices">
-      <span class="pkg-price pkg-price--online">Online ${formatPackagePrice(pkg.onlinePrice)}</span>
-      <span class="pkg-price pkg-price--offline">Offline ${formatPackagePrice(pkg.offlinePrice)}</span>
+      <span class="pkg-price pkg-price--online">Online ${formatMoney(pkg.onlinePrice)}</span>
+      <span class="pkg-price pkg-price--offline">Offline ${formatMoney(pkg.offlinePrice)}</span>
       ${pkg.duration ? `<span class="pkg-duration-badge">${escHtml(pkg.duration)}</span>` : ''}
       <span class="pkg-badge-color badge-${escAttr(accent)}">${escHtml(accent)}</span>
     </div>
@@ -546,7 +590,7 @@ function openPackageModal(pkg = null) {
       </form>
       <div class="pkg-modal-footer">
         <button type="button" class="ghost-action js-cancel-package">Huỷ</button>
-        <button type="submit" form="pkg-form" class="primary-action">
+        <button type="submit" form="pkg-form" class="primary-action js-submit-package">
           <i class="fa-solid fa-floppy-disk"></i><span>Lưu gói</span>
         </button>
       </div>
@@ -560,8 +604,10 @@ function openPackageModal(pkg = null) {
   overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
   $('#pkg-form', overlay).addEventListener('submit', async event => {
     event.preventDefault();
-    await savePackageFromForm(new FormData(event.target), current.order);
-    close();
+    await withButtonPending($('.js-submit-package', overlay), async () => {
+      await savePackageFromForm(new FormData(event.target), current.order);
+      close();
+    });
   });
 }
 
@@ -614,6 +660,134 @@ async function savePackageOrder() {
   } catch (error) { showToast(error.message, 'error'); }
 }
 
+// ============================================================
+// FEEDBACK — upload images to Drive
+// ============================================================
+function getFeedbackItem(slot) {
+  return state.items.find(item => item.key === `testimonials.${slot}.image_url`);
+}
+
+function localFeedbackSrc(slot) {
+  return `../hinh/feedback${slot}.webp`;
+}
+
+function renderFeedbackPanel(panel) {
+  const canEdit = ['admin', 'editor'].includes(state.user?.role);
+  panel.innerHTML = `
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Feedback</div>
+        <h2>Ảnh phản hồi khách hàng</h2>
+      </div>
+      <button type="button" class="secondary-action compact js-refresh-feedback">
+        <i class="fa-solid fa-rotate"></i><span>Tải lại</span>
+      </button>
+    </div>
+    <div class="pkg-inline-hint">
+      <i class="fa-solid fa-image"></i>
+      <span>Upload JPG/PNG/WebP tối đa 5MB. Ảnh sẽ lưu vào Google Drive và tự cập nhật lên landing page.</span>
+    </div>
+    <div class="feedback-grid-admin" id="feedback-grid-admin"></div>
+  `;
+
+  const grid = $('#feedback-grid-admin', panel);
+  for (let slot = 1; slot <= 10; slot += 1) {
+    grid.appendChild(createFeedbackCard(slot, canEdit));
+  }
+
+  $('.js-refresh-feedback', panel).addEventListener('click', event => withButtonPending(event.currentTarget, loadContent));
+}
+
+function createFeedbackCard(slot, canEdit) {
+  const item = getFeedbackItem(slot);
+  const currentUrl = String(item?.content || '').trim();
+  const card = document.createElement('article');
+  card.className = 'feedback-admin-card';
+  card.innerHTML = `
+    <div class="feedback-preview">
+      <img src="${escAttr(currentUrl || localFeedbackSrc(slot))}" alt="Feedback ${slot}" loading="lazy" />
+    </div>
+    <div class="feedback-admin-meta">
+      <strong>Feedback ${slot}</strong>
+      <span>${currentUrl ? 'Đang dùng ảnh Drive' : 'Đang dùng ảnh local'}</span>
+    </div>
+    <div class="feedback-admin-actions">
+      <label class="secondary-action compact feedback-file-trigger${canEdit ? '' : ' is-disabled'}">
+        <i class="fa-solid fa-file-arrow-up"></i><span>Chọn ảnh</span>
+        <input type="file" accept="image/png,image/jpeg,image/webp"${canEdit ? '' : ' disabled'} />
+      </label>
+      <button type="button" class="primary-action compact js-upload-feedback" disabled>
+        <i class="fa-solid fa-cloud-arrow-up"></i><span>Upload</span>
+      </button>
+      <button type="button" class="ghost-action compact js-delete-feedback"${canEdit && currentUrl ? '' : ' disabled'}>
+        <i class="fa-solid fa-trash"></i><span>Xóa</span>
+      </button>
+    </div>
+    <div class="feedback-file-name">Chưa chọn file</div>
+  `;
+
+  const input = $('input[type="file"]', card);
+  const uploadBtn = $('.js-upload-feedback', card);
+  const fileName = $('.feedback-file-name', card);
+  let selectedFile = null;
+
+  input.addEventListener('change', () => {
+    selectedFile = input.files && input.files[0] ? input.files[0] : null;
+    fileName.textContent = selectedFile ? selectedFile.name : 'Chưa chọn file';
+    uploadBtn.disabled = !selectedFile || !canEdit;
+    if (selectedFile) {
+      const previewUrl = URL.createObjectURL(selectedFile);
+      $('img', card).src = previewUrl;
+    }
+  });
+
+  uploadBtn.addEventListener('click', event => {
+    if (!selectedFile) return;
+    withButtonPending(event.currentTarget, () => uploadFeedbackImage(slot, selectedFile));
+  });
+
+  $('.js-delete-feedback', card).addEventListener('click', event => withButtonPending(event.currentTarget, () => deleteFeedbackImage(slot)));
+  return card;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+    reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadFeedbackImage(slot, file) {
+  try {
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) throw new Error('Chỉ hỗ trợ JPG, PNG hoặc WebP.');
+    if (file.size > 5 * 1024 * 1024) throw new Error('Ảnh tối đa 5MB.');
+    const data = await fileToBase64(file);
+    await api('uploadFeedbackImage', {
+      slot,
+      filename: file.name,
+      mimeType: file.type,
+      data,
+    });
+    await loadContent();
+    showToast('Đã upload ảnh feedback.');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function deleteFeedbackImage(slot) {
+  if (!confirm('Bạn muốn xóa ảnh Drive của feedback này và quay về ảnh local?')) return;
+  try {
+    await api('deleteFeedbackImage', { slot });
+    await loadContent();
+    showToast('Đã xóa ảnh feedback.');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 
 
 // ============================================================
@@ -623,7 +797,7 @@ async function loadContent() {
   const data = await api('listContent');
   if (data.user) {
     state.user = { ...(state.user || {}), ...data.user };
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ token: state.token, user: state.user }));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: state.token, user: state.user }));
     showShell();
   }
   state.items     = data.items || [];
@@ -705,7 +879,7 @@ function wireEvents() {
   $('#login-form').addEventListener('submit', async event => {
     event.preventDefault();
     try {
-      const data = await api('login', { username: $('#login-username').value.trim(), password: $('#login-password').value });
+      const data = await withButtonPending($('button[type="submit"]', event.target), () => api('login', { username: $('#login-username').value.trim(), password: $('#login-password').value }));
       setSession(data.token, data.user);
       showShell();
       await loadContent();
@@ -715,15 +889,15 @@ function wireEvents() {
   });
 
   $('#logout-btn').addEventListener('click', () => { clearSession(); showLogin(); });
-  $('#refresh-content').addEventListener('click', () => loadContent().then(() => showToast('Đã tải lại.')).catch(err => showToast(err.message, 'error')));
-  $('#save-all').addEventListener('click', () => saveKeys([...state.pending.keys()]));
+  $('#refresh-content').addEventListener('click', event => withButtonPending(event.currentTarget, () => loadContent().then(() => showToast('Đã tải lại.')).catch(err => showToast(err.message, 'error'))));
+  $('#save-all').addEventListener('click', event => withButtonPending(event.currentTarget, () => saveKeys([...state.pending.keys()])));
   $('#content-search').addEventListener('input', renderContent);
   $('#reload-users').addEventListener('click', loadUsers);
 
   $('#create-user-form').addEventListener('submit', async event => {
     event.preventDefault();
     try {
-      await api('createUser', { username: $('#new-username').value.trim(), displayName: $('#new-display-name').value.trim(), role: $('#new-role').value, password: $('#new-password').value });
+      await withButtonPending($('button[type="submit"]', event.target), () => api('createUser', { username: $('#new-username').value.trim(), displayName: $('#new-display-name').value.trim(), role: $('#new-role').value, password: $('#new-password').value }));
       event.target.reset();
       await loadUsers();
       showToast('Đã tạo tài khoản mới.');
@@ -733,7 +907,7 @@ function wireEvents() {
   $('#password-form').addEventListener('submit', async event => {
     event.preventDefault();
     try {
-      await api('changePassword', { currentPassword: $('#current-password').value, newPassword: $('#next-password').value });
+      await withButtonPending($('button[type="submit"]', event.target), () => api('changePassword', { currentPassword: $('#current-password').value, newPassword: $('#next-password').value }));
       event.target.reset();
       showToast('Đã đổi mật khẩu.');
     } catch (error) { showToast(error.message, 'error'); }

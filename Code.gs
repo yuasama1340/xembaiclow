@@ -16,8 +16,9 @@ const CONFIG = {
   // ④ URL trang Thank-You sau khi thanh toán xong
   THANK_YOU_URL: 'https://coibai.clowcat.com.vn/thankyou.html',
 
-  // ⑤ Secret token (đặt cùng giá trị này trong SePay Dashboard > Webhook)
-  SEPAY_SECRET: 'CLOW_SECRET_2026',
+  // ⑤ Secret token: đặt trong Apps Script > Project Settings > Script Properties
+  // Key: SEPAY_SECRET. Không lưu secret thật trực tiếp trong code public.
+  SEPAY_SECRET_FALLBACK: '',
 
   // ⑥ Email nhận thông báo khi có booking mới
   BOOKING_NOTIFY_EMAIL: 'yuasama1340@gmail.com',
@@ -76,21 +77,10 @@ const BOOKING_COLUMN_ALIASES = {
 };
 
 // ============================================================
-// 🗺️  LẤY SHEET — Sử dụng getActiveSpreadsheet() trực tiếp để tránh lỗi ID
+// 🗺️  LẤY SHEET — Luôn mở đúng Spreadsheet ID để ổn định khi deploy Web App
 // ============================================================
 function getSpreadsheet() {
-  let ss;
-  try {
-    // Nếu script tạo từ chính Google Sheet (Tiện ích -> Apps Script), getActiveSpreadsheet() sẽ luôn đúng và 100% không bao giờ lỗi ID
-    ss = SpreadsheetApp.getActiveSpreadsheet();
-  } catch (e) {
-    Logger.log('⚠️ Không lấy được active sheet, thử openById...');
-  }
-  
-  if (!ss) {
-    ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-  }
-  return ss;
+  return SpreadsheetApp.openById(CONFIG.SHEET_ID);
 }
 
 function getSheet() {
@@ -257,6 +247,15 @@ function extractAmount(packageStr) {
   const m = str.match(/(\d{6,})/);
   if (m) return parseInt(m[1]);
   return 0;
+}
+
+function parseAmountParam(value) {
+  const amount = Number(String(value || '').replace(/[^\d]/g, ''));
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
+}
+
+function getSepaySecret() {
+  return PropertiesService.getScriptProperties().getProperty('SEPAY_SECRET') || CONFIG.SEPAY_SECRET_FALLBACK || '';
 }
 
 function parseBoolean(value, fallback) {
@@ -639,7 +638,7 @@ function handleRegister(params) {
     const colMap = ensurePaymentColumns(sheet); // đảm bảo cột TT tồn tại
 
     const orderId = generateOrderId(sheet, colMap);
-    const amount  = extractAmount(params.package);
+    const amount  = parseAmountParam(params.amount) || extractAmount(params.package);
     const paymentConfig = getPaymentConfig();
     const newRow  = sheet.getLastRow() + 1;
 
@@ -792,9 +791,10 @@ function doGet(e) {
   const action = (params.action || '').toLowerCase();
 
   switch (action) {
-    case 'register': return handleRegister(params);
     case 'check':    return handleCheck(params);
-    case 'manualconfirm': return handleManualConfirm(params);
+    case 'register':
+    case 'manualconfirm':
+      return buildJson({ success: false, error: 'Vui lòng dùng POST cho thao tác ghi dữ liệu.' });
     default:
       return buildJson({ error: 'action không hợp lệ. Dùng: register | check | manualConfirm' });
   }
@@ -805,20 +805,27 @@ function doGet(e) {
 // ============================================================
 function doPost(e) {
   try {
+    const requestPayload = parsePostPayload(e);
+    const requestAction = String(requestPayload.action || '').toLowerCase();
+    if (requestAction === 'register') return handleRegister(requestPayload);
+    if (requestAction === 'manualconfirm') return handleManualConfirm(requestPayload);
+    if (requestAction === 'check') return handleCheck(requestPayload);
+
     const paymentConfig = getPaymentConfig();
     if (!paymentConfig.enabled) {
       return buildJson({ success: true, message: 'Thanh toán SePay đang tắt, webhook được bỏ qua.' });
     }
 
     // 1. Parse JSON từ SePay
-    let payload = {};
-    try { payload = JSON.parse(e.postData.contents); } catch (_) {}
+    const payload = requestPayload || {};
 
     Logger.log('📥 SePay Webhook: ' + JSON.stringify(payload));
 
-    // 2. (Tuỳ chọn) Xác thực token — bỏ comment khi production
-    // const token = payload.token || '';
-    // if (token !== CONFIG.SEPAY_SECRET) return buildJson({ success: false, message: 'Unauthorized' });
+    // 2. Xác thực token webhook từ SePay.
+    const secret = getSepaySecret();
+    const token = String(payload.token || payload.secret || (e.parameter && e.parameter.token) || '');
+    if (!secret) return buildJson({ success: false, message: 'Chưa cấu hình SEPAY_SECRET trong Script Properties.' });
+    if (token !== secret) return buildJson({ success: false, message: 'Unauthorized' });
 
     // 3. Trích xuất dữ liệu giao dịch
     // Tài liệu SePay: https://docs.sepay.vn/webhook.html
@@ -909,6 +916,25 @@ function buildJson(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function parsePostPayload(e) {
+  const params = Object.assign({}, (e && e.parameter) || {});
+  const contents = e && e.postData && e.postData.contents;
+  if (!contents) return params;
+
+  try {
+    const body = JSON.parse(contents);
+    if (body && typeof body === 'object') return Object.assign(params, body);
+  } catch (err) {
+    contents.split('&').forEach(pair => {
+      const parts = pair.split('=');
+      if (!parts[0]) return;
+      params[decodeURIComponent(parts[0])] = decodeURIComponent((parts[1] || '').replace(/\+/g, ' '));
+    });
+  }
+
+  return params;
 }
 
 // ============================================================

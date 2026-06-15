@@ -31,6 +31,8 @@ body {
 
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
+.login-panel picture, .brand picture { display: contents; }
+button.is-loading { opacity: 0.72; cursor: wait; }
 
 /* ============================================================
    BACKGROUND
@@ -951,6 +953,81 @@ input:disabled, textarea:disabled {
   gap: 10px;
   padding: 16px 26px 22px;
   border-top: 1px solid rgba(180,126,229,0.12);
+}
+
+/* ============================================================
+   FEEDBACK MANAGER
+   ============================================================ */
+.feedback-grid-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.feedback-admin-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.035);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.feedback-preview {
+  aspect-ratio: 4 / 5;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(232,204,122,0.18);
+  background: rgba(10,8,18,0.72);
+}
+
+.feedback-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.feedback-admin-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.feedback-admin-meta strong {
+  font-family: 'Playfair Display', serif;
+  color: var(--white);
+  font-size: 1.05rem;
+}
+
+.feedback-admin-meta span,
+.feedback-file-name {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.feedback-admin-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.feedback-file-trigger {
+  position: relative;
+  overflow: hidden;
+  justify-content: center;
+}
+
+.feedback-file-trigger input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.feedback-file-trigger.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* ============================================================

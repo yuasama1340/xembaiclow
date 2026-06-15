@@ -88,17 +88,38 @@ function applyLandingContentItem(item) {
   }
 }
 
+function applyFeedbackImageItem(item) {
+  const match = String(item?.key || '').match(/^testimonials\.(\d+)\.image_url$/);
+  const url = String(item?.content || item?.value || '').trim();
+  if (!match || !url) return;
+
+  const card = document.getElementById(`test-${match[1]}`);
+  if (!card) return;
+  const source = card.querySelector('source[type="image/webp"]');
+  const image = card.querySelector('img.test-img');
+  if (source) source.remove();
+  if (image) {
+    image.src = url;
+    image.removeAttribute('srcset');
+  }
+}
+
 async function loadLandingContent() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
 
   try {
-    const params = new URLSearchParams({ action: 'getLandingContent' });
+    const params = new URLSearchParams({ action: 'getLandingContent', t: Date.now().toString() });
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.items)) return;
     data.items.forEach(applyRuntimeConfigItem);
+    data.items.forEach(applyFeedbackImageItem);
     data.items.forEach(applyLandingContentItem);
-    await loadDynamicPackages();
+    if (Array.isArray(data.packages) && data.packages.length) {
+      applyDynamicPackages(data.packages);
+    } else {
+      loadDynamicPackages();
+    }
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   }
@@ -128,20 +149,25 @@ function packageFeatures(pkg) {
 async function loadDynamicPackages() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
   try {
-    const params = new URLSearchParams({ action: 'listPublicPackages' });
+    const params = new URLSearchParams({ action: 'listPublicPackages', t: Date.now().toString() });
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
-    dynamicPackages = data.packages
-      .filter(pkg => pkg.enabled !== false)
-      .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
-    renderDynamicPricing();
-    renderDynamicPackageOptions();
-    switchPricing(pricingMode || 'online');
-    updatePackageOptions();
+    applyDynamicPackages(data.packages);
   } catch (error) {
     console.warn('Không thể nạp bảng giá động:', error);
   }
+}
+
+function applyDynamicPackages(packages) {
+  dynamicPackages = packages
+    .filter(pkg => pkg.enabled !== false)
+    .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  if (!dynamicPackages.length) return;
+  renderDynamicPricing();
+  renderDynamicPackageOptions();
+  switchPricing(pricingMode || 'online');
+  updatePackageOptions();
 }
 
 function renderDynamicPricing() {
@@ -188,7 +214,8 @@ function renderDynamicPackageOptions() {
       .filter(pkg => Number(mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice) > 0)
       .map(pkg => {
         const text = packageSelectText(pkg, mode);
-        return `<option data-package-code="${escapeHtml(pkg.code)}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
+        const amount = Number(mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice) || 0;
+        return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${amount}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
       })
       .join('');
     return `<optgroup label="${mode === 'online' ? 'Online' : 'Offline'}">${options}</optgroup>`;
@@ -229,6 +256,22 @@ function updatePackageOptions() {
   if (currentOption && currentOption.disabled) packageSelect.value = '';
 }
 
+function getSelectedPackageAmount() {
+  const packageSelect = document.getElementById('package');
+  const option = packageSelect?.selectedOptions?.[0];
+  const explicitAmount = Number(option?.dataset?.packageAmount || 0);
+  if (explicitAmount) return explicitAmount;
+
+  const selectedPkg = packageSelect?.value || '';
+  const compact = selectedPkg.match(/(\d+(?:[.,]\d+)?)\s*k\b/i);
+  if (compact) return Math.round(Number(compact[1].replace(',', '.')) * 1000);
+
+  const separated = selectedPkg.match(/(\d{1,3}(?:[.,]\d{3})+)\s*(?:đ|vnd)?/i);
+  if (separated) return parseInt(separated[1].replace(/[.,]/g, ''), 10) || 0;
+
+  return 0;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const formatSelect = document.getElementById('format');
   if (!formatSelect) return;
@@ -254,13 +297,7 @@ async function handleSubmit(e) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('THAY_URL')) {
     console.warn('⚠️ Chưa cấu hình GOOGLE_SCRIPT_URL. Chạy chế độ demo.');
     const pkgVal = document.getElementById('package').value || 'Demo Package';
-    let amount = 350000;
-    if (pkgVal.includes('250')) amount = 250000;
-    else if (pkgVal.includes('300')) amount = 300000;
-    else if (pkgVal.includes('350')) amount = 350000;
-    else if (pkgVal.includes('400')) amount = 400000;
-    else if (pkgVal.includes('500')) amount = 500000;
-    else if (pkgVal.includes('550')) amount = 550000;
+    const amount = getSelectedPackageAmount() || 350000;
 
     const demoOrder = {
       orderId:    'CLOW-DEMO',
@@ -281,19 +318,23 @@ async function handleSubmit(e) {
     // Thu thập dữ liệu form
     const formatVal = document.getElementById('format').value;
     const selectedPkg = document.getElementById('package').value;
+    const selectedAmount = getSelectedPackageAmount();
 
-    const params = new URLSearchParams({
+    const params = {
       action:  'register',
       name:    document.getElementById('name').value.trim(),
       phone:   document.getElementById('phone').value.trim(),
       email:   document.getElementById('email').value.trim(),
       package: selectedPkg,
+      amount:  selectedAmount,
       format:  formatVal,
       topic:   document.getElementById('topic').value.trim(),
-    });
+    };
 
-    // Gọi GAS action=register (GET với query params để tránh CORS preflight)
-    const res  = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const res  = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
     const data = await res.json();
 
     if (data.success && data.orderId) {
@@ -328,10 +369,6 @@ async function handleSubmit(e) {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled  = false;
   }
-}
-
-function closeModal() {
-  document.getElementById('success-modal').classList.remove('active');
 }
 
 // ============================================================
@@ -485,18 +522,22 @@ function createDust() {
 }
 
 if (!prefersReducedMotion) {
-  setInterval(createDust, hasTouchPointer ? 900 : 300);
+  setInterval(() => {
+    if (!document.hidden) createDust();
+  }, hasTouchPointer ? 1400 : 700);
 }
 
 // --- FALLING CARDS (Wave system) ---
-const CARD_IMAGES = [
-  'hinh/labai1.jpg',
-  'hinh/labai2.jpg',
-  'hinh/labai3.jpg',
-  'hinh/labai4.jpg',
-  'hinh/labai5.jpg',
-  'hinh/labai6.jpg',
-];
+const supportsWebpImages = (() => {
+  try {
+    const canvas = document.createElement('canvas');
+    return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  } catch (error) {
+    return false;
+  }
+})();
+const cardImageExt = supportsWebpImages ? 'webp' : 'jpg';
+const CARD_IMAGES = [1, 2, 3, 4, 5, 6].map(index => `hinh/labai${index}.${cardImageExt}`);
 
 function isMobileViewport() {
   return window.innerWidth <= 900;
@@ -507,6 +548,11 @@ function pickImages(count) {
 }
 
 function spawnWave() {
+  if (document.hidden) {
+    setTimeout(spawnWave, 2500);
+    return;
+  }
+
   const mobile = isMobileViewport();
 
   // Create or get global fixed container
@@ -662,26 +708,31 @@ if (!hasTouchPointer && !prefersReducedMotion) {
 const bgMusic = document.getElementById('bg-music');
 const audioBtn = document.getElementById('audio-toggle');
 const audioIcon = audioBtn.querySelector('.audio-icon');
-let isAudioPlaying = false;
 
 // Tùy chỉnh âm lượng (0.0 đến 1.0)
 bgMusic.volume = 0.5;
 
+function syncAudioButton() {
+  const isPlaying = !bgMusic.paused;
+  audioIcon.textContent = isPlaying ? '🔊' : '🔇';
+  audioBtn.classList.toggle('playing', isPlaying);
+}
+
 audioBtn.addEventListener('click', () => {
-  if (isAudioPlaying) {
+  if (!bgMusic.paused) {
     bgMusic.pause();
-    audioIcon.textContent = '🔇';
-    audioBtn.classList.remove('playing');
   } else {
     bgMusic.play().catch(error => {
       console.log("Audio play failed:", error);
       alert("Không thể phát nhạc. Vui lòng đảm bảo bạn đã đặt file 'nhac.mp3' vào đúng thư mục.");
     });
-    audioIcon.textContent = '🔊';
-    audioBtn.classList.add('playing');
   }
-  isAudioPlaying = !isAudioPlaying;
 });
+
+bgMusic.addEventListener('play', syncAudioButton);
+bgMusic.addEventListener('pause', syncAudioButton);
+bgMusic.addEventListener('ended', syncAudioButton);
+syncAudioButton();
 
 
 
