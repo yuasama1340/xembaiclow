@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=20260523" />
+  <link rel="stylesheet" href="style.css?v=20260614-email-booking" />
   <link rel="icon" type="image/png" href="hinh/favicon.png" />
   
   <!-- Open Graph / Facebook -->
@@ -285,118 +285,144 @@
       <div class="section-label">Bảng giá dịch vụ</div>
       <h2 class="section-title">Chọn Gói <em>Phù Hợp Với Bạn</em></h2>
       
-      <div class="pricing-toggle">
+      <div class="pricing-mode-toggle">
         <button class="toggle-btn active" id="btn-online" onclick="switchPricing('online')">Online</button>
         <button class="toggle-btn" id="btn-offline" onclick="switchPricing('offline')">Offline (TP.HCM)</button>
       </div>
 
-      <div class="pricing-grid" id="pricing-online">
+      <!-- Slider: cards có IDs khớp với Google Sheets selectors -->
+      <div class="pricing-slider-wrap" id="pricing-slider-wrap">
+        <div class="pricing-track" id="pricing-track">
 
-        <div class="price-card" id="price-kham-pha">
-          <div class="price-card-header">
-            <div class="price-tier">Gói Khám Phá</div>
-            <div class="price-tag"><span class="price-amount">250k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 30 phút</div>
+          <!-- ONLINE CARDS (hiện mặc định) -->
+          <div class="price-card pricing-online-card" id="price-kham-pha">
+            <div class="price-card-header">
+              <div class="price-tier">Gói Khám Phá</div>
+              <div class="price-tag">
+                <span class="price-amount">250k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 30 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ 1 chủ đề trọng tâm</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+            </ul>
+            <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
+            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
           </div>
-          <ul class="price-features">
-            <li>✦ 1 chủ đề trọng tâm</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-          </ul>
-          <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
-          <a href="#contact" class="btn-price" id="btn-kham-pha">Đặt Lịch Ngay</a>
-        </div>
 
-        <div class="price-card price-featured" id="price-ket-noi">
-          <div class="price-popular">✦ Phổ biến nhất</div>
-          <div class="price-card-header">
-            <div class="price-tier">Gói Kết Nối</div>
-            <div class="price-tag"><span class="price-amount">350k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 45 phút</div>
+          <div class="price-card price-featured pricing-online-card" id="price-ket-noi">
+            <div class="price-popular">✦ Phổ biến nhất</div>
+            <div class="price-card-header">
+              <div class="price-tier">Gói Kết Nối</div>
+              <div class="price-tag">
+                <span class="price-amount">350k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 45 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ 2 chủ đề (VD: sự nghiệp + tình cảm)</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+            </ul>
+            <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
+            <a href="#contact" class="btn-price btn-price-featured">Đặt Lịch Ngay</a>
           </div>
-          <ul class="price-features">
-            <li>✦ 2 chủ đề (VD: sự nghiệp + tình cảm)</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-          </ul>
-          <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
-          <a href="#contact" class="btn-price btn-price-featured" id="btn-ket-noi">Đặt Lịch Ngay</a>
-        </div>
 
-        <div class="price-card" id="price-toan-dien">
-          <div class="price-card-header">
-            <div class="price-tier">Gói Toàn Diện</div>
-            <div class="price-tag"><span class="price-amount">500k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 60 phút</div>
+          <div class="price-card pricing-online-card" id="price-toan-dien">
+            <div class="price-card-header">
+              <div class="price-tier">Gói Toàn Diện</div>
+              <div class="price-tag">
+                <span class="price-amount">500k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 60 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ Đa chủ đề không giới hạn</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
+            </ul>
+            <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
+            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
           </div>
-          <ul class="price-features">
-            <li>✦ Đa chủ đề không giới hạn</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
-          </ul>
-          <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
-          <a href="#contact" class="btn-price" id="btn-toan-dien">Đặt Lịch Ngay</a>
-        </div>
 
+          <!-- OFFLINE CARDS (ẩn mặc định, loadLandingContent() cập nhật giá) -->
+          <div class="price-card pricing-offline-card" id="price-kham-pha-off" style="display:none">
+            <div class="price-card-header">
+              <div class="price-tier">Gói Khám Phá</div>
+              <div class="price-tag">
+                <span class="price-amount">300k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 30 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ 1 chủ đề trọng tâm</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+            </ul>
+            <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
+            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+          </div>
+
+          <div class="price-card price-featured pricing-offline-card" id="price-ket-noi-off" style="display:none">
+            <div class="price-popular">✦ Phổ biến nhất</div>
+            <div class="price-card-header">
+              <div class="price-tier">Gói Kết Nối</div>
+              <div class="price-tag">
+                <span class="price-amount">400k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 45 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ 2 chủ đề (VD: sự nghiệp + tình cảm)</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+            </ul>
+            <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
+            <a href="#contact" class="btn-price btn-price-featured">Đặt Lịch Ngay</a>
+          </div>
+
+          <div class="price-card pricing-offline-card" id="price-toan-dien-off" style="display:none">
+            <div class="price-card-header">
+              <div class="price-tier">Gói Toàn Diện</div>
+              <div class="price-tag">
+                <span class="price-amount">550k</span>
+                <span class="price-unit">/buổi</span>
+              </div>
+              <div class="price-time">⊙ 60 phút</div>
+            </div>
+            <ul class="price-features">
+              <li>✦ Đa chủ đề không giới hạn</li>
+              <li>✦ Phân tích bài Clow chuyên sâu</li>
+              <li>✦ Lời khuyên thực tế ngay lập tức</li>
+              <li>✦ Thông điệp chữa lành</li>
+              <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
+            </ul>
+            <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
+            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+          </div>
+
+        </div>
+        <button class="pricing-arrow pricing-arrow--prev" id="pricing-prev" aria-label="Gói trước">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button class="pricing-arrow pricing-arrow--next" id="pricing-next" aria-label="Gói tiếp">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
-
-      <div class="pricing-grid" id="pricing-offline" style="display: none;">
-
-        <div class="price-card" id="price-kham-pha-off">
-          <div class="price-card-header">
-            <div class="price-tier">Gói Khám Phá</div>
-            <div class="price-tag"><span class="price-amount">300k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 30 phút</div>
-          </div>
-          <ul class="price-features">
-            <li>✦ 1 chủ đề trọng tâm</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-          </ul>
-          <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
-          <a href="#contact" class="btn-price" id="btn-kham-pha-off">Đặt Lịch Ngay</a>
-        </div>
-
-        <div class="price-card price-featured" id="price-ket-noi-off">
-          <div class="price-popular">✦ Phổ biến nhất</div>
-          <div class="price-card-header">
-            <div class="price-tier">Gói Kết Nối</div>
-            <div class="price-tag"><span class="price-amount">400k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 45 phút</div>
-          </div>
-          <ul class="price-features">
-            <li>✦ 2 chủ đề (VD: sự nghiệp + tình cảm)</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-          </ul>
-          <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
-          <a href="#contact" class="btn-price btn-price-featured" id="btn-ket-noi-off">Đặt Lịch Ngay</a>
-        </div>
-
-        <div class="price-card" id="price-toan-dien-off">
-          <div class="price-card-header">
-            <div class="price-tier">Gói Toàn Diện</div>
-            <div class="price-tag"><span class="price-amount">550k</span><span class="price-unit">/buổi</span></div>
-            <div class="price-time">⏱ 60 phút</div>
-          </div>
-          <ul class="price-features">
-            <li>✦ Đa chủ đề không giới hạn</li>
-            <li>✦ Phân tích bài Clow chuyên sâu</li>
-            <li>✦ Lời khuyên thực tế ngay lập tức</li>
-            <li>✦ Thông điệp chữa lành</li>
-            <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
-          </ul>
-          <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
-          <a href="#contact" class="btn-price" id="btn-toan-dien-off">Đặt Lịch Ngay</a>
-        </div>
-
-      </div>
+      <div class="pricing-dots" id="pricing-dots"></div>
 
       <div class="extra-fee" style="flex-direction: column; align-items: flex-start; gap: 16px; padding: 24px 28px;">
         <div style="display: flex; align-items: flex-start; gap: 20px; width: 100%;">
@@ -410,15 +436,6 @@
           <div class="extra-icon">⏳</div>
           <div class="extra-text">
             <strong>Phụ phí linh hoạt:</strong> Thêm <span class="gold">100.000đ</span> cho mỗi 15 phút trò chuyện thêm ngoài gói đã chọn.
-          </div>
-        </div>
-        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
-        <div style="display: flex; align-items: flex-start; gap: 20px; width: 100%; position: relative;">
-          <div class="extra-icon" style="filter: drop-shadow(0 0 10px rgba(201,168,76,0.8));">✨</div>
-          <div class="extra-text">
-            <strong style="color: var(--gold-light); display: block; margin-bottom: 6px; font-size: 1.1rem; letter-spacing: 0.5px;">Dịch Vụ Tư Vấn 3-in-1 Đặc Biệt</strong>
-            Đối với những vấn đề phức tạp hoặc cần sự chuyên sâu có thể kết hợp 3 công cụ gồm <strong>Bài Clow, Bản Đồ Sao Chiêm Tinh và Nhân Số Học</strong>.<br>
-            <strong style="display: inline-block; margin-top: 10px; padding: 6px 14px; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); border-radius: 8px; color: var(--gold-light);">Phí: 500k / 60 phút</strong>
           </div>
         </div>
       </div>
@@ -438,7 +455,7 @@
               ✦ Dành Riêng Cho Gói Toàn Diện 500k ✦
             </div>
           </h2>
-          <p class="offer-desc">Đăng ký qua Landing Page trong tháng 6 và nhận ngay file PDF đẹp tóm tắt toàn bộ nội dung tư vấn, kèm hình ảnh trải bài của bạn – kỷ niệm chương hành trình khám phá bản thân.</p>
+          <p class="offer-desc">Đăng ký qua trang giới thiệu trong tháng 6 và nhận ngay file PDF đẹp tóm tắt toàn bộ nội dung tư vấn, kèm hình ảnh trải bài của bạn – kỷ niệm chương hành trình khám phá bản thân.</p>
           <div class="offer-features">
             <div class="of-item">✦ File PDF thiết kế đẹp, chuyên nghiệp</div>
             <div class="of-item">✦ Hình ảnh trải bài của buổi hôm đó</div>
@@ -541,16 +558,20 @@
             <input type="tel" id="phone" name="phone" placeholder="0xxx xxx xxx" required />
           </div>
           <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" placeholder="email@example.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
             <label for="format">Hình thức *</label>
             <select id="format" name="format" required>
               <option value="">-- Chọn hình thức --</option>
               <optgroup label="Online">
-                <option value="Online (Google Meet)">Online (Google Meet)</option>
+                <option id="format-online" value="Online (Google Meet)">Online (Google Meet)</option>
               </optgroup>
               <optgroup label="Offline">
-                <option value="Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận">Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận</option>
-                <option value="Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1">Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1</option>
-                <option value="Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2">Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2</option>
+                <option id="format-offline-1" value="Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận">Offline - The Comma Coffee số 21 Hoa Mai, Q. Phú Nhuận</option>
+                <option id="format-offline-2" value="Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1">Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1</option>
+                <option id="format-offline-3" value="Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2">Offline - Le'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2</option>
               </optgroup>
             </select>
           </div>
@@ -559,14 +580,14 @@
             <select id="package" name="package" required>
               <option value="">-- Chọn gói --</option>
               <optgroup label="Online">
-                <option value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
-                <option value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
-                <option value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
+                <option id="pkg-online-discovery" value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
+                <option id="pkg-online-connect" value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
+                <option id="pkg-online-full" value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
               </optgroup>
               <optgroup label="Offline">
-                <option value="Gói Khám Phá – 300k / 30 phút">Gói Khám Phá – 300k / 30 phút</option>
-                <option value="Gói Kết Nối – 400k / 45 phút">Gói Kết Nối – 400k / 45 phút</option>
-                <option value="Gói Toàn Diện – 550k / 60 phút">Gói Toàn Diện – 550k / 60 phút</option>
+                <option id="pkg-offline-discovery" value="Gói Khám Phá – 300k / 30 phút">Gói Khám Phá – 300k / 30 phút</option>
+                <option id="pkg-offline-connect" value="Gói Kết Nối – 400k / 45 phút">Gói Kết Nối – 400k / 45 phút</option>
+                <option id="pkg-offline-full" value="Gói Toàn Diện – 550k / 60 phút">Gói Toàn Diện – 550k / 60 phút</option>
               </optgroup>
             </select>
           </div>
@@ -601,7 +622,7 @@
         </div>
         <div class="footer-links">
           <h4>Dịch vụ</h4>
-          <ul>
+          <ul id="footer-services-list">
             <li><a href="#pricing">Gói Khám Phá</a></li>
             <li><a href="#pricing">Gói Kết Nối</a></li>
             <li><a href="#pricing">Gói Toàn Diện</a></li>
@@ -655,6 +676,6 @@
     </a>
   </div>
 
-  <script src="script.js?v=20260517-v2"></script>
+  <script src="script.js?v=20260615-package-filter"></script>
 </body>
 </html>

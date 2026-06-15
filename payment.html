@@ -7,6 +7,8 @@
   <meta name="description" content="Quét mã QR để hoàn tất thanh toán dịch vụ tư vấn Clow Cat Patronus." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://img.vietqr.io" />
+  <link rel="dns-prefetch" href="https://img.vietqr.io" />
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="hinh/favicon.png" />
 
@@ -219,6 +221,42 @@
       box-shadow: 0 0 10px var(--success);
     }
 
+    .manual-action {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #d9481f, #f0642f);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.2px;
+      box-shadow: 0 18px 34px rgba(217,72,31,0.28);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .manual-action.is-visible { display: inline-flex; }
+    .manual-action:disabled { opacity: 0.68; cursor: wait; }
+
+    .manual-note {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: 12px;
+      background: rgba(201,168,76,0.08);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .manual-note.is-visible { display: block; }
+
     /* ===== SUCCESS OVERLAY ===== */
     .success-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -309,7 +347,7 @@
 
     <!-- QR Code -->
     <div class="qr-wrapper" id="qr-wrapper">
-      <img id="qr-image" class="qr-image" src="" alt="QR Code Thanh Toán SePay" />
+      <img id="qr-image" class="qr-image" src="" alt="QR Code Thanh Toán SePay" loading="eager" decoding="async" fetchpriority="high" />
       <div class="qr-scan-line"></div>
       <div class="qr-corner tl"></div>
       <div class="qr-corner tr"></div>
@@ -329,6 +367,15 @@
       <div class="status-dot"></div>
       <span id="status-text">Đang chờ thanh toán...</span>
     </div>
+
+    <div class="manual-note" id="manual-note">
+      Sau khi chuyển khoản, bạn nhấn nút bên dưới để hoàn tất đăng ký. ClowCat sẽ kiểm tra giao dịch và liên hệ xác nhận lịch với bạn.
+    </div>
+
+    <button type="button" class="manual-action" id="manual-confirm-btn">
+      <span>✓</span>
+      <span>Tôi Đã Chuyển Khoản Thành Công</span>
+    </button>
   </div>
 
   <!-- Footer -->
@@ -356,7 +403,10 @@
     // ============================================================
     const CLIENT_CONFIG = {
       // URL Web App GAS của bạn (sau khi deploy)
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbxUfwXxRlW90ei0OQiYDnZC-RzTYQWsJeCRc3THksKBJ2aQza6aJmFC-yX_EEn7PbobYQ/exec',
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbx9Bm4nWbeLvmr9eKDcMNwwTvGo9MH3C5O8nUzXOSz-zmr6FllaQPlDqQw37AmgQQMz7Q/exec',
+
+      // URL Web App GAS quản trị nội dung/cấu hình
+      ADMIN_CONFIG_URL: 'https://script.google.com/macros/s/AKfycbwM_j_XyRS2g0kLCytzDU5ESQ-s6Bavy8W4D5XODBLFFzG_yngH53LV7ZYrt6lx9TjO/exec',
 
       // Khoảng thời gian polling (ms) – check SePay mỗi X ms
       POLL_INTERVAL: 4000,
@@ -367,6 +417,9 @@
       // SePay QR — điền sau khi có thông tin ngân hàng
       SEPAY_BANK_CODE:   'TPB',   // VD: 'VCB', 'TCB', 'MB', 'ACB'
       SEPAY_ACCOUNT_NO:  '05480409701',   // Số tài khoản của bạn
+      SEPAY_ACCOUNT_NAME: 'PHAN THAI BAO',
+      PAYMENT_ENABLED: true,
+      TRANSFER_NOTE: 'Khi chuyển khoản, vui lòng ghi đúng nội dung là mã đơn hàng để hệ thống xác nhận tự động.',
     };
 
     // ============================================================
@@ -376,11 +429,14 @@
     let orderAmount  = 0;
     let pollTimer    = null;
     let pollCount    = 0;
-    const MAX_POLLS  = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
+    let maxPolls     = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
+    let manualMode   = false;
+    let manualListenerAttached = false;
 
     function init() {
       // Đọc thông tin đơn từ sessionStorage (được lưu bởi script.js sau khi đăng ký thành công)
       const stored = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
+      applyPaymentConfig(stored.paymentConfig);
 
       orderId     = stored.orderId     || getUrlParam('orderId') || '';
       orderAmount = stored.amount      || parseInt(getUrlParam('amount') || '0');
@@ -396,6 +452,8 @@
         return;
       }
 
+      manualMode = stored.paymentEnabled === false || CLIENT_CONFIG.PAYMENT_ENABLED === false;
+
       // Hiển thị thông tin
       document.getElementById('display-order-id').textContent = orderId;
       document.getElementById('display-name').textContent     = name;
@@ -404,11 +462,84 @@
       document.getElementById('hint-order-id').textContent    = orderId;
       document.title = `Thanh Toán ${orderId} | Clow Cat Patronus`;
 
-      // Tạo QR Code từ SePay
+      // Tạo QR Code chuyển khoản
       buildQrCode(orderId, orderAmount);
 
-      // Bắt đầu polling
-      startPolling();
+      if (manualMode) {
+        setupManualTransferMode();
+      } else {
+        // Bắt đầu polling SePay
+        startPolling();
+      }
+
+      refreshPaymentConfigInBackground(stored);
+    }
+
+    function applyPaymentConfig(payment = {}) {
+      if (payment.enabled !== undefined) CLIENT_CONFIG.PAYMENT_ENABLED = payment.enabled === true || String(payment.enabled).toUpperCase() === 'TRUE';
+      if (payment.bankCode) CLIENT_CONFIG.SEPAY_BANK_CODE = String(payment.bankCode).trim().toUpperCase();
+      if (payment.accountNo) CLIENT_CONFIG.SEPAY_ACCOUNT_NO = String(payment.accountNo).trim();
+      if (payment.accountName) CLIENT_CONFIG.SEPAY_ACCOUNT_NAME = String(payment.accountName).trim();
+      if (payment.pollIntervalMs) CLIENT_CONFIG.POLL_INTERVAL = Number(payment.pollIntervalMs) || CLIENT_CONFIG.POLL_INTERVAL;
+      if (payment.maxWaitMinutes) CLIENT_CONFIG.MAX_WAIT_MINUTES = Number(payment.maxWaitMinutes) || CLIENT_CONFIG.MAX_WAIT_MINUTES;
+      if (payment.transferNote) CLIENT_CONFIG.TRANSFER_NOTE = String(payment.transferNote);
+      maxPolls = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
+      updateTransferHint();
+    }
+
+    async function refreshPaymentConfigInBackground(stored) {
+      if (!CLIENT_CONFIG.ADMIN_CONFIG_URL) return;
+
+      const previousQrSignature = getQrSignature();
+      let timeout = null;
+      try {
+        const controller = new AbortController();
+        timeout = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(`${CLIENT_CONFIG.ADMIN_CONFIG_URL}?action=getPublicConfig`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        const data = await res.json();
+        if (data.success && data.config && data.config.payment) {
+          applyPaymentConfig(data.config.payment);
+          if (getQrSignature() !== previousQrSignature) buildQrCode(orderId, orderAmount);
+
+          const shouldUseManual = stored.paymentEnabled === false || CLIENT_CONFIG.PAYMENT_ENABLED === false;
+          if (shouldUseManual && !manualMode) {
+            manualMode = true;
+            if (pollTimer) clearInterval(pollTimer);
+            setupManualTransferMode();
+          }
+        }
+      } catch (err) {
+        console.warn('Không thể nạp cấu hình thanh toán từ admin:', err);
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
+    }
+
+    function updateTransferHint() {
+      document.getElementById('transfer-hint').innerHTML =
+        `📌 ${escapeHtml(CLIENT_CONFIG.TRANSFER_NOTE)}<br/>` +
+        `<strong id="hint-order-id" style="color: var(--gold); font-size: 1rem; letter-spacing: 1px;">${escapeHtml(orderId || 'CLOW-XXX')}</strong>`;
+    }
+
+    function getQrSignature() {
+      return [
+        CLIENT_CONFIG.SEPAY_BANK_CODE,
+        CLIENT_CONFIG.SEPAY_ACCOUNT_NO,
+        CLIENT_CONFIG.SEPAY_ACCOUNT_NAME,
+      ].join('|');
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function getUrlParam(key) {
@@ -431,15 +562,45 @@
       const bank    = CLIENT_CONFIG.SEPAY_BANK_CODE;
       const account = CLIENT_CONFIG.SEPAY_ACCOUNT_NO;
 
-      if (bank === 'THAY_MA_NGAN_HANG' || account === 'THAY_SO_TAI_KHOAN') {
+      if (!bank || !account || bank === 'THAY_MA_NGAN_HANG' || account === 'THAY_SO_TAI_KHOAN') {
         // Chế độ demo: dùng QR placeholder đẹp
         document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('DEMO:' + orderId + ':' + amount)}&bgcolor=ffffff&color=1a0a2e&margin=10`;
+        document.getElementById('status-text').textContent = '⚠️ Chưa cấu hình đủ thông tin ngân hàng.';
         return;
       }
 
       // QR thực từ VietQR (ổn định, không bị chặn CORS)
-      const qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderId)}&accountName=PHAN%20THAI%20BAO`;
+      const qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderId)}&accountName=${encodeURIComponent(CLIENT_CONFIG.SEPAY_ACCOUNT_NAME)}`;
       document.getElementById('qr-image').src = qrUrl;
+    }
+
+    function setupManualTransferMode() {
+      const statusText = document.getElementById('status-text');
+      const manualNote = document.getElementById('manual-note');
+      const manualBtn = document.getElementById('manual-confirm-btn');
+
+      statusText.textContent = 'Đang chờ bạn chuyển khoản và xác nhận.';
+      manualNote.classList.add('is-visible');
+      manualBtn.classList.add('is-visible');
+      if (!manualListenerAttached) {
+        manualBtn.addEventListener('click', confirmManualTransfer);
+        manualListenerAttached = true;
+      }
+    }
+
+    async function confirmManualTransfer() {
+      const btn = document.getElementById('manual-confirm-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>✓</span><span>Đang ghi nhận...</span>';
+
+      try {
+        const url = `${CLIENT_CONFIG.GAS_URL}?action=manualConfirm&orderId=${encodeURIComponent(orderId)}`;
+        await fetch(url, { cache: 'no-cache' });
+      } catch (err) {
+        console.warn('Không thể ghi nhận xác nhận thủ công:', err);
+      }
+
+      handlePaymentSuccess(true);
     }
 
     // ============================================================
@@ -452,9 +613,11 @@
     }
 
     async function checkPaymentStatus() {
+      if (manualMode) return;
+
       pollCount++;
 
-      if (pollCount > MAX_POLLS) {
+      if (pollCount > maxPolls) {
         clearInterval(pollTimer);
         document.getElementById('status-text').textContent = '⏰ Hết thời gian chờ. Vui lòng liên hệ hỗ trợ.';
         return;
@@ -467,7 +630,7 @@
 
         if (data.paid === true) {
           clearInterval(pollTimer);
-          handlePaymentSuccess();
+          handlePaymentSuccess(false);
         } else {
           // Cập nhật UI – countdown đến lần check tiếp
           updateStatusDisplay(pollCount);
@@ -487,15 +650,19 @@
     // ============================================================
     // 🎉  XỬ LÝ THANH TOÁN THÀNH CÔNG
     // ============================================================
-    function handlePaymentSuccess() {
+    function handlePaymentSuccess(isManual) {
       // Hiện status success
       const statusArea = document.getElementById('status-area');
       statusArea.classList.add('success');
-      document.getElementById('status-text').textContent = '✅ Đã xác nhận thanh toán!';
+      document.getElementById('status-text').textContent = isManual ? '✅ Đã ghi nhận chuyển khoản!' : '✅ Đã xác nhận thanh toán!';
 
       // Hiện overlay thành công
       const overlay = document.getElementById('success-overlay');
       overlay.classList.add('visible');
+      if (isManual) {
+        document.querySelector('.success-title').textContent = 'Đăng Ký Thành Công!';
+        document.querySelector('.success-sub').innerHTML = 'Cảm ơn bạn đã chuyển khoản.<br />Chúng tôi sẽ kiểm tra giao dịch và liên hệ xác nhận trong vòng 24 giờ.';
+      }
 
       // Animate progress bar rồi redirect
       setTimeout(() => {

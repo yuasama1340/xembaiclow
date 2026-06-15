@@ -7,7 +7,131 @@ window.addEventListener('scroll', () => {
 // ============================================================
 // ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy
 // ============================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUfwXxRlW90ei0OQiYDnZC-RzTYQWsJeCRc3THksKBJ2aQza6aJmFC-yX_EEn7PbobYQ/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9Bm4nWbeLvmr9eKDcMNwwTvGo9MH3C5O8nUzXOSz-zmr6FllaQPlDqQw37AmgQQMz7Q/exec';
+const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM_j_XyRS2g0kLCytzDU5ESQ-s6Bavy8W4D5XODBLFFzG_yngH53LV7ZYrt6lx9TjO/exec';
+
+const runtimeConfig = {
+  payment: {
+    enabled: true,
+    provider: 'sepay',
+    bankCode: 'TPB',
+    accountNo: '05480409701',
+    accountName: 'PHAN THAI BAO',
+    pollIntervalMs: 4000,
+    maxWaitMinutes: 30,
+    transferNote: 'Khi chuyển khoản, vui lòng ghi đúng mã đơn hàng để hệ thống xác nhận tự động.',
+  },
+};
+
+// ============================================================
+// 🪄  NẠP NỘI DUNG LANDING PAGE TỪ GOOGLE SHEET
+// ============================================================
+function normalizeConfigValue(value, type) {
+  const raw = String(value == null ? '' : value).trim();
+  if (type === 'boolean') return ['true', '1', 'yes', 'on', 'bat', 'bật'].includes(raw.toLowerCase());
+  if (type === 'number') return Number(raw || 0);
+  return raw;
+}
+
+function applyRuntimeConfigItem(item) {
+  const key = String(item?.key || '');
+  if (!key.startsWith('settings.')) return;
+  const path = key.replace(/^settings\./, '').split('.');
+  let cursor = runtimeConfig;
+  path.forEach((part, index) => {
+    if (index === path.length - 1) {
+      cursor[part] = normalizeConfigValue(item.content, item.type);
+    } else {
+      if (!cursor[part]) cursor[part] = {};
+      cursor = cursor[part];
+    }
+  });
+}
+
+function applyLandingContentItem(item) {
+  if (!item || !item.selector) return;
+  const el = document.querySelector(item.selector);
+  if (!el) return;
+
+  const value = item.content == null ? String(item.value || '') : String(item.content);
+  const type = item.type || item.property || 'text';
+  const attr = item.attr || item.attribute || '';
+
+  switch (type) {
+    case 'html':
+      el.innerHTML = value;
+      break;
+    case 'attr':
+      if (attr) el.setAttribute(attr, value);
+      break;
+    case 'placeholder':
+      el.setAttribute('placeholder', value);
+      break;
+    case 'text':
+      el.textContent = value;
+      if (el.tagName === 'OPTION') el.value = value;
+      break;
+    default:
+      el.textContent = value;
+      if (el.tagName === 'OPTION') el.value = value;
+  }
+}
+
+async function loadLandingContent() {
+  if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
+
+  try {
+    const params = new URLSearchParams({ action: 'getLandingContent' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.items)) return;
+    data.items.forEach(applyRuntimeConfigItem);
+    data.items.forEach(applyLandingContentItem);
+  } catch (error) {
+    console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
+  }
+}
+
+loadLandingContent();
+
+// ============================================================
+// 🎛️  LỌC GÓI DỊCH VỤ THEO HÌNH THỨC ONLINE / OFFLINE
+// ============================================================
+function getBookingModeFromFormat(formatValue) {
+  const raw = String(formatValue || '').toLowerCase();
+  if (!raw) return '';
+  return raw.includes('offline') ? 'offline' : 'online';
+}
+
+function updatePackageOptions() {
+  const formatSelect = document.getElementById('format');
+  const packageSelect = document.getElementById('package');
+  if (!formatSelect || !packageSelect) return;
+
+  const mode = getBookingModeFromFormat(formatSelect.value);
+  const groups = packageSelect.querySelectorAll('optgroup');
+  const currentOption = packageSelect.selectedOptions[0];
+
+  groups.forEach(group => {
+    const groupMode = String(group.label || '').toLowerCase().includes('offline') ? 'offline' : 'online';
+    const shouldShow = !mode || groupMode === mode;
+    group.hidden = !shouldShow;
+    group.disabled = !shouldShow;
+    group.querySelectorAll('option').forEach(option => {
+      option.hidden = !shouldShow;
+      option.disabled = !shouldShow;
+    });
+  });
+
+  if (currentOption && currentOption.disabled) packageSelect.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formatSelect = document.getElementById('format');
+  if (!formatSelect) return;
+  updatePackageOptions();
+  formatSelect.addEventListener('change', updatePackageOptions);
+});
 
 // ============================================================
 // 📝  FLOW MỚI: Đăng ký đơn → Chuyển trang QR (SePay)
@@ -39,7 +163,10 @@ async function handleSubmit(e) {
       orderId:    'CLOW-DEMO',
       amount:     amount,
       name:       document.getElementById('name').value || 'Khách Demo',
+      email:      document.getElementById('email').value || '',
       package:    pkgVal,
+      paymentEnabled: runtimeConfig.payment.enabled !== false,
+      paymentConfig: runtimeConfig.payment,
       thankYouUrl: 'thankyou.html',
     };
     sessionStorage.setItem('pendingOrder', JSON.stringify(demoOrder));
@@ -56,6 +183,7 @@ async function handleSubmit(e) {
       action:  'register',
       name:    document.getElementById('name').value.trim(),
       phone:   document.getElementById('phone').value.trim(),
+      email:   document.getElementById('email').value.trim(),
       package: selectedPkg,
       format:  formatVal,
       topic:   document.getElementById('topic').value.trim(),
@@ -66,16 +194,26 @@ async function handleSubmit(e) {
     const data = await res.json();
 
     if (data.success && data.orderId) {
+      const paymentEnabled = data.paymentEnabled !== undefined
+        ? data.paymentEnabled === true
+        : runtimeConfig.payment.enabled !== false;
+
       // Lưu thông tin đơn vào sessionStorage để payment.html đọc
       sessionStorage.setItem('pendingOrder', JSON.stringify({
         orderId:    data.orderId,
         amount:     data.amount,
         name:       document.getElementById('name').value.trim(),
+        email:      document.getElementById('email').value.trim(),
         package:    selectedPkg,
+        format:     formatVal,
+        phone:      document.getElementById('phone').value.trim(),
+        topic:      document.getElementById('topic').value.trim(),
+        paymentEnabled,
+        paymentConfig: data.paymentConfig || runtimeConfig.payment,
         thankYouUrl: data.thankYouUrl || 'thankyou.html',
       }));
 
-      // Chuyển sang trang QR thanh toán
+      // Luôn chuyển qua trang QR. Nếu tắt SePay, payment.html sẽ dùng nút xác nhận thủ công.
       window.location.href = 'payment.html';
     } else {
       throw new Error(data.error || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
@@ -93,32 +231,124 @@ function closeModal() {
   document.getElementById('success-modal').classList.remove('active');
 }
 
-// Chuyển đổi bảng giá Online / Offline
-function switchPricing(mode) {
-  const onlineGrid  = document.getElementById('pricing-online');
-  const offlineGrid = document.getElementById('pricing-offline');
-  const btnOnline   = document.getElementById('btn-online');
-  const btnOffline  = document.getElementById('btn-offline');
+// ============================================================
+// 🎴  PRICING SLIDER — Logic
+// ============================================================
+let pricingMode = 'online'; // 'online' | 'offline'
+let pricingCurrent = 0;
 
+function switchPricing(mode) {
+  pricingMode = mode;
+  pricingCurrent = 0;
+  
+  const btnOnline  = document.getElementById('btn-online');
+  const btnOffline = document.getElementById('btn-offline');
+  if (btnOnline)  btnOnline.classList.toggle('active',  mode === 'online');
+  if (btnOffline) btnOffline.classList.toggle('active', mode === 'offline');
+  
+  const onlineCards = document.querySelectorAll('.pricing-online-card');
+  const offlineCards = document.querySelectorAll('.pricing-offline-card');
+  
   if (mode === 'online') {
-    onlineGrid.style.display  = 'grid';
-    offlineGrid.style.display = 'none';
-    btnOnline.classList.add('active');
-    btnOffline.classList.remove('active');
+    onlineCards.forEach(c => c.style.display = 'flex');
+    offlineCards.forEach(c => c.style.display = 'none');
   } else {
-    onlineGrid.style.display  = 'none';
-    offlineGrid.style.display = 'grid';
-    btnOffline.classList.add('active');
-    btnOnline.classList.remove('active');
-    // Reset opacity vì Intersection Observer không chạy được khi phần tử đang ẩn
-    offlineGrid.querySelectorAll('.price-card').forEach(card => {
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    });
+    onlineCards.forEach(c => c.style.display = 'none');
+    offlineCards.forEach(c => c.style.display = 'flex');
   }
+  
+  updateSliderElements();
+  goToPricingCard(0, false);
 }
 
-// Intersection Observer for fade-in animations
+function updateSliderElements() {
+  const track  = document.getElementById('pricing-track');
+  const dots   = document.getElementById('pricing-dots');
+  if (!track) return;
+  
+  const cards = track.querySelectorAll(`.pricing-${pricingMode}-card`);
+  const total = cards.length;
+  
+  if (dots) {
+    dots.innerHTML = Array.from({length: total}).map((_, i) =>
+      `<button class="pricing-dot${i === pricingCurrent ? ' active' : ''}" data-idx="${i}" aria-label="Gói ${i + 1}"></button>`
+    ).join('');
+    dots.querySelectorAll('.pricing-dot').forEach(dot => {
+      dot.addEventListener('click', () => goToPricingCard(parseInt(dot.dataset.idx)));
+    });
+  }
+  updatePricingArrows(total);
+}
+
+function updatePricingDots(total) {
+  document.querySelectorAll('.pricing-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === pricingCurrent);
+  });
+}
+
+function updatePricingArrows(total) {
+  const prev = document.getElementById('pricing-prev');
+  const next = document.getElementById('pricing-next');
+  if (prev) prev.disabled = pricingCurrent === 0;
+  if (next) next.disabled = pricingCurrent === total - 1;
+}
+
+function goToPricingCard(idx, animate = true) {
+  const track = document.getElementById('pricing-track');
+  if (!track) return;
+  const cards = track.querySelectorAll(`.pricing-${pricingMode}-card`);
+  if (!cards.length) return;
+  const total = cards.length;
+  pricingCurrent = Math.max(0, Math.min(idx, total - 1));
+  const card = cards[pricingCurrent];
+  const offset = card.offsetLeft - (track.offsetWidth / 2) + (card.offsetWidth / 2);
+  if (animate) { track.scrollTo({ left: offset, behavior: 'smooth' }); }
+  else { track.scrollLeft = offset; }
+  updatePricingDots(total);
+  updatePricingArrows(total);
+}
+
+function initPricingSlider() {
+  const track  = document.getElementById('pricing-track');
+  const btnPrev = document.getElementById('pricing-prev');
+  const btnNext = document.getElementById('pricing-next');
+  if (!track) return;
+  
+  updateSliderElements();
+
+  track.addEventListener('scroll', () => {
+    const cardW = track.querySelector('.price-card')?.offsetWidth || 340;
+    const gap   = 24;
+    const scrollPos = track.scrollLeft;
+    pricingCurrent = Math.round(scrollPos / (cardW + gap));
+    const total = track.querySelectorAll(`.pricing-${pricingMode}-card`).length;
+    updatePricingDots(total);
+    updatePricingArrows(total);
+  }, { passive: true });
+
+  let tsX = 0;
+  track.addEventListener('touchstart', e => { tsX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tsX;
+    if (Math.abs(dx) > 50) dx < 0 ? goToPricingCard(pricingCurrent + 1) : goToPricingCard(pricingCurrent - 1);
+  });
+
+  setTimeout(() => goToPricingCard(pricingCurrent, false), 80);
+
+  track.querySelectorAll('.price-card').forEach(el => {
+    const customCursor = document.querySelector('.custom-cursor');
+    if (!customCursor) return;
+    el.addEventListener('mouseenter', () => { customCursor.style.transform = 'translate(-14px, -46px) scale(1.25) rotate(-10deg)'; });
+    el.addEventListener('mouseleave', () => { customCursor.style.transform = 'translate(-14px, -46px) scale(1) rotate(0deg)'; });
+  });
+  
+  if (btnPrev) btnPrev.addEventListener('click', () => goToPricingCard(pricingCurrent - 1));
+  if (btnNext) btnNext.addEventListener('click', () => goToPricingCard(pricingCurrent + 1));
+}
+
+initPricingSlider();
+
+// Intersection Observer for fade-in animations (exclude price-card, handled by slider now)
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (e.isIntersecting) {
@@ -128,7 +358,7 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 
-document.querySelectorAll('.pain-card, .benefit-item, .price-card, .step').forEach(el => {
+document.querySelectorAll('.pain-card, .benefit-item, .step').forEach(el => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(30px)';
   el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';

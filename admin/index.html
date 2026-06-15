@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản trị ClowCat | Trang giới thiệu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="icon" type="image/png" href="../hinh/favicon.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="admin-bg">
+    <div class="stars"></div>
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+  </div>
+
+  <!-- LOGIN -->
+  <main class="login-view" id="login-view">
+    <section class="login-panel">
+      <img src="../hinh/logo.png" alt="ClowCat" class="login-logo" />
+      <div class="eyebrow">ClowCat Patronus</div>
+      <h1>Quản Trị Trang Giới Thiệu</h1>
+      <form id="login-form" class="stack-form">
+        <label>
+          <span>Tài khoản</span>
+          <input type="text" id="login-username" value="admin" autocomplete="username" required />
+        </label>
+        <label>
+          <span>Mật khẩu</span>
+          <input type="password" id="login-password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="primary-action">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Đăng nhập</span>
+        </button>
+      </form>
+      <p class="login-note">Tài khoản quản trị đầu tiên được tạo tự động sau khi Apps Script chạy bản mới.</p>
+    </section>
+  </main>
+
+  <!-- ADMIN SHELL -->
+  <main class="admin-shell is-hidden" id="admin-shell">
+    <aside class="sidebar">
+      <a href="../index.html" class="brand">
+        <img src="../hinh/logo.png" alt="ClowCat" />
+        <span>Quản trị ClowCat</span>
+      </a>
+      <nav class="side-nav" id="section-nav"></nav>
+      <div class="side-footer">
+        <div class="user-chip">
+          <i class="fa-solid fa-user-shield"></i>
+          <div>
+            <strong id="current-user-name">Quản trị viên</strong>
+            <span id="current-user-role">Quản trị viên</span>
+          </div>
+        </div>
+        <button type="button" class="ghost-action" id="logout-btn">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Bảng điều khiển</div>
+          <h1>Nội dung trang giới thiệu</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" id="content-search" placeholder="Tìm nội dung..." />
+          </div>
+          <button type="button" class="secondary-action" id="refresh-content">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Tải lại</span>
+          </button>
+          <button type="button" class="primary-action" id="save-all">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Lưu tất cả</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="status-strip">
+        <div>
+          <strong id="content-count">0</strong>
+          <span>mục nội dung</span>
+        </div>
+        <div>
+          <strong id="pending-count">0</strong>
+          <span>thay đổi chờ lưu</span>
+        </div>
+        <div>
+          <strong id="last-sync">--</strong>
+          <span>cập nhật gần nhất</span>
+        </div>
+      </div>
+
+      <section class="content-board" id="content-board"></section>
+
+      <section class="management-grid">
+        <article class="tool-panel" id="users-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">Phân quyền</div>
+              <h2>Tài khoản quản trị</h2>
+            </div>
+            <button type="button" class="secondary-action compact" id="reload-users">
+              <i class="fa-solid fa-users-gear"></i>
+              <span>Làm mới</span>
+            </button>
+          </div>
+          <div class="users-list" id="users-list"></div>
+          <form id="create-user-form" class="inline-form">
+            <label>
+              <span>Tên đăng nhập</span>
+              <input type="text" id="new-username" placeholder="bien-tap-01" />
+            </label>
+            <label>
+              <span>Tên hiển thị</span>
+              <input type="text" id="new-display-name" placeholder="Bạn cộng sự" />
+            </label>
+            <label>
+              <span>Quyền</span>
+              <select id="new-role">
+                <option value="editor">Biên tập viên</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+            </label>
+            <label>
+              <span>Mật khẩu</span>
+              <input type="password" id="new-password" placeholder="Tối thiểu 6 ký tự" />
+            </label>
+            <button type="submit" class="primary-action">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Tạo tài khoản</span>
+            </button>
+          </form>
+        </article>
+
+        <article class="tool-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">Bảo mật</div>
+              <h2>Đổi mật khẩu</h2>
+            </div>
+          </div>
+          <form id="password-form" class="stack-form slim">
+            <label>
+              <span>Mật khẩu hiện tại</span>
+              <input type="password" id="current-password" autocomplete="current-password" required />
+            </label>
+            <label>
+              <span>Mật khẩu mới</span>
+              <input type="password" id="next-password" autocomplete="new-password" required />
+            </label>
+            <button type="submit" class="secondary-action">
+              <i class="fa-solid fa-key"></i>
+              <span>Cập nhật mật khẩu</span>
+            </button>
+          </form>
+        </article>
+      </section>
+    </section>
+  </main>
+
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js?v=20260615-payment-admin"></script>
+</body>
+</html>
