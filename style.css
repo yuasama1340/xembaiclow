@@ -543,7 +543,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 
 .flex-card {
-  /* Không cố định min-height — để grid tự căn bằng chiều cao giữa 3 card */
+  min-height: 500px;
   border-radius: 24px;
   cursor: none;
   outline: none;
@@ -559,8 +559,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   width: 100%;
   height: 100%;
-  /* Chiều cao tự căn bằng giữa 3 card trong grid */
-  min-height: 420px;
+  min-height: 500px;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   transition: transform .72s cubic-bezier(.2,.75,.2,1);
@@ -600,19 +599,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(201,168,76,0.25) transparent;
-  /* Fade-out đẹp ở đáy báo hiệu có thêm nội dung */
-  mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
-  padding-right: 4px;
+  padding-right: 12px; /* Tăng padding để thanh cuộn rõ ràng không đè chữ */
   padding-bottom: 16px;
 }
-.flex-card-back-scroll::-webkit-scrollbar { width: 3px; }
-.flex-card-back-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
-/* Khi scroll tới đáy: bỏ fade để không che nội dung cuối */
-.flex-card-back-scroll.at-bottom {
-  mask-image: none;
-  -webkit-mask-image: none;
-}
+.flex-card-back-scroll::-webkit-scrollbar { width: 4px; }
+.flex-card-back-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
 
 .flex-card-face::before {
   content: '';
@@ -676,6 +667,12 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   font-size: clamp(1.45rem, 2.15vw, 1.7rem);
   line-height: 1.18;
   margin-bottom: 16px;
+}
+
+/* Tiêu đề mặt sau nhỏ hơn để tiết kiệm diện tích cho chữ */
+.flex-card-back .back-title {
+  font-size: clamp(1.2rem, 1.8vw, 1.35rem);
+  margin-bottom: 12px;
 }
 
 .front-copy,

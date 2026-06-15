@@ -538,20 +538,6 @@ function initFlexibleCards() {
       toggle();
     });
   });
-
-  // Bỏ fade khi scroll tới đáy — nội dung không bị che
-  document.querySelectorAll('.flex-card-back-scroll').forEach(el => {
-    const checkBottom = () => {
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
-      el.classList.toggle('at-bottom', atBottom);
-    };
-    el.addEventListener('scroll', checkBottom, { passive: true });
-    // Check ngay khi lật card
-    const card = el.closest('.flex-card');
-    if (card) {
-      card.addEventListener('click', () => setTimeout(checkBottom, 50));
-    }
-  });
 }
 
 initFlexibleCards();
