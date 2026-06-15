@@ -344,8 +344,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  scroll-padding-inline: 80px;
+  /* scroll-padding: card sẽ snap vào được căn giữa */
+  scroll-padding-inline: 50%;
   justify-content: safe center;
+}
+
+/* Khi có overflow: thêm padding 2 bên để card đầu/cuối căn được tới giữa */
+.pricing-track.is-scrollable {
+  padding-inline: 60px;
 }
 
 .pricing-track::-webkit-scrollbar { display: none; }
@@ -356,9 +362,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   overflow-x: hidden;
 }
 
-/* Inset margin cho card đầu/cuối khi có overflow */
-.pricing-track.is-scrollable .price-card:first-child { margin-left: 52px; }
-.pricing-track.is-scrollable .price-card:last-child  { margin-right: 52px; }
+/* Inset margin — dùng padding-inline của track thay vì margin trên card
+   (tránh làm sai các tính toán offsetLeft trong JS) */
 
 .price-card {
   background: var(--glass);
@@ -379,7 +384,29 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 
 .price-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(107,63,160,0.3); }
 .price-featured { background: linear-gradient(135deg, rgba(45,27,94,.85), rgba(107,63,160,.35)); border-color: var(--purple-bright); box-shadow: 0 0 40px rgba(107,63,160,.35); }
-.price-popular { position: absolute; top: 14px; right: 14px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a0a3e; font-size: .7rem; font-weight: 700; padding: 4px 12px; border-radius: 50px; white-space: nowrap; }
+
+/* Badge nổi bật — absolute ở góc trên phải */
+.price-popular {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #1a0a3e;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 50px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 2;
+}
+
+/* Khi có badge: đẩy nội dung xuống không bị che */
+.price-card:has(.price-popular) .price-tier {
+  padding-top: 28px;
+  padding-right: 4px;
+}
 .price-tier { font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
 .price-tag { margin-bottom: 6px; }
 .price-amount { font-size: 2.6rem; font-weight: 800; color: var(--gold); }
@@ -516,7 +543,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 
 .flex-card {
-  min-height: 500px;
+  /* Không cố định min-height — để grid tự căn bằng chiều cao giữa 3 card */
   border-radius: 24px;
   cursor: none;
   outline: none;
@@ -532,7 +559,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 500px;
+  /* Chiều cao tự căn bằng giữa 3 card trong grid */
+  min-height: 420px;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   transition: transform .72s cubic-bezier(.2,.75,.2,1);
@@ -551,9 +579,37 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   -webkit-backface-visibility: hidden;
   border-radius: 24px;
   padding: 34px 30px 30px;
-  overflow: hidden;
+  overflow: hidden; /* Giữ overflow hidden cho front face */
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 22px 70px rgba(0,0,0,0.36);
+}
+
+/* Mặt sau: cho phép scroll nội dung khi nhiều chữ */
+.flex-card-back {
+  overflow: hidden; /* giữ overflow ở face level */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vùng chứa back-copy + back-list: tự co giãn, scroll khi tràn */
+.flex-card-back-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,168,76,0.25) transparent;
+  /* Fade-out đẹp ở đáy báo hiệu có thêm nội dung */
+  mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+  padding-right: 4px;
+  padding-bottom: 16px;
+}
+.flex-card-back-scroll::-webkit-scrollbar { width: 3px; }
+.flex-card-back-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+/* Khi scroll tới đáy: bỏ fade để không che nội dung cuối */
+.flex-card-back-scroll.at-bottom {
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 .flex-card-face::before {
@@ -674,6 +730,24 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   padding: 10px 0;
   line-height: 1.38;
   font-size: .95rem;
+}
+
+/* Fade-out đẹp ở đáy khi có quá nhiều nội dung (scroll to read more) */
+.flex-card-back .back-list-wrap {
+  position: relative;
+  overflow-y: auto;
+  max-height: 280px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,168,76,0.3) transparent;
+  padding-right: 4px;
+  margin-top: 4px;
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+/* Khi scroll tới cuối: bỏ fade */
+.flex-card-back .back-list-wrap.is-scrolled-end {
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 .back-list li::before {
@@ -863,8 +937,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .section-title { margin-bottom: 32px; }
   .pricing-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .flex-card-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
-  .flex-card, .flex-card-inner { min-height: 360px; }
-  .flex-card-face { padding: 30px 26px; }
+  /* Cho phép card tự cao theo nội dung — không cố định */
+  .flex-card, .flex-card-inner { min-height: 0; }
+  .flex-card-face { min-height: 340px; padding: 30px 26px; }
+  /* Back scroll area: giới hạn chiều cao hợp lý trên tablet */
+  .flex-card-back-scroll { max-height: 240px; }
   .flexible-cta .btn-primary { min-width: min(360px, 100%); }
   .flexible-intro { margin-top: -16px; margin-bottom: 30px; }
   .contact-wrap { grid-template-columns: 1fr; gap: 32px; }
@@ -895,8 +972,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .contact-info .section-title { white-space: normal; }
   .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
   .pain-card, .benefit-item, .price-card { padding: 24px 20px; border-radius: 14px; }
-  .flex-card, .flex-card-inner { min-height: 390px; }
-  .flex-card-face { border-radius: 18px; padding: 28px 22px; }
+  .flex-card, .flex-card-inner { min-height: 0; }
+  .flex-card-face { border-radius: 18px; padding: 28px 22px; min-height: 0; }
   .flex-card-face::before { inset: 16px; border-radius: 14px; }
   .flex-card-mark { font-size: 4.2rem; margin-bottom: 24px; }
   .flex-card h3 { font-size: 1.45rem; }
@@ -925,7 +1002,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .flex-card-face {
     position: relative;
     inset: auto;
-    min-height: 390px;
+    /* Không cố định min-height — tự cao theo nội dung */
+    min-height: 0;
     transform: none;
     -webkit-transform: none;
     backface-visibility: visible;
@@ -933,6 +1011,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   }
   .flex-card-back {
     display: none;
+    /* Mobile back face: scroll không cần fade vì chiều cao auto */
+    overflow: visible;
+  }
+  .flex-card-back .flex-card-back-scroll {
+    max-height: none;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
   .flex-card.is-flipped .flex-card-front {
     display: none;
@@ -948,7 +1034,10 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
     min-height: 58px;
     font-size: 1.05rem;
   }
+  /* Badge: hiện inline thông thường, không absolute */
   .price-popular { position: static; display: inline-block; width: fit-content; margin-bottom: 18px; }
+  /* Khi badge không còn absolute, không cần padding-top extra */
+  .price-card:has(.price-popular) .price-tier { padding-top: 0; }
   .price-amount { font-size: 2.35rem; }
   .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
   .toggle-btn { flex: 1; padding: 12px 10px; font-size: .9rem; letter-spacing: 0; border-radius: 14px; }
@@ -1011,7 +1100,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .flex-card-face {
     position: relative;
     inset: auto;
-    min-height: 390px;
+    /* Tự cao theo nội dung trên touch devices */
+    min-height: 0;
     transform: none;
     -webkit-transform: none;
     backface-visibility: visible;
@@ -1019,6 +1109,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   }
   .flex-card-back {
     display: none;
+    overflow: visible;
+  }
+  /* Mặt sau hiện full, không fade / không scroll — tự cao */
+  .flex-card-back .flex-card-back-scroll {
+    max-height: none;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
   .flex-card.is-flipped .flex-card-front {
     display: none;
@@ -1026,6 +1124,13 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .flex-card.is-flipped .flex-card-back {
     display: flex;
   }
+  /* Pricing slider: arrow nối bật trên touch */
+  .pricing-arrow { width: 40px; height: 40px; font-size: 1rem; }
+  .pricing-arrow--prev { left: 0; }
+  .pricing-arrow--next { right: 0; }
+  /* Badge — inline, không absolute trên touch */
+  .price-popular { position: static; display: inline-block; margin-bottom: 12px; max-width: 100%; }
+  .price-card:has(.price-popular) .price-tier { padding-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }

@@ -455,10 +455,14 @@ function goToPricingCard(idx, animate = true) {
   const total = cards.length;
   pricingCurrent = Math.max(0, Math.min(idx, total - 1));
   const card = cards[pricingCurrent];
-  // Căn card giữa track chính xác hơn
-  const trackCenter = track.offsetWidth / 2;
-  const cardCenter  = card.offsetLeft + card.offsetWidth / 2;
-  const scrollTarget = cardCenter - trackCenter;
+
+  // Dùng getBoundingClientRect() — chính xác tuyệt đối, không bị ảnh hưởng bởi margin/padding CSS
+  const trackRect = track.getBoundingClientRect();
+  const cardRect  = card.getBoundingClientRect();
+  const cardCenterInViewport  = cardRect.left  + cardRect.width  / 2;
+  const trackCenterInViewport = trackRect.left + trackRect.width / 2;
+  const scrollTarget = track.scrollLeft + (cardCenterInViewport - trackCenterInViewport);
+
   if (animate) { track.scrollTo({ left: scrollTarget, behavior: 'smooth' }); }
   else { track.scrollLeft = scrollTarget; }
   updatePricingDots(total);
@@ -533,6 +537,20 @@ function initFlexibleCards() {
       event.preventDefault();
       toggle();
     });
+  });
+
+  // Bỏ fade khi scroll tới đáy — nội dung không bị che
+  document.querySelectorAll('.flex-card-back-scroll').forEach(el => {
+    const checkBottom = () => {
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+      el.classList.toggle('at-bottom', atBottom);
+    };
+    el.addEventListener('scroll', checkBottom, { passive: true });
+    // Check ngay khi lật card
+    const card = el.closest('.flex-card');
+    if (card) {
+      card.addEventListener('click', () => setTimeout(checkBottom, 50));
+    }
   });
 }
 
