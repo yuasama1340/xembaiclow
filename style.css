@@ -402,18 +402,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   z-index: 2;
 }
 
-/* Khi có badge: đẩy nội dung xuống không bị che */
-.price-card:has(.price-popular) .price-tier {
-  padding-top: 28px;
-  padding-right: 4px;
-}
-.price-tier { font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+/* Đẩy nội dung TẤT CẢ các thẻ xuống 1 khoảng bằng nhau để căn ngang hàng hoàn hảo với thẻ có badge */
+.price-tier { padding-top: 28px; font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
 .price-tag { margin-bottom: 6px; }
 .price-amount { font-size: 2.6rem; font-weight: 800; color: var(--gold); }
 .price-unit { font-size: .95rem; color: var(--text-muted); }
 .price-time { font-size: .82rem; color: var(--purple-bright); margin-bottom: 20px; }
 .price-features { list-style: none; flex: 1; margin-bottom: 18px; }
-.price-features li { padding: 9px 0; font-size: .92rem; color: var(--text-muted); border-bottom: 1px solid var(--glass-border); line-height: 1.5; }
+.price-features li { padding: 9px 0; font-size: .92rem; color: #ffffff; font-weight: 400; border-bottom: 1px solid var(--glass-border); line-height: 1.5; }
 .price-features li:last-child { border-bottom: none; }
 .price-note { font-size: .88rem; color: var(--purple-bright); font-style: italic; margin-bottom: 20px; line-height: 1.55; }
 .btn-price { display: block; text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--white); padding: 13px; border-radius: 50px; font-weight: 600; text-decoration: none; transition: all .3s; margin-top: auto; white-space: nowrap; }
@@ -1035,8 +1031,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   }
   /* Badge: hiện inline thông thường, không absolute */
   .price-popular { position: static; display: inline-block; width: fit-content; margin-bottom: 18px; }
-  /* Khi badge không còn absolute, không cần padding-top extra */
-  .price-card:has(.price-popular) .price-tier { padding-top: 0; }
+  /* Reset padding cho tất cả thẻ trên mobile vì badge đã inline */
+  .price-tier { padding-top: 0; }
   .price-amount { font-size: 2.35rem; }
   .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
   .toggle-btn { flex: 1; padding: 12px 10px; font-size: .9rem; letter-spacing: 0; border-radius: 14px; }
@@ -1129,7 +1125,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .pricing-arrow--next { right: 0; }
   /* Badge — inline, không absolute trên touch */
   .price-popular { position: static; display: inline-block; margin-bottom: 12px; max-width: 100%; }
-  .price-card:has(.price-popular) .price-tier { padding-top: 0; }
+  .price-tier { padding-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
