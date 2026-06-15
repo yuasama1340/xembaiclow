@@ -313,39 +313,65 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   z-index: 1;
   margin-bottom: 32px;
-  padding: 12px 0 20px;
+  padding: 12px 0 24px;
+}
+
+/* Gradient fade 2 bên — chỉ hiện khi có 4+ gói */
+.pricing-slider-wrap.has-overflow::before,
+.pricing-slider-wrap.has-overflow::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 72px;
+  z-index: 5;
+  pointer-events: none;
+}
+.pricing-slider-wrap.has-overflow::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-mid), transparent);
+}
+.pricing-slider-wrap.has-overflow::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-mid), transparent);
 }
 
 .pricing-track {
   display: flex;
-  gap: 20px;
-  padding: 16px 0 20px;
+  gap: 24px;
+  padding: 20px 24px 24px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  /* Inset padding so first & last cards centre nicely */
-  scroll-padding-inline: 60px;
+  scroll-padding-inline: 80px;
+  justify-content: safe center;
 }
 
 .pricing-track::-webkit-scrollbar { display: none; }
 
-/* First and last card get extra margin so arrow doesn't overlap */
-.pricing-track .price-card:first-child { margin-left: 56px; }
-.pricing-track .price-card:last-child  { margin-right: 56px; }
+/* Khi không cần scroll → căn giữa, không overflow */
+.pricing-track:not(.is-scrollable) {
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Inset margin cho card đầu/cuối khi có overflow */
+.pricing-track.is-scrollable .price-card:first-child { margin-left: 52px; }
+.pricing-track.is-scrollable .price-card:last-child  { margin-right: 52px; }
 
 .price-card {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
-  padding: 32px 24px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
-  transition: all .3s;
+  transition: transform .3s, box-shadow .3s;
   position: relative;
   overflow: hidden;
-  flex: 0 0 min(320px, 76vw);
+  flex: 0 0 min(300px, 78vw);
+  min-height: 440px;
   scroll-snap-align: center;
   word-break: break-word;
   hyphens: auto;
@@ -368,39 +394,48 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .btn-price-featured { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a0a3e !important; border-color: transparent; }
 .btn-price-featured:hover { box-shadow: 0 8px 24px rgba(201,168,76,.4); }
 
-/* Arrow buttons — sits on top of slider wrap, NOT inside track */
+/* Arrow buttons — nằm ngoài overflow container, KHÔNG đè lên card */
 .pricing-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(201,168,76,0.4);
-  background: rgba(10,8,18,0.9);
+  border: 1px solid rgba(201,168,76,0.45);
+  background: rgba(10,8,18,0.92);
   color: var(--gold-light);
-  font-size: 1rem;
+  font-size: 1.1rem;
   display: grid;
   place-items: center;
   cursor: none;
-  z-index: 10;
+  z-index: 20;
   transition: all 0.22s;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.1);
 }
 
-.pricing-arrow:hover:not(:disabled) { background: rgba(201,168,76,0.18); border-color: var(--gold); transform: translateY(-50%) scale(1.1); }
-.pricing-arrow:disabled { opacity: 0.22; pointer-events: none; }
-.pricing-arrow--prev { left: 4px; }
-.pricing-arrow--next { right: 4px; }
+.pricing-arrow:hover:not(:disabled) {
+  background: rgba(201,168,76,0.2);
+  border-color: var(--gold);
+  transform: translateY(-50%) scale(1.12);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.25);
+}
+.pricing-arrow:disabled { opacity: 0.18; pointer-events: none; }
+.pricing-arrow--prev { left: -8px; }
+.pricing-arrow--next { right: -8px; }
 
 /* Dots */
 .pricing-dots {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   margin-bottom: 32px;
+  min-height: 22px;
 }
+
+.pricing-dots:not(.is-visible) { opacity: 0; pointer-events: none; }
 
 .pricing-dot {
   width: 8px;
@@ -408,15 +443,17 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   border-radius: 50%;
   background: rgba(180,126,229,0.3);
   border: 1px solid rgba(180,126,229,0.4);
-  transition: all 0.22s;
+  transition: all 0.25s;
   cursor: none;
 }
 
+/* Active dot: pill đẹp thay vì chỉ scale */
 .pricing-dot.active {
   background: var(--gold);
   border-color: var(--gold-light);
-  transform: scale(1.3);
-  box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  width: 22px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(201,168,76,0.55);
 }
 
 /* Group badge inside price card (set by JS) */

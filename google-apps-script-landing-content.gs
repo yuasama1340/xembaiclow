@@ -764,6 +764,17 @@ function normalizePackageCode(value) {
     .slice(0, 48);
 }
 
+// parseBoolean — h\u00e0m n\u00e0y ph\u1ea3i \u0111\u1ecbnh ngh\u0129a \u1edf \u0111\u00e2y v\u00ec file .gs n\u00e0y l\u00e0 project GAS ri\u00eang
+// (kh\u00f4ng share function v\u1edbi Code.gs)
+function parseBoolean(value, fallback) {
+  if (value === true || value === false) return value;
+  const raw = String(value == null ? '' : value).trim().toLowerCase();
+  if (!raw) return fallback;
+  if (['true', '1', 'yes', 'on', 'bat', 'b\u1eadt'].indexOf(raw) !== -1) return true;
+  if (['false', '0', 'no', 'off', 'tat', 't\u1eaft'].indexOf(raw) !== -1) return false;
+  return fallback;
+}
+
 function packagePayload(params) {
   const code = normalizePackageCode(params.code || params.name);
   if (!code) throw new Error('Thiếu mã gói.');

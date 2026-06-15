@@ -168,6 +168,8 @@ function applyDynamicPackages(packages) {
   renderDynamicPackageOptions();
   switchPricing(pricingMode || 'online');
   updatePackageOptions();
+  // Detect overflow sau khi DOM render xong
+  setTimeout(() => updateSliderElements(), 120);
 }
 
 function renderDynamicPricing() {
@@ -403,12 +405,22 @@ function switchPricing(mode) {
 
 function updateSliderElements() {
   const track  = document.getElementById('pricing-track');
+  const wrap   = document.querySelector('.pricing-slider-wrap');
   const dots   = document.getElementById('pricing-dots');
+  const prev   = document.getElementById('pricing-prev');
+  const next   = document.getElementById('pricing-next');
   if (!track) return;
-  
+
   const cards = track.querySelectorAll(`.pricing-${pricingMode}-card`);
   const total = cards.length;
   
+  // Tự động detect cần scroll không (nếu số gói > 3 hoặc màn hình hẹp)
+  const needsScroll = total > 3 || (track.scrollWidth > track.clientWidth + 10);
+  track.classList.toggle('is-scrollable', needsScroll);
+  if (wrap) wrap.classList.toggle('has-overflow', needsScroll);
+  if (prev) prev.style.display = needsScroll ? '' : 'none';
+  if (next) next.style.display = needsScroll ? '' : 'none';
+
   if (dots) {
     dots.innerHTML = Array.from({length: total}).map((_, i) =>
       `<button class="pricing-dot${i === pricingCurrent ? ' active' : ''}" data-idx="${i}" aria-label="Gói ${i + 1}"></button>`
@@ -416,6 +428,8 @@ function updateSliderElements() {
     dots.querySelectorAll('.pricing-dot').forEach(dot => {
       dot.addEventListener('click', () => goToPricingCard(parseInt(dot.dataset.idx)));
     });
+    // Chỉ hiện dots khi cần scroll
+    dots.classList.toggle('is-visible', needsScroll);
   }
   updatePricingArrows(total);
 }
@@ -441,9 +455,12 @@ function goToPricingCard(idx, animate = true) {
   const total = cards.length;
   pricingCurrent = Math.max(0, Math.min(idx, total - 1));
   const card = cards[pricingCurrent];
-  const offset = card.offsetLeft - (track.offsetWidth / 2) + (card.offsetWidth / 2);
-  if (animate) { track.scrollTo({ left: offset, behavior: 'smooth' }); }
-  else { track.scrollLeft = offset; }
+  // Căn card giữa track chính xác hơn
+  const trackCenter = track.offsetWidth / 2;
+  const cardCenter  = card.offsetLeft + card.offsetWidth / 2;
+  const scrollTarget = cardCenter - trackCenter;
+  if (animate) { track.scrollTo({ left: scrollTarget, behavior: 'smooth' }); }
+  else { track.scrollLeft = scrollTarget; }
   updatePricingDots(total);
   updatePricingArrows(total);
 }
@@ -453,17 +470,25 @@ function initPricingSlider() {
   const btnPrev = document.getElementById('pricing-prev');
   const btnNext = document.getElementById('pricing-next');
   if (!track) return;
-  
-  updateSliderElements();
+
+  // Sau khi render xong mới detect overflow
+  setTimeout(() => updateSliderElements(), 50);
 
   track.addEventListener('scroll', () => {
-    const cardW = track.querySelector('.price-card')?.offsetWidth || 340;
-    const gap   = 24;
-    const scrollPos = track.scrollLeft;
-    pricingCurrent = Math.round(scrollPos / (cardW + gap));
-    const total = track.querySelectorAll(`.pricing-${pricingMode}-card`).length;
-    updatePricingDots(total);
-    updatePricingArrows(total);
+    const cards = track.querySelectorAll(`.pricing-${pricingMode}-card`);
+    if (!cards.length) return;
+    // Tính card gần center nhất
+    const trackCenter = track.scrollLeft + track.offsetWidth / 2;
+    let closest = 0;
+    let minDist = Infinity;
+    cards.forEach((card, i) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const dist = Math.abs(cardCenter - trackCenter);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    pricingCurrent = closest;
+    updatePricingDots(cards.length);
+    updatePricingArrows(cards.length);
   }, { passive: true });
 
   let tsX = 0;
@@ -475,13 +500,20 @@ function initPricingSlider() {
 
   setTimeout(() => goToPricingCard(pricingCurrent, false), 80);
 
+  // Recalc khi resize
+  let rTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(rTimer);
+    rTimer = setTimeout(() => { updateSliderElements(); goToPricingCard(pricingCurrent, false); }, 120);
+  });
+
   track.querySelectorAll('.price-card').forEach(el => {
     const customCursor = document.querySelector('.custom-cursor');
     if (!customCursor) return;
     el.addEventListener('mouseenter', () => { customCursor.style.transform = 'translate(-14px, -46px) scale(1.25) rotate(-10deg)'; });
     el.addEventListener('mouseleave', () => { customCursor.style.transform = 'translate(-14px, -46px) scale(1) rotate(0deg)'; });
   });
-  
+
   if (btnPrev) btnPrev.addEventListener('click', () => goToPricingCard(pricingCurrent - 1));
   if (btnNext) btnNext.addEventListener('click', () => goToPricingCard(pricingCurrent + 1));
 }
