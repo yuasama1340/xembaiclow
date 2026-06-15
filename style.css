@@ -403,7 +403,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 
 /* Đẩy nội dung TẤT CẢ các thẻ xuống 1 khoảng bằng nhau để căn ngang hàng hoàn hảo với thẻ có badge */
-.price-tier { padding-top: 28px; font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+.price-tier { padding-top: 28px; font-size: .85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin-bottom: 10px; line-height: 1.4; }
 .price-tag { margin-bottom: 6px; }
 .price-amount { font-size: 2.6rem; font-weight: 800; color: var(--gold); }
 .price-unit { font-size: .95rem; color: var(--text-muted); }
