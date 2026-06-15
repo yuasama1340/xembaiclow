@@ -891,6 +891,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .modal-box p { color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
 
 /* RESPONSIVE */
+.mobile-break { display: none; }
 @media (max-width: 900px) {
   html { font-size: 17px; }
   .container { padding: 0 20px; }
@@ -964,6 +965,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .card-img { width: clamp(60px, 17vw, 78px); border-width: 1px; }
   .section-label { font-size: .7rem; letter-spacing: 2px; }
   .section-title { font-size: clamp(1.4rem, 6.5vw, 1.8rem); }
+  .mobile-break { display: block; }
   .contact-info .section-title { white-space: normal; }
   .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
   .pain-card, .benefit-item, .price-card { padding: 24px 20px; border-radius: 14px; }

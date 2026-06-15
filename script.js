@@ -195,7 +195,12 @@ function renderDynamicPricing() {
             <div class="price-time">⊙ ${escapeHtml(pkg.duration || 'Theo lịch')}</div>
           </div>
           <ul class="price-features">
-            ${features.map(feature => `<li>✦ ${escapeHtml(feature.replace(/^✦\s*/, ''))}</li>`).join('')}
+            ${features.map(feature => {
+              let escaped = escapeHtml(feature.replace(/^✦\s*/, ''));
+              // Cho phép các thẻ HTML an toàn cơ bản
+              escaped = escaped.replace(/&lt;(\/?(?:b|strong|i|em|br\/?))&gt;/gi, '<$1>');
+              return `<li>✦ ${escaped}</li>`;
+            }).join('')}
           </ul>
           ${pkg.note ? `<div class="price-note">${escapeHtml(pkg.note)}</div>` : ''}
           <a href="#contact" class="btn-price${isFeatured ? ' btn-price-featured' : ''}">${escapeHtml(pkg.button || 'Đặt Lịch Ngay')}</a>
