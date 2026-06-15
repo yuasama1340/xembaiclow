@@ -475,14 +475,16 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
   perspective: 1400px;
+  -webkit-perspective: 1400px;
 }
 
 .flex-card {
-  min-height: 410px;
+  min-height: 500px;
   border-radius: 24px;
   cursor: none;
   outline: none;
   perspective: 1200px;
+  -webkit-perspective: 1200px;
 }
 
 .flex-card:focus-visible .flex-card-inner {
@@ -493,8 +495,9 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 410px;
+  min-height: 500px;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform .72s cubic-bezier(.2,.75,.2,1);
 }
 
@@ -508,8 +511,9 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   align-items: flex-start;
   text-align: left;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 24px;
-  padding: 34px 30px;
+  padding: 34px 30px 30px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 22px 70px rgba(0,0,0,0.36);
@@ -574,7 +578,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .flex-card h3 {
   position: relative;
   z-index: 1;
-  font-size: 1.7rem;
+  font-size: clamp(1.45rem, 2.15vw, 1.7rem);
   line-height: 1.18;
   margin-bottom: 16px;
 }
@@ -584,8 +588,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   z-index: 1;
   color: rgba(255,255,255,0.78);
-  line-height: 1.65;
-  font-size: 1rem;
+  line-height: 1.58;
+  font-size: .96rem;
 }
 
 .front-tags {
@@ -622,16 +626,17 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   z-index: 1;
   list-style: none;
-  margin-top: auto;
-  padding-top: 22px;
+  margin-top: 20px;
+  padding-top: 0;
   width: 100%;
 }
 
 .back-list li {
   color: var(--text-muted);
   border-top: 1px solid rgba(255,255,255,0.09);
-  padding: 11px 0;
-  line-height: 1.45;
+  padding: 10px 0;
+  line-height: 1.38;
+  font-size: .95rem;
 }
 
 .back-list li::before {
@@ -646,7 +651,28 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .flexible-cta {
   display: flex;
   justify-content: center;
-  margin-top: 42px;
+  margin-top: 54px;
+}
+
+.flexible-cta .btn-primary {
+  min-width: min(360px, 100%);
+  min-height: 64px;
+  justify-content: center;
+  font-size: 1.15rem;
+  letter-spacing: .3px;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 18px 45px rgba(201,168,76,0.26), 0 0 0 8px rgba(201,168,76,0.08);
+}
+
+.flexible-cta .btn-primary::before {
+  content: '✦';
+  margin-right: 10px;
+  color: #1a0a3e;
+}
+
+.flexible-cta .btn-primary:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px rgba(201,168,76,0.34), 0 0 0 10px rgba(201,168,76,0.1);
 }
 
 /* OFFER */
@@ -802,6 +828,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .flex-card-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
   .flex-card, .flex-card-inner { min-height: 360px; }
   .flex-card-face { padding: 30px 26px; }
+  .flexible-cta .btn-primary { min-width: min(360px, 100%); }
   .flexible-intro { margin-top: -16px; margin-bottom: 30px; }
   .contact-wrap { grid-template-columns: 1fr; gap: 32px; }
   .solution-banner { grid-template-columns: 1fr; gap: 28px; padding: 34px 28px; }
@@ -839,6 +866,51 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .front-copy, .back-copy { font-size: .96rem; }
   .flip-hint { right: 22px; bottom: 20px; }
   .flexible-intro { font-size: 1rem; line-height: 1.65; }
+  .flex-card-grid {
+    perspective: none;
+    -webkit-perspective: none;
+  }
+  .flex-card {
+    min-height: 0;
+    perspective: none;
+    -webkit-perspective: none;
+  }
+  .flex-card-inner,
+  .flex-card.is-flipped .flex-card-inner,
+  .flex-card.is-flipped:hover .flex-card-inner {
+    min-height: 0;
+    height: auto;
+    transform: none;
+    -webkit-transform: none;
+    transform-style: flat;
+    -webkit-transform-style: flat;
+  }
+  .flex-card-face {
+    position: relative;
+    inset: auto;
+    min-height: 390px;
+    transform: none;
+    -webkit-transform: none;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+  .flex-card-back {
+    display: none;
+  }
+  .flex-card.is-flipped .flex-card-front {
+    display: none;
+  }
+  .flex-card.is-flipped .flex-card-back {
+    display: flex;
+  }
+  .flexible-cta {
+    margin-top: 32px;
+  }
+  .flexible-cta .btn-primary {
+    width: 100%;
+    min-height: 58px;
+    font-size: 1.05rem;
+  }
   .price-popular { position: static; display: inline-block; width: fit-content; margin-bottom: 18px; }
   .price-amount { font-size: 2.35rem; }
   .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
@@ -880,8 +952,43 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   body, a, button, .audio-btn { cursor: auto !important; }
   .custom-cursor, .cursor-aura, .spark { display: none !important; }
   .pain-card:hover, .benefit-item:hover, .price-card:hover, .flex-card:hover .flex-card-inner, .btn-primary:hover, .btn-outline:hover, .audio-btn:hover { transform: none; }
+  .flex-card-grid {
+    perspective: none;
+    -webkit-perspective: none;
+  }
+  .flex-card {
+    min-height: 0;
+    perspective: none;
+    -webkit-perspective: none;
+  }
+  .flex-card-inner,
   .flex-card.is-flipped .flex-card-inner,
-  .flex-card.is-flipped:hover .flex-card-inner { transform: rotateY(180deg); }
+  .flex-card.is-flipped:hover .flex-card-inner {
+    min-height: 0;
+    height: auto;
+    transform: none;
+    -webkit-transform: none;
+    transform-style: flat;
+    -webkit-transform-style: flat;
+  }
+  .flex-card-face {
+    position: relative;
+    inset: auto;
+    min-height: 390px;
+    transform: none;
+    -webkit-transform: none;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+  .flex-card-back {
+    display: none;
+  }
+  .flex-card.is-flipped .flex-card-front {
+    display: none;
+  }
+  .flex-card.is-flipped .flex-card-back {
+    display: flex;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -1179,17 +1286,6 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 /* Mobile responsive */
 @media (max-width: 600px) {
   .floating-socials {
-    right: 14px;
-    bottom: 80px;
-    gap: 10px;
-  }
-  .float-btn {
-    width: 46px;
-    height: 46px;
-  }
-  .float-btn i {
-    width: 46px;
-    height: 46px;
-    font-size: 1.2rem;
+    display: none;
   }
 }
