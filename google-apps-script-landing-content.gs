@@ -4,11 +4,12 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-payment-config';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-packages';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
+const PACKAGES_SHEET_NAME = 'Packages';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const PASSWORD_SALT = 'CLOW_CAT_PATRONUS_ADMIN_2026_CHANGE_ME';
@@ -16,9 +17,28 @@ const SESSION_TTL_SECONDS = 21600;
 
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
+const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
   return [bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung, new Date(), 'system'];
+}
+
+function pkg(bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, button, order) {
+  return [bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, button, order, new Date(), 'system'];
+}
+
+function buildDefaultPackageRows() {
+  return [
+    pkg(true, 'kham-pha', 'Gói Khám Phá', 250000, 300000, '/buổi', 'moon', 'purple', false, '', '30 phút',
+      '1 chủ đề trọng tâm\nPhân tích bài Clow chuyên sâu\nThông điệp chữa lành\nLời khuyên thực tế ngay lập tức',
+      'Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.', 'Đặt Lịch Ngay', 1),
+    pkg(true, 'ket-noi', 'Gói Kết Nối', 350000, 400000, '/buổi', 'sparkles', 'gold', true, '✦ Phổ biến nhất', '45 phút',
+      '2 chủ đề (VD: sự nghiệp + tình cảm)\nPhân tích bài Clow chuyên sâu\nThông điệp chữa lành\nLời khuyên thực tế ngay lập tức',
+      'Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.', 'Đặt Lịch Ngay', 2),
+    pkg(true, 'toan-dien', 'Gói Toàn Diện', 500000, 550000, '/buổi', 'star', 'teal', false, '', '60 phút',
+      'Đa chủ đề không giới hạn\nPhân tích bài Clow chuyên sâu\nLời khuyên thực tế ngay lập tức\nThông điệp chữa lành\nTặng kèm file PDF tóm tắt buổi tư vấn',
+      'Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.', 'Đặt Lịch Ngay', 3)
+  ];
 }
 
 function buildDefaultLandingContentRows() {
@@ -134,6 +154,9 @@ function doGet(e) {
         return handleGetLandingContent();
       case 'getpublicconfig':
         return handleGetPublicConfig();
+      case 'listpublicpackages':
+      case 'getpackages':
+        return handleListPublicPackages();
       case 'login':
       case 'adminlogin':
         return handleLogin(params);
@@ -143,6 +166,18 @@ function doGet(e) {
       case 'savecontent':
       case 'adminsavecontent':
         return handleSaveContent(params);
+      case 'listpackages':
+      case 'adminlistpackages':
+        return handleListPackages(params);
+      case 'savepackage':
+      case 'adminsavepackage':
+        return handleSavePackage(params);
+      case 'deletepackage':
+      case 'admindeletepackage':
+        return handleDeletePackage(params);
+      case 'reorderpackages':
+      case 'adminreorderpackages':
+        return handleReorderPackages(params);
       case 'listusers':
       case 'adminlistusers':
         return handleListUsers(params);
@@ -178,14 +213,44 @@ function getColumnMap(sheet) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const map = {};
   headers.forEach((header, index) => {
-    if (header) map[String(header).trim()] = index + 1;
+    if (header) {
+      const name = String(header).trim();
+      map[name] = index + 1;
+      map[normalizeHeaderName(name)] = index + 1;
+    }
   });
   return map;
+}
+
+function normalizeHeaderName(value) {
+  return String(value || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
 }
 
 function ensureLandingContentSheet() {
   const sheet = getOrCreateSheet(LANDING_CONTENT_SHEET_NAME, CONTENT_HEADERS);
   syncLandingContentSheet();
+  return sheet;
+}
+
+function ensurePackagesSheet() {
+  const sheet = getOrCreateSheet(PACKAGES_SHEET_NAME, PACKAGE_HEADERS);
+  const map = getColumnMap(sheet);
+
+  PACKAGE_HEADERS.forEach((header, index) => {
+    if (!map[header]) sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+  });
+
+  if (sheet.getLastRow() < 2) {
+    const rows = buildDefaultPackageRows();
+    sheet.getRange(2, 1, rows.length, PACKAGE_HEADERS.length).setValues(rows);
+  }
+
+  formatPackagesSheet(sheet);
   return sheet;
 }
 
@@ -240,6 +305,53 @@ function formatLandingContentSheet(sheet) {
   sheet.getRange(1, 1, 1, CONTENT_HEADERS.length).setFontWeight('bold');
   sheet.getRange('I:J').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.autoResizeColumns(1, CONTENT_HEADERS.length);
+}
+
+function formatPackagesSheet(sheet) {
+  const map = getColumnMap(sheet);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, sheet.getLastColumn()).setFontWeight('bold');
+  if (map['Gia online']) sheet.getRange(2, map['Gia online'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('#,##0');
+  if (map['Gia offline']) sheet.getRange(2, map['Gia offline'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('#,##0');
+  if (map['Thu tu']) sheet.getRange(2, map['Thu tu'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('0');
+  if (map['Cap nhat luc']) sheet.getRange(2, map['Cap nhat luc'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  if (map['Cap nhat boi']) sheet.getRange(2, map['Cap nhat boi'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  sheet.autoResizeColumns(1, sheet.getLastColumn());
+}
+
+function packageFromRow(row, map, rowIndex) {
+  return {
+    rowIndex: rowIndex,
+    enabled: row[map.Bat - 1] === true || String(row[map.Bat - 1]).toUpperCase() === 'TRUE',
+    code: String(row[map['Ma goi'] - 1] || ''),
+    name: String(row[map['Ten goi'] - 1] || ''),
+    onlinePrice: Number(row[map['Gia online'] - 1] || 0),
+    offlinePrice: Number(row[map['Gia offline'] - 1] || 0),
+    unit: String(row[map['Don vi'] - 1] || '/buổi'),
+    icon: String(row[map.Icon - 1] || ''),
+    accent: String(row[map['Mau nhan'] - 1] || 'purple'),
+    featured: row[map['Noi bat'] - 1] === true || String(row[map['Noi bat'] - 1]).toUpperCase() === 'TRUE',
+    badge: String(row[map.Badge - 1] || ''),
+    duration: String(row[map['Thoi luong'] - 1] || ''),
+    features: String(row[map['Quyen loi'] - 1] || ''),
+    note: String(row[map['Ghi chu'] - 1] || ''),
+    button: String(row[map.Nut - 1] || 'Đặt Lịch Ngay'),
+    order: Number(row[map['Thu tu'] - 1] || 999),
+    updatedAt: row[map['Cap nhat luc'] - 1],
+    updatedBy: row[map['Cap nhat boi'] - 1]
+  };
+}
+
+function readPackageRows(includeDisabled) {
+  const sheet = ensurePackagesSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  return sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues()
+    .map((row, index) => packageFromRow(row, map, index + 2))
+    .filter(item => includeDisabled || item.enabled)
+    .sort((a, b) => (a.order || 999) - (b.order || 999));
 }
 
 function readContentRows(includeDisabled) {
@@ -329,6 +441,138 @@ function handleSaveContent(params) {
   sheet.getRange(row, map['Cap nhat luc']).setValue(new Date());
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   return json({ success: true, key, updatedBy: session.username, updatedAt: new Date() });
+}
+
+function handleListPublicPackages() {
+  return json({ success: true, scriptVersion: SCRIPT_VERSION, packages: readPackageRows(false) });
+}
+
+function handleListPackages(params) {
+  requireSession(params, ['admin', 'editor']);
+  return json({ success: true, scriptVersion: SCRIPT_VERSION, packages: readPackageRows(true) });
+}
+
+function findPackageRow(code) {
+  const sheet = ensurePackagesSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const codes = sheet.getRange(2, map['Ma goi'], lastRow - 1, 1).getValues().flat();
+  const target = String(code || '').trim().toLowerCase();
+  for (let i = 0; i < codes.length; i++) {
+    if (String(codes[i] || '').trim().toLowerCase() === target) {
+      return { sheet, map, row: i + 2 };
+    }
+  }
+  return null;
+}
+
+function normalizePackageCode(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+}
+
+function packagePayload(params) {
+  const code = normalizePackageCode(params.code || params.name);
+  if (!code) throw new Error('Thiếu mã gói.');
+
+  return {
+    enabled: parseBoolean(params.enabled, true),
+    code: code,
+    name: String(params.name || '').trim(),
+    onlinePrice: Number(params.onlinePrice || 0),
+    offlinePrice: Number(params.offlinePrice || 0),
+    unit: String(params.unit || '/buổi').trim(),
+    icon: String(params.icon || '').trim(),
+    accent: String(params.accent || 'purple').trim(),
+    featured: parseBoolean(params.featured, false),
+    badge: String(params.badge || '').trim(),
+    duration: String(params.duration || '').trim(),
+    features: String(params.features || '').trim(),
+    note: String(params.note || '').trim(),
+    button: String(params.button || 'Đặt Lịch Ngay').trim(),
+    order: Number(params.order || 999)
+  };
+}
+
+function handleSavePackage(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const item = packagePayload(params);
+  if (!item.name) throw new Error('Thiếu tên gói.');
+  if (!item.onlinePrice && !item.offlinePrice) throw new Error('Cần nhập ít nhất một giá online hoặc offline.');
+
+  const found = findPackageRow(item.code);
+  const sheet = found ? found.sheet : ensurePackagesSheet();
+  const map = getColumnMap(sheet);
+  const row = found ? found.row : sheet.getLastRow() + 1;
+  const now = new Date();
+
+  sheet.getRange(row, map.Bat).setValue(item.enabled);
+  sheet.getRange(row, map['Ma goi']).setValue(item.code);
+  sheet.getRange(row, map['Ten goi']).setValue(item.name);
+  sheet.getRange(row, map['Gia online']).setValue(item.onlinePrice);
+  sheet.getRange(row, map['Gia offline']).setValue(item.offlinePrice);
+  sheet.getRange(row, map['Don vi']).setValue(item.unit);
+  sheet.getRange(row, map.Icon).setValue(item.icon);
+  sheet.getRange(row, map['Mau nhan']).setValue(item.accent);
+  sheet.getRange(row, map['Noi bat']).setValue(item.featured);
+  sheet.getRange(row, map.Badge).setValue(item.badge);
+  sheet.getRange(row, map['Thoi luong']).setValue(item.duration);
+  sheet.getRange(row, map['Quyen loi']).setValue(item.features);
+  sheet.getRange(row, map['Ghi chu']).setValue(item.note);
+  sheet.getRange(row, map.Nut).setValue(item.button);
+  sheet.getRange(row, map['Thu tu']).setValue(item.order);
+  sheet.getRange(row, map['Cap nhat luc']).setValue(now);
+  sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
+  formatPackagesSheet(sheet);
+
+  return json({ success: true, package: item, updatedAt: now, updatedBy: session.username });
+}
+
+function handleDeletePackage(params) {
+  requireSession(params, ['admin', 'editor']);
+  const code = String(params.code || '').trim();
+  const found = findPackageRow(code);
+  if (!found) throw new Error('Không tìm thấy gói: ' + code);
+  found.sheet.deleteRow(found.row);
+  return json({ success: true });
+}
+
+function handleReorderPackages(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const codes = String(params.codes || '')
+    .split(',')
+    .map(code => normalizePackageCode(code))
+    .filter(Boolean);
+  if (!codes.length) throw new Error('Thiếu thứ tự gói.');
+
+  const sheet = ensurePackagesSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  const rowByCode = {};
+  if (lastRow >= 2) {
+    sheet.getRange(2, map['Ma goi'], lastRow - 1, 1).getValues().flat().forEach((code, index) => {
+      rowByCode[normalizePackageCode(code)] = index + 2;
+    });
+  }
+
+  const now = new Date();
+  codes.forEach((code, index) => {
+    const row = rowByCode[code];
+    if (!row) return;
+    sheet.getRange(row, map['Thu tu']).setValue(index + 1);
+    sheet.getRange(row, map['Cap nhat luc']).setValue(now);
+    sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
+  });
+  return json({ success: true, updatedAt: now, updatedBy: session.username });
 }
 
 function ensureAdminUsersSheet() {

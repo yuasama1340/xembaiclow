@@ -23,6 +23,8 @@ const runtimeConfig = {
   },
 };
 
+let dynamicPackages = [];
+
 // ============================================================
 // 🪄  NẠP NỘI DUNG LANDING PAGE TỪ GOOGLE SHEET
 // ============================================================
@@ -31,6 +33,15 @@ function normalizeConfigValue(value, type) {
   if (type === 'boolean') return ['true', '1', 'yes', 'on', 'bat', 'bật'].includes(raw.toLowerCase());
   if (type === 'number') return Number(raw || 0);
   return raw;
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function applyRuntimeConfigItem(item) {
@@ -87,12 +98,104 @@ async function loadLandingContent() {
     if (!data.success || !Array.isArray(data.items)) return;
     data.items.forEach(applyRuntimeConfigItem);
     data.items.forEach(applyLandingContentItem);
+    await loadDynamicPackages();
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   }
 }
 
 loadLandingContent();
+
+function formatPackageMoney(amount, compact = false) {
+  const value = Number(amount || 0);
+  if (!value) return '';
+  if (compact && value % 1000 === 0) return `${value / 1000}k`;
+  return value.toLocaleString('vi-VN') + 'đ';
+}
+
+function packageSelectText(pkg, mode) {
+  const price = mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice;
+  return `${pkg.name} – ${formatPackageMoney(price, true)} / ${pkg.duration || 'theo lịch'}`;
+}
+
+function packageFeatures(pkg) {
+  return String(pkg.features || '')
+    .split(/\n+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+async function loadDynamicPackages() {
+  if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
+  try {
+    const params = new URLSearchParams({ action: 'listPublicPackages' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
+    dynamicPackages = data.packages
+      .filter(pkg => pkg.enabled !== false)
+      .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+    renderDynamicPricing();
+    renderDynamicPackageOptions();
+    switchPricing(pricingMode || 'online');
+    updatePackageOptions();
+  } catch (error) {
+    console.warn('Không thể nạp bảng giá động:', error);
+  }
+}
+
+function renderDynamicPricing() {
+  const track = document.getElementById('pricing-track');
+  if (!track || !dynamicPackages.length) return;
+
+  const cardHtml = [];
+  ['online', 'offline'].forEach(mode => {
+    dynamicPackages.forEach(pkg => {
+      const price = mode === 'offline' ? Number(pkg.offlinePrice || 0) : Number(pkg.onlinePrice || 0);
+      if (!price) return;
+      const isFeatured = pkg.featured === true || String(pkg.featured).toUpperCase() === 'TRUE';
+      const features = packageFeatures(pkg);
+      cardHtml.push(`
+        <div class="price-card ${isFeatured ? 'price-featured ' : ''}pricing-${mode}-card" data-package-code="${escapeHtml(pkg.code)}" style="${mode === 'offline' ? 'display:none' : ''}">
+          ${pkg.badge ? `<div class="price-popular">${escapeHtml(pkg.badge)}</div>` : ''}
+          <div class="price-card-header">
+            <div class="price-tier">${escapeHtml(pkg.name)}</div>
+            <div class="price-tag">
+              <span class="price-amount">${escapeHtml(formatPackageMoney(price, true))}</span>
+              <span class="price-unit">${escapeHtml(pkg.unit || '/buổi')}</span>
+            </div>
+            <div class="price-time">⊙ ${escapeHtml(pkg.duration || 'Theo lịch')}</div>
+          </div>
+          <ul class="price-features">
+            ${features.map(feature => `<li>✦ ${escapeHtml(feature.replace(/^✦\s*/, ''))}</li>`).join('')}
+          </ul>
+          ${pkg.note ? `<div class="price-note">${escapeHtml(pkg.note)}</div>` : ''}
+          <a href="#contact" class="btn-price${isFeatured ? ' btn-price-featured' : ''}">${escapeHtml(pkg.button || 'Đặt Lịch Ngay')}</a>
+        </div>
+      `);
+    });
+  });
+
+  track.innerHTML = cardHtml.join('');
+}
+
+function renderDynamicPackageOptions() {
+  const packageSelect = document.getElementById('package');
+  if (!packageSelect || !dynamicPackages.length) return;
+
+  const groups = ['online', 'offline'].map(mode => {
+    const options = dynamicPackages
+      .filter(pkg => Number(mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice) > 0)
+      .map(pkg => {
+        const text = packageSelectText(pkg, mode);
+        return `<option data-package-code="${escapeHtml(pkg.code)}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
+      })
+      .join('');
+    return `<optgroup label="${mode === 'online' ? 'Online' : 'Offline'}">${options}</optgroup>`;
+  }).join('');
+
+  packageSelect.innerHTML = `<option value="">-- Chọn gói --</option>${groups}`;
+}
 
 // ============================================================
 // 🎛️  LỌC GÓI DỊCH VỤ THEO HÌNH THỨC ONLINE / OFFLINE

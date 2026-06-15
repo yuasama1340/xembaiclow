@@ -8,9 +8,11 @@ const state = {
   token: JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')?.token || '',
   user:  JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')?.user  || null,
   items: [],
+  packages: [],
   activeSection: '',
   pending:   new Map(),
   originals: new Map(),
+  draggingPackage: '',
 };// ============================================================
 // UTILS
 // ============================================================
@@ -37,10 +39,30 @@ function formatMoney(val) {
   return Number(val).toLocaleString('vi-VN') + 'đ';
 }
 
+function formatPackagePrice(value) {
+  const amount = Number(value || 0);
+  if (!amount) return '--';
+  return amount.toLocaleString('vi-VN') + 'đ';
+}
+
+function packageOptionText(pkg, mode) {
+  const amount = mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice;
+  return `${pkg.name} – ${formatPackagePrice(amount)} / ${pkg.duration || 'theo lịch'}`;
+}
+
+function isPricingSection(section) {
+  const raw = String(section || '').toLowerCase();
+  return raw.includes('bảng giá') || raw.includes('bang gia');
+}
+
 function escHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(str) {
+  return escHtml(str).replace(/'/g, '&#39;');
 }
 
 // ============================================================
@@ -248,6 +270,13 @@ function renderContent() {
 
   const panel = document.createElement('section');
   panel.className = 'section-panel';
+
+  if (isPricingSection(state.activeSection)) {
+    renderPackagesPanel(panel);
+    board.appendChild(panel);
+    return;
+  }
+
   panel.innerHTML = `
     <div class="section-heading">
       <div>
@@ -266,6 +295,325 @@ function renderContent() {
   board.appendChild(panel);
 }
 
+// ============================================================
+// PACKAGES — dynamic pricing manager
+// ============================================================
+function renderPackagesPanel(panel) {
+  const canEdit = ['admin', 'editor'].includes(state.user?.role);
+  const sortedPackages = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  const enabledCount = sortedPackages.filter(pkg => pkg.enabled).length;
+
+  panel.innerHTML = `
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Bảng giá động</div>
+        <h2>Quản lý gói tư vấn</h2>
+      </div>
+      <div class="topbar-actions">
+        <div class="pkg-stats-mini">
+          <span><strong>${sortedPackages.length}</strong> gói</span>
+          <span><strong>${enabledCount}</strong> đang bật</span>
+        </div>
+        <button type="button" class="secondary-action compact js-save-package-order"${canEdit ? '' : ' disabled'}>
+          <i class="fa-solid fa-list-ol"></i><span>Lưu thứ tự</span>
+        </button>
+        <button type="button" class="primary-action compact js-add-package"${canEdit ? '' : ' disabled'}>
+          <i class="fa-solid fa-plus"></i><span>Thêm gói</span>
+        </button>
+      </div>
+    </div>
+    <div class="pkg-inline-hint">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>Kéo thả để đổi thứ tự. Gói đang bật sẽ tự hiển thị trên bảng giá landing page và dropdown đặt lịch.</span>
+    </div>
+    <div class="packages-grid-inline" id="packages-grid-inline"></div>
+  `;
+
+  const grid = $('#packages-grid-inline', panel);
+  if (!sortedPackages.length) {
+    grid.innerHTML = `
+      <div class="pkg-empty">
+        <i class="fa-regular fa-folder-open"></i>
+        <span>Chưa có gói tư vấn nào.</span>
+      </div>
+    `;
+  } else {
+    sortedPackages.forEach((pkg, index) => grid.appendChild(createPackageCard(pkg, index, sortedPackages.length, canEdit)));
+  }
+
+  $('.js-add-package', panel).addEventListener('click', () => openPackageModal());
+  $('.js-save-package-order', panel).addEventListener('click', savePackageOrder);
+}
+
+function createPackageCard(pkg, index, total, canEdit) {
+  const card = document.createElement('article');
+  card.className = `pkg-card${pkg.enabled ? '' : ' pkg-card--off'}`;
+  card.dataset.code = pkg.code;
+  card.draggable = canEdit;
+
+  const features = String(pkg.features || '')
+    .split(/\n+/)
+    .map(text => text.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  const accent = pkg.accent || 'purple';
+
+  card.innerHTML = `
+    <div class="pkg-card-top">
+      <button type="button" class="pkg-drag-handle" title="Kéo thả"${canEdit ? '' : ' disabled'}>
+        <i class="fa-solid fa-grip-vertical"></i>
+      </button>
+      <div class="pkg-card-meta">
+        <div class="pkg-group-badge">
+          <span class="pkg-group-name">${escHtml(pkg.code)}</span>
+          <span class="pkg-status-dot ${pkg.enabled ? 'is-on' : 'is-off'}">${pkg.enabled ? 'Đang bật' : 'Đang tắt'}</span>
+          ${pkg.featured ? '<span class="pkg-featured-badge">Nổi bật</span>' : ''}
+        </div>
+        <h3 class="pkg-card-name">${escHtml(pkg.name || 'Chưa đặt tên')}</h3>
+      </div>
+      <span class="pkg-order-badge">#${index + 1}</span>
+    </div>
+    <div class="pkg-prices">
+      <span class="pkg-price pkg-price--online">Online ${formatPackagePrice(pkg.onlinePrice)}</span>
+      <span class="pkg-price pkg-price--offline">Offline ${formatPackagePrice(pkg.offlinePrice)}</span>
+      ${pkg.duration ? `<span class="pkg-duration-badge">${escHtml(pkg.duration)}</span>` : ''}
+      <span class="pkg-badge-color badge-${escAttr(accent)}">${escHtml(accent)}</span>
+    </div>
+    <ul class="pkg-features-list">
+      ${features.map(feature => `<li>${escHtml(feature)}</li>`).join('')}
+    </ul>
+    ${pkg.note ? `<div class="pkg-note-text">${escHtml(pkg.note)}</div>` : ''}
+    <div class="pkg-card-actions">
+      <button type="button" class="pkg-action-btn pkg-move-up" title="Đưa lên"${canEdit && index > 0 ? '' : ' disabled'}>
+        <i class="fa-solid fa-arrow-up"></i>
+      </button>
+      <button type="button" class="pkg-action-btn pkg-move-down" title="Đưa xuống"${canEdit && index < total - 1 ? '' : ' disabled'}>
+        <i class="fa-solid fa-arrow-down"></i>
+      </button>
+      <button type="button" class="pkg-action-btn pkg-edit-btn"${canEdit ? '' : ' disabled'}>
+        <i class="fa-solid fa-pen"></i><span>Sửa</span>
+      </button>
+      <button type="button" class="pkg-action-btn pkg-delete-btn" title="Xoá"${canEdit ? '' : ' disabled'}>
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `;
+
+  $('.pkg-edit-btn', card).addEventListener('click', () => openPackageModal(pkg));
+  $('.pkg-delete-btn', card).addEventListener('click', () => deletePackage(pkg.code));
+  $('.pkg-move-up', card).addEventListener('click', () => movePackage(pkg.code, -1));
+  $('.pkg-move-down', card).addEventListener('click', () => movePackage(pkg.code, 1));
+
+  card.addEventListener('dragstart', event => {
+    if (!canEdit) return;
+    state.draggingPackage = pkg.code;
+    card.classList.add('pkg-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragend', () => {
+    state.draggingPackage = '';
+    card.classList.remove('pkg-dragging');
+    document.querySelectorAll('.pkg-drag-over').forEach(el => el.classList.remove('pkg-drag-over'));
+  });
+  card.addEventListener('dragover', event => {
+    if (!canEdit || !state.draggingPackage || state.draggingPackage === pkg.code) return;
+    event.preventDefault();
+    card.classList.add('pkg-drag-over');
+  });
+  card.addEventListener('dragleave', () => card.classList.remove('pkg-drag-over'));
+  card.addEventListener('drop', event => {
+    event.preventDefault();
+    card.classList.remove('pkg-drag-over');
+    if (!state.draggingPackage || state.draggingPackage === pkg.code) return;
+    placePackageBefore(state.draggingPackage, pkg.code);
+  });
+
+  return card;
+}
+
+function movePackage(code, direction) {
+  const sorted = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  const index = sorted.findIndex(pkg => pkg.code === code);
+  const nextIndex = index + direction;
+  if (index < 0 || nextIndex < 0 || nextIndex >= sorted.length) return;
+  [sorted[index], sorted[nextIndex]] = [sorted[nextIndex], sorted[index]];
+  applyPackageOrder(sorted);
+}
+
+function placePackageBefore(dragCode, targetCode) {
+  const sorted = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  const dragIndex = sorted.findIndex(pkg => pkg.code === dragCode);
+  const targetIndex = sorted.findIndex(pkg => pkg.code === targetCode);
+  if (dragIndex < 0 || targetIndex < 0) return;
+  const [dragged] = sorted.splice(dragIndex, 1);
+  const insertIndex = sorted.findIndex(pkg => pkg.code === targetCode);
+  sorted.splice(insertIndex, 0, dragged);
+  applyPackageOrder(sorted);
+}
+
+function applyPackageOrder(sorted) {
+  sorted.forEach((pkg, index) => { pkg.order = index + 1; });
+  state.packages = sorted;
+  renderContent();
+}
+
+function openPackageModal(pkg = null) {
+  const isEdit = Boolean(pkg);
+  const current = pkg || {
+    enabled: true,
+    code: '',
+    name: '',
+    onlinePrice: '',
+    offlinePrice: '',
+    unit: '/buổi',
+    icon: 'sparkles',
+    accent: 'purple',
+    featured: false,
+    badge: '',
+    duration: '',
+    features: '',
+    note: '',
+    button: 'Đặt Lịch Ngay',
+    order: state.packages.length + 1,
+  };
+
+  const overlay = document.createElement('div');
+  overlay.className = 'pkg-modal-overlay';
+  overlay.innerHTML = `
+    <div class="pkg-modal" role="dialog" aria-modal="true">
+      <div class="pkg-modal-header">
+        <h2><i class="fa-solid fa-gem"></i>${isEdit ? 'Sửa gói tư vấn' : 'Thêm gói tư vấn'}</h2>
+        <button type="button" class="pkg-modal-close" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form class="pkg-form" id="pkg-form">
+        <div class="pkg-form-grid">
+          <label class="pkg-label">
+            <span>Mã gói</span>
+            <input name="code" value="${escAttr(current.code)}" placeholder="kham-pha" ${isEdit ? 'readonly' : ''} />
+            <small>Dùng chữ thường, không dấu. Mã đã tạo không nên đổi.</small>
+          </label>
+          <label class="pkg-label">
+            <span>Tên gói</span>
+            <input name="name" value="${escAttr(current.name)}" placeholder="Gói Khám Phá" required />
+          </label>
+          <label class="pkg-label">
+            <span>Giá online</span>
+            <input name="onlinePrice" type="number" min="0" step="1000" value="${escAttr(current.onlinePrice)}" />
+          </label>
+          <label class="pkg-label">
+            <span>Giá offline</span>
+            <input name="offlinePrice" type="number" min="0" step="1000" value="${escAttr(current.offlinePrice)}" />
+          </label>
+          <label class="pkg-label">
+            <span>Đơn vị</span>
+            <input name="unit" value="${escAttr(current.unit || '/buổi')}" />
+          </label>
+          <label class="pkg-label">
+            <span>Thời lượng</span>
+            <input name="duration" value="${escAttr(current.duration)}" placeholder="45 phút" />
+          </label>
+          <label class="pkg-label">
+            <span>Nhãn nổi bật</span>
+            <input name="badge" value="${escAttr(current.badge)}" placeholder="✦ Phổ biến nhất" />
+          </label>
+          <label class="pkg-label">
+            <span>Màu nhấn</span>
+            <select name="accent">
+              ${['purple','gold','teal','orange','pink','blue'].map(color => `<option value="${color}"${current.accent === color ? ' selected' : ''}>${color}</option>`).join('')}
+            </select>
+          </label>
+          <label class="pkg-label">
+            <span>Icon</span>
+            <input name="icon" value="${escAttr(current.icon)}" placeholder="sparkles" />
+          </label>
+          <label class="pkg-label">
+            <span>Nút CTA</span>
+            <input name="button" value="${escAttr(current.button || 'Đặt Lịch Ngay')}" />
+          </label>
+        </div>
+        <label class="pkg-label" style="margin-top:14px;">
+          <span>Quyền lợi</span>
+          <textarea name="features" rows="6" placeholder="Mỗi dòng là một quyền lợi">${escHtml(current.features)}</textarea>
+        </label>
+        <label class="pkg-label" style="margin-top:14px;">
+          <span>Ghi chú</span>
+          <textarea name="note" rows="3">${escHtml(current.note)}</textarea>
+        </label>
+        <div class="pkg-form-row">
+          <label class="pkg-check-label"><input name="enabled" type="checkbox"${current.enabled ? ' checked' : ''} /> Bật gói</label>
+          <label class="pkg-check-label"><input name="featured" type="checkbox"${current.featured ? ' checked' : ''} /> Gói nổi bật</label>
+        </div>
+      </form>
+      <div class="pkg-modal-footer">
+        <button type="button" class="ghost-action js-cancel-package">Huỷ</button>
+        <button type="submit" form="pkg-form" class="primary-action">
+          <i class="fa-solid fa-floppy-disk"></i><span>Lưu gói</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  $('.pkg-modal-close', overlay).addEventListener('click', close);
+  $('.js-cancel-package', overlay).addEventListener('click', close);
+  overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+  $('#pkg-form', overlay).addEventListener('submit', async event => {
+    event.preventDefault();
+    await savePackageFromForm(new FormData(event.target), current.order);
+    close();
+  });
+}
+
+async function savePackageFromForm(formData, order) {
+  try {
+    const params = {
+      code: formData.get('code'),
+      name: formData.get('name'),
+      onlinePrice: formData.get('onlinePrice'),
+      offlinePrice: formData.get('offlinePrice'),
+      unit: formData.get('unit'),
+      icon: formData.get('icon'),
+      accent: formData.get('accent'),
+      featured: formData.get('featured') ? 'TRUE' : 'FALSE',
+      enabled: formData.get('enabled') ? 'TRUE' : 'FALSE',
+      badge: formData.get('badge'),
+      duration: formData.get('duration'),
+      features: formData.get('features'),
+      note: formData.get('note'),
+      button: formData.get('button'),
+      order,
+    };
+    await api('savePackage', params);
+    await loadPackages();
+    renderContent();
+    showToast('Đã lưu gói tư vấn.');
+  } catch (error) { showToast(error.message, 'error'); }
+}
+
+async function deletePackage(code) {
+  if (!confirm('Bạn muốn xoá gói này khỏi bảng giá?')) return;
+  try {
+    await api('deletePackage', { code });
+    await loadPackages();
+    renderContent();
+    showToast('Đã xoá gói.');
+  } catch (error) { showToast(error.message, 'error'); }
+}
+
+async function savePackageOrder() {
+  try {
+    const codes = [...state.packages]
+      .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999))
+      .map(pkg => pkg.code)
+      .join(',');
+    await api('reorderPackages', { codes });
+    await loadPackages();
+    renderContent();
+    showToast('Đã lưu thứ tự bảng giá.');
+  } catch (error) { showToast(error.message, 'error'); }
+}
+
 
 
 // ============================================================
@@ -281,7 +629,13 @@ async function loadContent() {
   state.items     = data.items || [];
   state.originals = new Map(state.items.map(item => [item.key, item.content ?? '']));
   state.pending.clear();
+  await loadPackages();
   renderContent();
+}
+
+async function loadPackages() {
+  const data = await api('listPackages');
+  state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
 }
 
 async function saveContentItem(key, value) {

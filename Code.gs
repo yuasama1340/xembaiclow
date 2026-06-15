@@ -245,6 +245,14 @@ function extractAmount(packageStr) {
       return val;
     }
   }
+  const compact = str.match(/(\d+(?:[.,]\d+)?)\s*k\b/i);
+  if (compact) {
+    return Math.round(Number(compact[1].replace(',', '.')) * 1000);
+  }
+  const separated = str.match(/(\d{1,3}(?:[.,]\d{3})+)\s*(?:đ|vnd)?/i);
+  if (separated) {
+    return parseInt(separated[1].replace(/[.,]/g, ''), 10) || 0;
+  }
   // Thử regex tìm số >= 6 chữ số
   const m = str.match(/(\d{6,})/);
   if (m) return parseInt(m[1]);
