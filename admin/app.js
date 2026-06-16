@@ -287,7 +287,8 @@ function createField(item) {
 // RENDER CONTENT (with special Bang Gia handling)
 // ============================================================
 function renderSkeleton() {
-  const list = $('#content-list');
+  const list = $('#content-board');
+  if (!list) return;
   list.innerHTML = `
     <div class="content-field skeleton">
       <div class="skeleton-title shimmer"></div>
