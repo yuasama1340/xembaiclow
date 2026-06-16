@@ -1090,13 +1090,13 @@ input:disabled, textarea:disabled {
   width: 30%;
   border-radius: 4px;
   margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.15);
 }
 .skeleton-input {
   height: 48px;
   width: 100%;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.15);
 }
 .shimmer {
   position: relative;
@@ -1107,8 +1107,8 @@ input:disabled, textarea:disabled {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1.2s infinite;
 }
 @keyframes shimmer {
   100% { transform: translateX(100%); }
