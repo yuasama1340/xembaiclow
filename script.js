@@ -894,3 +894,54 @@ syncAudioButton();
     startAutoPlay();
   }
 })();
+
+// ============================================================
+// 🔢  NUMBER COUNTER ANIMATION
+// ============================================================
+function initCounterAnimation() {
+  const counters = document.querySelectorAll('.stat-num');
+  if (!counters.length) return;
+
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const counter = entry.target;
+        const target = +counter.getAttribute('data-target');
+        const suffix = counter.getAttribute('data-suffix') || '';
+        const duration = 2000; // 2 seconds
+        const stepTime = 20; 
+        const steps = duration / stepTime;
+        const increment = target / steps;
+        
+        let current = 0;
+        
+        const updateCounter = () => {
+          current += increment;
+          if (current < target) {
+            counter.innerText = Math.ceil(current) + suffix;
+            setTimeout(updateCounter, stepTime);
+          } else {
+            counter.innerText = target + suffix;
+          }
+        };
+        
+        updateCounter();
+        observer.unobserve(counter); // Only animate once
+      }
+    });
+  }, observerOptions);
+
+  counters.forEach(counter => {
+    observer.observe(counter);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initCounterAnimation();
+});
