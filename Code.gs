@@ -276,7 +276,11 @@ function getDefaultPaymentConfig() {
     accountName: CONFIG.DEFAULT_ACCOUNT_NAME,
     pollIntervalMs: CONFIG.DEFAULT_PAYMENT_POLL_INTERVAL_MS,
     maxWaitMinutes: CONFIG.DEFAULT_PAYMENT_MAX_WAIT_MINUTES,
-    transferNote: CONFIG.DEFAULT_PAYMENT_TRANSFER_NOTE
+    transferNote: CONFIG.DEFAULT_PAYMENT_TRANSFER_NOTE,
+    manualBankCode: '',
+    manualAccountNo: '',
+    manualAccountName: '',
+    manualTransferNote: ''
   };
 }
 
@@ -307,6 +311,18 @@ function applyPaymentSetting(config, key, value) {
     case 'settings.payment.transferNote':
       config.transferNote = raw || config.transferNote;
       break;
+    case 'settings.manualPayment.bankCode':
+      config.manualBankCode = raw.toUpperCase() || config.manualBankCode;
+      break;
+    case 'settings.manualPayment.accountNo':
+      config.manualAccountNo = raw || config.manualAccountNo;
+      break;
+    case 'settings.manualPayment.accountName':
+      config.manualAccountName = raw || config.manualAccountName;
+      break;
+    case 'settings.manualPayment.transferNote':
+      config.manualTransferNote = raw || config.manualTransferNote;
+      break;
   }
 }
 
@@ -333,6 +349,14 @@ function getPaymentConfig() {
   } catch (err) {
     Logger.log('⚠️ Không đọc được cấu hình thanh toán từ admin sheet: ' + err.message);
     logError('getPaymentConfig', err, {});
+  }
+
+  // Tự động sử dụng cấu hình thủ công nếu SePay bị tắt
+  if (!config.enabled) {
+    if (config.manualBankCode) config.bankCode = config.manualBankCode;
+    if (config.manualAccountNo) config.accountNo = config.manualAccountNo;
+    if (config.manualAccountName) config.accountName = config.manualAccountName;
+    if (config.manualTransferNote) config.transferNote = config.manualTransferNote;
   }
 
   return config;

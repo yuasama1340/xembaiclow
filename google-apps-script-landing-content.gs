@@ -180,14 +180,19 @@ function buildDefaultLandingContentRows() {
     lc(true, 'contact.format.offline.2', 'Đặt lịch', 'Form - địa điểm 2', '#format-offline-2', 'text', '', 'Offline - Barxiu Coffee lầu 1 chung cư số 143 Nguyễn Trãi, Q1'),
     lc(true, 'contact.format.offline.3', 'Đặt lịch', 'Form - địa điểm 3', '#format-offline-3', 'text', '', 'Offline - Le\'Monet Art Cafe 29 đường R, KĐT Lakeview City, Q2'),
 
-    lc(true, 'settings.payment.enabled', 'Thanh toán', 'Bật xác nhận tự động SePay', '', 'boolean', '', 'TRUE'),
-    lc(true, 'settings.payment.provider', 'Thanh toán', 'Cổng thanh toán', '', 'text', '', 'sepay'),
-    lc(true, 'settings.payment.bankCode', 'Thanh toán', 'Mã ngân hàng VietQR', '', 'text', '', 'TPB'),
-    lc(true, 'settings.payment.accountNo', 'Thanh toán', 'Số tài khoản nhận tiền', '', 'text', '', '05480409701'),
-    lc(true, 'settings.payment.accountName', 'Thanh toán', 'Tên chủ tài khoản', '', 'text', '', 'PHAN THAI BAO'),
-    lc(true, 'settings.payment.pollIntervalMs', 'Thanh toán', 'Thời gian kiểm tra thanh toán (ms)', '', 'number', '', '4000'),
-    lc(true, 'settings.payment.maxWaitMinutes', 'Thanh toán', 'Thời gian chờ tối đa (phút)', '', 'number', '', '30'),
-    lc(true, 'settings.payment.transferNote', 'Thanh toán', 'Hướng dẫn nội dung chuyển khoản', '', 'text', '', 'Khi chuyển khoản, vui lòng ghi đúng mã đơn hàng để hệ thống xác nhận tự động.'),
+    lc(true, 'settings.payment.enabled', 'Thanh toán (SePay)', 'Bật xác nhận tự động SePay', '', 'boolean', '', 'TRUE'),
+    lc(true, 'settings.payment.provider', 'Thanh toán (SePay)', 'Cổng thanh toán', '', 'text', '', 'sepay'),
+    lc(true, 'settings.payment.bankCode', 'Thanh toán (SePay)', 'Mã ngân hàng VietQR', '', 'text', '', 'TPB'),
+    lc(true, 'settings.payment.accountNo', 'Thanh toán (SePay)', 'Số tài khoản nhận tiền', '', 'text', '', '05480409701'),
+    lc(true, 'settings.payment.accountName', 'Thanh toán (SePay)', 'Tên chủ tài khoản', '', 'text', '', 'PHAN THAI BAO'),
+    lc(true, 'settings.payment.pollIntervalMs', 'Thanh toán (SePay)', 'Thời gian kiểm tra thanh toán (ms)', '', 'number', '', '4000'),
+    lc(true, 'settings.payment.maxWaitMinutes', 'Thanh toán (SePay)', 'Thời gian chờ tối đa (phút)', '', 'number', '', '30'),
+    lc(true, 'settings.payment.transferNote', 'Thanh toán (SePay)', 'Hướng dẫn nội dung chuyển khoản', '', 'text', '', 'Khi chuyển khoản, vui lòng ghi đúng mã đơn hàng để hệ thống xác nhận tự động.'),
+
+    lc(true, 'settings.manualPayment.bankCode', 'Thanh toán (Thủ công)', 'Mã ngân hàng', '', 'text', '', 'TPB'),
+    lc(true, 'settings.manualPayment.accountNo', 'Thanh toán (Thủ công)', 'Số tài khoản nhận tiền', '', 'text', '', '05480409701'),
+    lc(true, 'settings.manualPayment.accountName', 'Thanh toán (Thủ công)', 'Tên chủ tài khoản', '', 'text', '', 'PHAN THAI BAO'),
+    lc(true, 'settings.manualPayment.transferNote', 'Thanh toán (Thủ công)', 'Hướng dẫn nội dung chuyển khoản', '', 'text', '', 'Vui lòng ghi đúng mã đơn hàng và đợi admin xác nhận.'),
 
     lc(true, 'footer.tagline', 'Footer', 'Khẩu hiệu footer', '.footer-brand p', 'text', '', 'KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG')
   ];
