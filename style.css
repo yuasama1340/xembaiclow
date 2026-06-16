@@ -1089,11 +1089,9 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .guide-header { order: 1; margin-bottom: 16px; }
   .guide-visual { order: 2; width: 100%; max-width: 320px; margin: 0 auto; }
   .guide-video-wrapper { order: 3; margin: 24px 0; }
-  .guide-subtitle { order: 4; text-align: center; margin-bottom: 16px; }
+  .guide-subtitle { order: 4; margin-bottom: 16px; }
   .guide-quote { order: 5; }
   .guide-list { order: 6; }
-  .guide-header .section-label { text-align: center; }
-  .guide-header .section-title { text-align: center; }
 
   .pricing-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .flex-card-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
