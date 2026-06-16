@@ -125,7 +125,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 .guide-grid {
   display: grid;
-  grid-template-columns: 5fr 7fr;
+  grid-template-columns: 4.5fr 7.5fr;
   gap: 60px;
   align-items: center;
 }
@@ -165,7 +165,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   position: relative;
   width: 100%;
   padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-  margin-bottom: 32px;
+  margin: 24px 0 32px;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(201, 168, 76, 0.3);
