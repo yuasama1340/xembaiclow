@@ -131,6 +131,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 .guide-visual {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
 .guide-arch {
