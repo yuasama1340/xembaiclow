@@ -78,6 +78,10 @@ function applyLandingContentItem(item) {
     case 'placeholder':
       el.setAttribute('placeholder', value);
       break;
+    case 'image':
+      if (el.tagName === 'IMG') el.src = value;
+      else el.style.backgroundImage = `url(${value})`;
+      break;
     case 'text':
       el.textContent = value;
       if (el.tagName === 'OPTION') el.value = value;

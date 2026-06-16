@@ -118,6 +118,132 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .magic-center-logo { width: 180px; height: 180px; object-fit: contain; animation: logoPulse 4s ease-in-out infinite alternate; filter: drop-shadow(0 0 16px rgba(201,168,76,0.7)); }
 @keyframes logoPulse { 0% { transform: scale(0.95); opacity: 0.85; } 100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 28px rgba(201,168,76,1)); } }
 
+/* GUIDE */
+.guide {
+  padding: 120px 0;
+  background: var(--bg-mid);
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 60px;
+  align-items: center;
+}
+.guide-visual {
+  display: flex;
+  justify-content: center;
+}
+.guide-arch {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 3 / 4;
+  border-radius: 200px 200px 0 0;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(201, 168, 76, 0.05) 0%, transparent 100%);
+  position: relative;
+}
+.guide-arch::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px; right: -1px; bottom: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--gold), transparent 40%);
+  z-index: -1;
+  opacity: 0.5;
+}
+.guide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 200px 200px 0 0;
+  display: block;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.guide-header { margin-bottom: 24px; }
+.guide-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.guide-line {
+  height: 1px;
+  flex: 0 0 40px;
+  background: rgba(201, 168, 76, 0.3);
+}
+.guide-label {
+  font-family: 'Playfair Display', serif;
+  color: var(--gold-light);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.guide-title {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.guide-subtitle {
+  font-family: 'Lora', serif;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.guide-quote {
+  border-left: 3px solid var(--gold);
+  padding-left: 24px;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.guide-item {
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+.guide-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 168, 76, 0.2);
+  background: rgba(255,255,255,0.03);
+}
+.feat-icon-wrap {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(201, 168, 76, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+}
+.feat-text {
+  font-size: 1.05rem;
+  color: var(--white);
+  line-height: 1.5;
+}
+.feat-text b {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
 /* BENEFITS */
 .benefits { padding: 100px 0; }
 .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
@@ -948,7 +1074,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .card-fall { pointer-events: none; }
   .card-img { width: clamp(64px, 18vw, 86px); border-radius: 10px; opacity: .78; }
   .hero-center-glow { top: 48%; width: 260px; height: 260px; opacity: .65; }
-  .about, .benefits, .pricing, .flexible-3in1, .process, .contact { padding: 72px 0; }
+  .about, .guide, .benefits, .pricing, .flexible-3in1, .process, .contact { padding: 72px 0; }
   .testimonials { padding: 52px 0; }
   .testimonials-slider-wrap { max-height: 65vh; }
   .testimonial-card { flex: 0 0 290px; margin: 0 10px; }
@@ -990,7 +1116,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .section-title { font-size: clamp(1.4rem, 6.5vw, 1.8rem); }
   .mobile-break { display: block; }
   .contact-info .section-title { white-space: normal; }
-  .pain-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
+  .pain-grid, .guide-grid, .benefits-grid, .pricing-grid { grid-template-columns: 1fr; }
   .pain-card, .benefit-item, .price-card { padding: 24px 20px; border-radius: 14px; }
   .flex-card, .flex-card-inner { min-height: 0; }
   .flex-card-face { border-radius: 18px; padding: 28px 22px; min-height: 0; }
