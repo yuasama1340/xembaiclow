@@ -82,6 +82,14 @@ function applyLandingContentItem(item) {
       if (el.tagName === 'IMG') el.src = value;
       else el.style.backgroundImage = `url(${value})`;
       break;
+    case 'youtube':
+      if (el.tagName === 'IFRAME' && value) {
+        let embedUrl = value;
+        const match = value.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+        if (match && match[1]) embedUrl = `https://www.youtube.com/embed/${match[1]}`;
+        el.src = embedUrl;
+      }
+      break;
     case 'text':
       el.textContent = value;
       if (el.tagName === 'OPTION') el.value = value;
