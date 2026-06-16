@@ -1089,8 +1089,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
     display: contents;
   }
   .guide-header { order: 1; margin-bottom: 16px; }
-  .guide-visual { order: 2; width: 100%; max-width: 320px; margin: 0 auto; }
-  .guide-video-wrapper { order: 3; margin: 24px 0; }
+  .guide-video-wrapper { order: 2; margin: 24px 0; }
+  .guide-visual { order: 3; width: 100%; max-width: 320px; margin: 0 auto; }
   .guide-subtitle { order: 4; margin-bottom: 16px; }
   .guide-quote { order: 5; }
   .guide-list { order: 6; }
