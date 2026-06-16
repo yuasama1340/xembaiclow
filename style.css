@@ -666,10 +666,10 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .flex-orb-1 { width: 260px; height: 260px; background: radial-gradient(circle, rgba(107,63,160,.28), transparent 70%); left: 8%; top: 14%; }
 .flex-orb-2 { width: 220px; height: 220px; background: radial-gradient(circle, rgba(201,168,76,.14), transparent 70%); right: 6%; bottom: 8%; }
 
-.flexible-3in1 .container { position: relative; z-index: 1; text-align: center; }
+.flexible-3in1 .container { position: relative; z-index: 1; text-align: left; }
 .flexible-intro {
   max-width: 780px;
-  margin: -22px auto 42px;
+  margin: -22px 0 42px;
   color: var(--text-muted);
   font-size: 1.12rem;
   line-height: 1.75;
