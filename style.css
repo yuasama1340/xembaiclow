@@ -908,9 +908,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 
 .flexible-cta .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: min(360px, 100%);
   min-height: 64px;
-  justify-content: center;
   font-size: 1.15rem;
   letter-spacing: .3px;
   border: 1px solid rgba(255,255,255,0.18);
