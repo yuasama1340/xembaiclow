@@ -447,6 +447,10 @@ function formatLandingContentSheet(sheet) {
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, CONTENT_HEADERS.length).setFontWeight('bold');
   sheet.getRange('I:J').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  const map = getColumnMap(sheet);
+  if (map['Noi dung']) {
+    sheet.getRange(2, map['Noi dung'], Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('@'); // Force plain text
+  }
   sheet.autoResizeColumns(1, CONTENT_HEADERS.length);
 }
 
@@ -621,7 +625,9 @@ function handleSaveContent(params) {
   if (index === -1) throw new Error('Không tìm thấy khóa: ' + key);
 
   const row = index + 2;
-  sheet.getRange(row, map['Noi dung']).setValue(content);
+  const contentRange = sheet.getRange(row, map['Noi dung']);
+  contentRange.setNumberFormat('@'); // Prevent dropping leading zero
+  contentRange.setValue(content);
   sheet.getRange(row, map['Cap nhat luc']).setValue(new Date());
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   clearPublicCache();
@@ -646,7 +652,9 @@ function saveContentValue(key, content, session, meta) {
     sheet.getRange(row, map['Thuoc tinh']).setValue('');
   }
 
-  sheet.getRange(row, map['Noi dung']).setValue(content);
+  const contentRange = sheet.getRange(row, map['Noi dung']);
+  contentRange.setNumberFormat('@'); // Prevent dropping leading zero
+  contentRange.setValue(content);
   sheet.getRange(row, map['Cap nhat luc']).setValue(new Date());
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   clearPublicCache();
