@@ -290,17 +290,14 @@ function renderSkeleton() {
   const list = $('#content-board');
   if (!list) return;
   list.innerHTML = `
-    <div class="content-field skeleton">
-      <div class="skeleton-title shimmer"></div>
-      <div class="skeleton-input shimmer"></div>
-    </div>
-    <div class="content-field skeleton">
-      <div class="skeleton-title shimmer" style="width: 40%"></div>
-      <div class="skeleton-input shimmer" style="height: 80px"></div>
-    </div>
-    <div class="content-field skeleton">
-      <div class="skeleton-title shimmer" style="width: 60%"></div>
-      <div class="skeleton-input shimmer"></div>
+    <div class="magical-loader">
+      <div class="loader-cards">
+        <div class="loader-card card-1"></div>
+        <div class="loader-card card-2"></div>
+        <div class="loader-card card-3"></div>
+      </div>
+      <h3 class="loader-title">Đang thỉnh dữ liệu từ các lá bài...</h3>
+      <p class="loader-subtitle">Xin chờ trong giây lát để trải bài được hoàn tất</p>
     </div>
   `;
 }
