@@ -118,10 +118,12 @@ async function loadLandingContent() {
     if (Array.isArray(data.packages) && data.packages.length) {
       applyDynamicPackages(data.packages);
     } else {
-      loadDynamicPackages();
+      await loadDynamicPackages();
     }
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
+  } finally {
+    document.body.classList.remove('js-loading');
   }
 }
 

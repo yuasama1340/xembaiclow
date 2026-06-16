@@ -15,8 +15,31 @@
   --glass-border: rgba(180,126,229,0.2);
 }
 
+/* PREVENT FOUC (Flash of Unstyled Content) */
+body {
+  margin: 0;
+  background: var(--bg-dark);
+  color: var(--white);
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  font-family: 'Lora', serif;
+  cursor: none;
+}
+
+body.js-loading {
+  opacity: 0;
+  pointer-events: none;
+  /* Hiển thị lại sau 3s đề phòng mạng lỗi / JS không chạy */
+  animation: fallbackFadeIn 0.8s ease-in-out 3s forwards;
+}
+
+@keyframes fallbackFadeIn {
+  to { opacity: 1; pointer-events: auto; }
+}
+
 html { scroll-behavior: smooth; font-size: 18px; overflow-x: hidden; }
-body { font-family: 'Lora', serif; background: var(--bg-dark); color: var(--white); overflow-x: hidden; cursor: none; }
 a, button, .audio-btn, .float-btn, .toggle-btn { cursor: none !important; }
 h1, h2, h3, h4, h5, h6, .logo, .hero-title, .section-title, .price-amount { font-family: 'Playfair Display', serif; }
 

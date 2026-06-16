@@ -286,6 +286,24 @@ function createField(item) {
 // ============================================================
 // RENDER CONTENT (with special Bang Gia handling)
 // ============================================================
+function renderSkeleton() {
+  const list = $('#content-list');
+  list.innerHTML = `
+    <div class="content-field skeleton">
+      <div class="skeleton-title shimmer"></div>
+      <div class="skeleton-input shimmer"></div>
+    </div>
+    <div class="content-field skeleton">
+      <div class="skeleton-title shimmer" style="width: 40%"></div>
+      <div class="skeleton-input shimmer" style="height: 80px"></div>
+    </div>
+    <div class="content-field skeleton">
+      <div class="skeleton-title shimmer" style="width: 60%"></div>
+      <div class="skeleton-input shimmer"></div>
+    </div>
+  `;
+}
+
 function renderContent() {
   const query    = $('#content-search').value.trim().toLowerCase();
   const filtered = query
@@ -794,7 +812,12 @@ async function deleteFeedbackImage(slot) {
 // LOAD / SAVE CONTENT
 // ============================================================
 async function loadContent() {
-  const data = await api('listContent');
+  renderSkeleton();
+  const [data, packagesData] = await Promise.all([
+    api('listContent'),
+    api('listPackages')
+  ]);
+  
   if (data.user) {
     state.user = { ...(state.user || {}), ...data.user };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: state.token, user: state.user }));
@@ -803,13 +826,10 @@ async function loadContent() {
   state.items     = data.items || [];
   state.originals = new Map(state.items.map(item => [item.key, item.content ?? '']));
   state.pending.clear();
-  await loadPackages();
+  
+  state.packages = (packagesData.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  
   renderContent();
-}
-
-async function loadPackages() {
-  const data = await api('listPackages');
-  state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
 }
 
 async function saveContentItem(key, value) {
@@ -925,8 +945,11 @@ async function init() {
 
   showShell();
   try {
-    await loadContent();
-    await loadUsers();
+    // Chạy song song tất cả các request để giảm thời gian load
+    await Promise.all([
+      loadContent(),
+      state.user?.role === 'admin' ? loadUsers() : Promise.resolve()
+    ]);
   } catch (error) {
     clearSession();
     showLogin();

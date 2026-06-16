@@ -1079,3 +1079,37 @@ input:disabled, textarea:disabled {
   .pkg-modal-footer { flex-direction: column; }
   .pkg-modal-footer button { width: 100%; }
 }
+
+/* SKELETON LOADER */
+.skeleton {
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+.skeleton-title {
+  height: 20px;
+  width: 30%;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.skeleton-input {
+  height: 48px;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
