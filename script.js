@@ -132,6 +132,13 @@ async function loadLandingContent() {
     } else {
       await loadDynamicPackages();
     }
+    // Render custom sections nếu có trong response
+    if (Array.isArray(data.customSections)) {
+      renderCustomSections(data.customSections);
+    }
+    if (Array.isArray(data.sectionOrder) && data.sectionOrder.length) {
+      applyAllSectionOrder(data.sectionOrder, data.customSections || []);
+    }
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   } finally {
@@ -957,3 +964,83 @@ function initCounterAnimation() {
 document.addEventListener('DOMContentLoaded', () => {
   initCounterAnimation();
 });
+
+// ============================================================
+// 📄  CUSTOM SECTIONS — Render & Order
+// ============================================================
+
+/**
+ * Tạo và inject các custom section vào #sections-wrapper
+ */
+function renderCustomSections(sections) {
+  if (!Array.isArray(sections) || !sections.length) return;
+  const wrapper = document.getElementById('sections-wrapper');
+  if (!wrapper) return;
+
+  sections.forEach(sec => {
+    // Tránh render trùng
+    if (document.getElementById(sec.id)) return;
+
+    const el = document.createElement('section');
+    el.className = 'custom-section';
+    el.id = sec.id;
+    el.setAttribute('data-section-key', sec.id);
+
+    let html = '<div class="container">';
+    if (sec.label) {
+      html += `<div class="section-label">${escapeHtml(sec.label)}</div>`;
+    }
+    if (sec.title) {
+      html += `<h2 class="section-title">${sec.title}</h2>`;
+    }
+    if (sec.description) {
+      html += `<p class="custom-section-desc">${escapeHtml(sec.description)}</p>`;
+    }
+    if (sec.contentHtml) {
+      // contentHtml đã qua Quill, chỉ cho phép thẻ an toàn
+      html += `<div class="custom-section-body">${sec.contentHtml}</div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+    wrapper.appendChild(el);
+  });
+}
+
+/**
+ * Áp dụng thứ tự section từ API lên DOM bằng CSS order
+ * sectionOrder: array of section keys theo thứ tự mong muốn
+ * customSections: array of custom section objects (để biết nav label)
+ */
+function applyAllSectionOrder(sectionOrder, customSections) {
+  if (!Array.isArray(sectionOrder)) return;
+  const wrapper = document.getElementById('sections-wrapper');
+  if (!wrapper) return;
+
+  // Gán CSS order cho mỗi section theo thứ tự trong array
+  sectionOrder.forEach((key, index) => {
+    const el = wrapper.querySelector(`[data-section-key="${key}"]`);
+    if (el) el.style.order = index + 1;
+  });
+
+  // Cập nhật nav links cho custom sections có nav label
+  if (Array.isArray(customSections)) {
+    const navLinks = document.querySelector('.nav-links');
+    const navCta = navLinks ? navLinks.querySelector('.nav-cta') : null;
+    customSections.forEach(sec => {
+      if (!sec.navLabel || !sec.id) return;
+      if (navLinks && !navLinks.querySelector(`[href="#${sec.id}"]`)) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `#${sec.id}`;
+        a.textContent = sec.navLabel;
+        li.appendChild(a);
+        // Chèn trước nút Đặt lịch (nav-cta)
+        if (navCta && navCta.parentElement) {
+          navLinks.insertBefore(li, navCta.parentElement);
+        } else {
+          navLinks.appendChild(li);
+        }
+      }
+    });
+  }
+}

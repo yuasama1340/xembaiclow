@@ -1594,3 +1594,72 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
     display: none;
   }
 }
+
+/* ============================================================
+   📄 SECTIONS WRAPPER — sắp xếp thứ tự bằng CSS order
+   ============================================================ */
+#sections-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+#sections-wrapper > section {
+  /* order mặc định sẽ được JS gán qua style attribute */
+}
+
+/* ============================================================
+   📄 CUSTOM SECTIONS — Section do Admin tạo
+   ============================================================ */
+.custom-section {
+  padding: 100px 0;
+  background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
+  position: relative;
+}
+.custom-section:nth-child(even) {
+  background: var(--bg-mid);
+}
+.custom-section .section-title {
+  margin-bottom: 20px;
+}
+.custom-section-desc {
+  font-size: 1.08rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.75;
+  max-width: 720px;
+  margin-bottom: 40px;
+}
+
+/* Nội dung Rich Text từ Quill Editor */
+.custom-section-body {
+  color: rgba(255,255,255,0.85);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+.custom-section-body h1 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; margin: 0 0 20px; color: var(--white); }
+.custom-section-body h2 { font-size: clamp(1.3rem, 2.5vw, 1.9rem); font-weight: 700; margin: 28px 0 14px; color: var(--white); }
+.custom-section-body h3 { font-size: clamp(1.1rem, 2vw, 1.45rem); font-weight: 700; margin: 24px 0 12px; color: var(--white); }
+.custom-section-body p { margin-bottom: 16px; }
+.custom-section-body strong, .custom-section-body b { color: var(--white); font-weight: 700; }
+.custom-section-body em, .custom-section-body i { color: var(--gold-light); font-style: italic; }
+.custom-section-body a { color: var(--purple-bright); text-decoration: underline; }
+.custom-section-body a:hover { color: var(--gold-light); }
+.custom-section-body ul, .custom-section-body ol { padding-left: 24px; margin-bottom: 16px; }
+.custom-section-body li { margin-bottom: 8px; color: rgba(255,255,255,0.8); }
+.custom-section-body blockquote {
+  border-left: 3px solid var(--gold);
+  padding: 12px 20px;
+  margin: 20px 0;
+  background: var(--glass);
+  border-radius: 0 12px 12px 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Canh lề Quill */
+.ql-align-center, .custom-section-body .ql-align-center { text-align: center; }
+.ql-align-right, .custom-section-body .ql-align-right   { text-align: right; }
+.ql-align-justify, .custom-section-body .ql-align-justify { text-align: justify; }
+
+@media (max-width: 768px) {
+  .custom-section { padding: 64px 0; }
+  .custom-section-desc { font-size: 1rem; }
+}

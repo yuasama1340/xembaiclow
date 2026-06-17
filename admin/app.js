@@ -15,6 +15,9 @@ const state = {
   pending:   new Map(),
   originals: new Map(),
   draggingPackage: '',
+  customSections: [],
+  sectionOrder: [],
+  draggingOrderItem: null,
 };// ============================================================
 // UTILS
 // ============================================================
@@ -956,3 +959,302 @@ async function init() {
 }
 
 init();
+
+// ============================================================
+// 📄  CUSTOM SECTIONS MANAGEMENT
+// ============================================================
+
+const NATIVE_SECTION_LABELS = {
+  about:        'Ve dich vu',
+  guide:        'Nguoi huong dan',
+  benefits:     'Loi ich',
+  testimonials: 'Khach hang',
+  pricing:      'Bang gia',
+  'flexible-3in1': '3 trong 1',
+  offer:        'Uu dai',
+  process:      'Quy trinh',
+  contact:      'Dat lich'
+};
+
+let quillEditor = null;
+
+// --- Khoi tao Quill Editor ---
+function initQuillEditor() {
+  if (quillEditor) return;
+  const container = document.getElementById('quill-editor');
+  if (!container || typeof Quill === 'undefined') return;
+
+  quillEditor = new Quill(container, {
+    theme: 'snow',
+    placeholder: 'Nhap noi dung section tai day...',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ align: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link', 'blockquote'],
+        ['clean']
+      ]
+    }
+  });
+}
+
+// --- Nav button cho tab Sections ---
+function renderSectionsNavButton() {
+  const nav = document.getElementById('section-nav');
+  if (!nav) return;
+  if (nav.querySelector('[data-tab="sections"]')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-section';
+  btn.setAttribute('data-tab', 'sections');
+  btn.innerHTML = '<span>📄 Sections</span><span></span>';
+  btn.addEventListener('click', () => showSectionsPanel());
+  nav.appendChild(btn);
+}
+
+function showSectionsPanel() {
+  // An content board, hien sections panel
+  const board = document.getElementById('content-board');
+  const panel = document.getElementById('sections-panel');
+  if (board) board.classList.add('is-hidden');
+  if (panel) panel.classList.remove('is-hidden');
+
+  // Bo active cac nav buttons khac, set active cho sections
+  document.querySelectorAll('.nav-section').forEach(b => b.classList.remove('is-active'));
+  const sectionsBtn = document.querySelector('[data-tab="sections"]');
+  if (sectionsBtn) sectionsBtn.classList.add('is-active');
+
+  loadAndRenderSections();
+}
+
+function hideSectionsPanel() {
+  const panel = document.getElementById('sections-panel');
+  if (panel) panel.classList.add('is-hidden');
+}
+
+// --- Load du lieu tu GAS ---
+async function loadAndRenderSections() {
+  try {
+    const data = await api('listCustomSections');
+    state.customSections = data.customSections || [];
+    state.sectionOrder   = data.sectionOrder   || [];
+    renderSectionsOrderList();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// --- Render danh sach keo tha ---
+function renderSectionsOrderList() {
+  const list = document.getElementById('sections-order-list');
+  if (!list) return;
+
+  // Xay dung map: key -> ten hien thi
+  const customMap = {};
+  state.customSections.forEach(s => { customMap[s.id] = s; });
+
+  // Neu chua co order, dung default
+  let order = state.sectionOrder.length ? state.sectionOrder
+    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','contact'];
+
+  list.innerHTML = '';
+
+  order.forEach(key => {
+    const isNative   = !!NATIVE_SECTION_LABELS[key];
+    const customSec  = customMap[key];
+    const label      = isNative
+      ? NATIVE_SECTION_LABELS[key]
+      : (customSec ? (customSec.label || customSec.id) : key);
+    const isEnabled  = isNative ? true : (customSec ? customSec.enabled : true);
+    const isCustom   = !isNative;
+
+    const item = document.createElement('div');
+    item.className = 'order-item' + (isNative ? ' order-item--native' : '') + (!isEnabled ? ' order-item--disabled' : '');
+    item.dataset.key = key;
+    item.draggable = true;
+    item.innerHTML = `
+      <span class="order-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
+      <span class="order-item-label">${escHtml(label)}</span>
+      ${isNative ? '<span class="order-badge order-badge--native">Goc</span>' : ''}
+      ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'An'}</span>` : ''}
+      ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
+    `;
+
+    // Drag events
+    item.addEventListener('dragstart', e => {
+      state.draggingOrderItem = item;
+      item.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('is-dragging');
+      state.draggingOrderItem = null;
+      list.querySelectorAll('.order-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (state.draggingOrderItem && state.draggingOrderItem !== item) {
+        item.classList.add('drag-over');
+        const bounding = item.getBoundingClientRect();
+        const offset   = bounding.y + bounding.height / 2;
+        if (e.clientY < offset) {
+          list.insertBefore(state.draggingOrderItem, item);
+        } else {
+          list.insertBefore(state.draggingOrderItem, item.nextSibling);
+        }
+      }
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+
+    list.appendChild(item);
+  });
+
+  // Nut edit cho cac custom section
+  list.querySelectorAll('.order-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => openSectionModal(btn.dataset.id));
+  });
+}
+
+// --- Luu thu tu ---
+async function saveSectionOrder() {
+  const list = document.getElementById('sections-order-list');
+  if (!list) return;
+  const keys = Array.from(list.querySelectorAll('.order-item')).map(i => i.dataset.key);
+  try {
+    await api('reorderAllSections', { order: JSON.stringify(keys) });
+    showToast('Da cap nhat thu tu section!');
+    state.sectionOrder = keys;
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// --- Mo modal tao moi / sua ---
+function openSectionModal(editId) {
+  initQuillEditor();
+  const overlay  = document.getElementById('section-modal-overlay');
+  const titleEl  = document.getElementById('section-modal-title');
+  const deleteBtn= document.getElementById('section-modal-delete');
+
+  const idInput   = document.getElementById('section-id');
+  const enabledCb = document.getElementById('section-enabled');
+  const labelInp  = document.getElementById('section-label-input');
+  const titleInp  = document.getElementById('section-title-input');
+  const descInp   = document.getElementById('section-description');
+  const navInp    = document.getElementById('section-nav-label');
+  const hiddenId  = document.getElementById('section-edit-id');
+
+  if (editId) {
+    const sec = state.customSections.find(s => s.id === editId);
+    titleEl.textContent = 'Chinh sua Section';
+    deleteBtn.style.display = '';
+    hiddenId.value   = editId;
+    idInput.value    = sec ? sec.id : editId;
+    idInput.disabled = true;
+    enabledCb.checked= sec ? sec.enabled : true;
+    labelInp.value   = sec ? (sec.label || '') : '';
+    titleInp.value   = sec ? (sec.title || '') : '';
+    descInp.value    = sec ? (sec.description || '') : '';
+    navInp.value     = sec ? (sec.navLabel || '') : '';
+    if (quillEditor) quillEditor.root.innerHTML = sec ? (sec.contentHtml || '') : '';
+  } else {
+    titleEl.textContent = 'Tao Section Moi';
+    deleteBtn.style.display = 'none';
+    hiddenId.value   = '';
+    idInput.value    = '';
+    idInput.disabled = false;
+    enabledCb.checked= true;
+    labelInp.value   = '';
+    titleInp.value   = '';
+    descInp.value    = '';
+    navInp.value     = '';
+    if (quillEditor) quillEditor.root.innerHTML = '';
+  }
+
+  overlay.classList.remove('is-hidden');
+}
+
+function closeSectionModal() {
+  document.getElementById('section-modal-overlay').classList.add('is-hidden');
+  const idInput = document.getElementById('section-id');
+  if (idInput) idInput.disabled = false;
+}
+
+// --- Luu section ---
+async function saveSectionFromModal() {
+  const id       = document.getElementById('section-edit-id').value ||
+                   document.getElementById('section-id').value;
+  const enabled  = document.getElementById('section-enabled').checked;
+  const label    = document.getElementById('section-label-input').value.trim();
+  const title    = document.getElementById('section-title-input').value.trim();
+  const desc     = document.getElementById('section-description').value.trim();
+  const navLabel = document.getElementById('section-nav-label').value.trim();
+  const html     = quillEditor ? quillEditor.root.innerHTML : '';
+
+  if (!id) { showToast('Vui long nhap ID section.', 'error'); return; }
+
+  const saveBtn = document.getElementById('section-modal-save');
+  await withButtonPending(saveBtn, async () => {
+    try {
+      await api('saveCustomSection', {
+        id, enabled, label, title,
+        description: desc,
+        contentHtml: html,
+        navLabel
+      });
+      showToast('Da luu section!');
+      closeSectionModal();
+      await loadAndRenderSections();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+// --- Xoa section ---
+async function deleteSection(id) {
+  if (!id) return;
+  if (!confirm(`Xoa section "${id}"? Hanh dong nay khong the hoan tac.`)) return;
+  const deleteBtn = document.getElementById('section-modal-delete');
+  await withButtonPending(deleteBtn, async () => {
+    try {
+      await api('deleteCustomSection', { id });
+      showToast('Da xoa section!');
+      closeSectionModal();
+      await loadAndRenderSections();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+// --- Wire events cho Sections ---
+function wireSectionsEvents() {
+  const addBtn    = document.getElementById('btn-add-section');
+  const saveOrder = document.getElementById('btn-save-order');
+  const modalSave = document.getElementById('section-modal-save');
+  const modalDel  = document.getElementById('section-modal-delete');
+  const modalClose= document.getElementById('section-modal-close');
+  const modalCancel=document.getElementById('section-modal-cancel');
+  const overlay   = document.getElementById('section-modal-overlay');
+
+  if (addBtn)     addBtn.addEventListener('click', () => openSectionModal(null));
+  if (saveOrder)  saveOrder.addEventListener('click', () => withButtonPending(saveOrder, saveSectionOrder));
+  if (modalSave)  modalSave.addEventListener('click', saveSectionFromModal);
+  if (modalDel)   modalDel.addEventListener('click', () => {
+    const id = document.getElementById('section-edit-id').value;
+    deleteSection(id);
+  });
+  if (modalClose)  modalClose.addEventListener('click',  closeSectionModal);
+  if (modalCancel) modalCancel.addEventListener('click', closeSectionModal);
+  if (overlay)     overlay.addEventListener('click', e => { if (e.target === overlay) closeSectionModal(); });
+}
+
+// Hook vao wireEvents() va init() hien co
+const _origWireEvents = typeof wireEvents === 'function' ? wireEvents : null;
+window.addEventListener('DOMContentLoaded', () => {
+  renderSectionsNavButton();
+  wireSectionsEvents();
+});

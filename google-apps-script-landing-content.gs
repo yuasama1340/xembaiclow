@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-15-flexible-3in1-cta';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-17-custom-sections-v1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -20,9 +20,17 @@ const SESSION_TTL_SECONDS = 21600;
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
-const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v6';
-const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v6';
+const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v7';
+const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v7';
+const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v1';
 const PUBLIC_CACHE_SECONDS = 60;
+
+// Custom Sections
+const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
+const SECTION_ORDER_SHEET_NAME = 'Section Order';
+const CUSTOM_SECTIONS_HEADERS = ['Bat', 'ID', 'Nhan section', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Nav label', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
+const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu'];
+const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'flexible-3in1', 'offer', 'process', 'contact'];
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
   return [bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung, new Date(), 'system'];
@@ -228,6 +236,8 @@ function doGet(e) {
       case 'listpublicpackages':
       case 'getpackages':
         return handleListPublicPackages();
+      case 'getcustomsections':
+        return handleGetPublicCustomSections();
       case 'login':
       case 'adminlogin':
       case 'listcontent':
@@ -242,6 +252,14 @@ function doGet(e) {
       case 'admindeletepackage':
       case 'reorderpackages':
       case 'adminreorderpackages':
+      case 'listcustomsections':
+      case 'adminlistcustomsections':
+      case 'savecustomsection':
+      case 'adminsavecustomsection':
+      case 'deletecustomsection':
+      case 'admindeletecustomsection':
+      case 'reorderallsections':
+      case 'adminreorderallsections':
       case 'listusers':
       case 'adminlistusers':
       case 'createuser':
@@ -290,6 +308,18 @@ function doPost(e) {
       case 'deletefeedbackimage':
       case 'admindeletefeedbackimage':
         return handleDeleteFeedbackImage(params);
+      case 'listcustomsections':
+      case 'adminlistcustomsections':
+        return handleListCustomSections(params);
+      case 'savecustomsection':
+      case 'adminsavecustomsection':
+        return handleSaveCustomSection(params);
+      case 'deletecustomsection':
+      case 'admindeletecustomsection':
+        return handleDeleteCustomSection(params);
+      case 'reorderallsections':
+      case 'adminreorderallsections':
+        return handleReorderAllSections(params);
       case 'listusers':
       case 'adminlistusers':
         return handleListUsers(params);
@@ -554,7 +584,9 @@ function buildPublicLandingPayload() {
     scriptVersion: SCRIPT_VERSION,
     generatedAt: new Date().toISOString(),
     items: readContentRows(false, { sync: false }),
-    packages: readPackageRows(false, { format: false })
+    packages: readPackageRows(false, { format: false }),
+    customSections: readCustomSectionRows(false),
+    sectionOrder: readSectionOrder()
   };
 }
 
@@ -1106,4 +1138,186 @@ function json(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// 📄 CUSTOM SECTIONS — Sheet "Custom Sections"
+// ============================================================
+
+function ensureCustomSectionsSheet() {
+  return getOrCreateSheet(CUSTOM_SECTIONS_SHEET_NAME, CUSTOM_SECTIONS_HEADERS);
+}
+
+function ensureSectionOrderSheet() {
+  const sheet = getOrCreateSheet(SECTION_ORDER_SHEET_NAME, SECTION_ORDER_HEADERS);
+  if (sheet.getLastRow() < 2) {
+    const rows = DEFAULT_SECTION_ORDER.map((key, i) => [key, i + 1]);
+    sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+  }
+  return sheet;
+}
+
+function customSectionFromRow(row, map, rowIndex) {
+  return {
+    rowIndex: rowIndex,
+    enabled: row[map.Bat - 1] === true || String(row[map.Bat - 1]).toUpperCase() === 'TRUE',
+    id: String(row[map.ID - 1] || '').trim(),
+    label: String(row[map['Nhan section'] - 1] || '').trim(),
+    title: String(row[map['Tieu de'] - 1] || '').trim(),
+    description: String(row[map['Mo ta ngan'] - 1] || '').trim(),
+    contentHtml: String(row[map['Noi dung HTML'] - 1] || '').trim(),
+    navLabel: String(row[map['Nav label'] - 1] || '').trim(),
+    order: Number(row[map['Thu tu'] - 1] || 999),
+    updatedAt: row[map['Cap nhat luc'] - 1],
+    updatedBy: row[map['Cap nhat boi'] - 1]
+  };
+}
+
+function readCustomSectionRows(includeDisabled) {
+  const sheet = getSheetIfExists(CUSTOM_SECTIONS_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const map = getColumnMap(sheet);
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues()
+    .map((row, i) => customSectionFromRow(row, map, i + 2))
+    .filter(s => includeDisabled || s.enabled)
+    .sort((a, b) => (a.order || 999) - (b.order || 999));
+}
+
+function readSectionOrder() {
+  const sheet = getSheetIfExists(SECTION_ORDER_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return DEFAULT_SECTION_ORDER;
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+  return rows
+    .filter(r => String(r[0]).trim())
+    .sort((a, b) => Number(a[1]) - Number(b[1]))
+    .map(r => String(r[0]).trim());
+}
+
+// PUBLIC: trả về các custom sections đang bật
+function handleGetPublicCustomSections() {
+  try {
+    const cached = CacheService.getScriptCache().get(PUBLIC_CACHE_SECTIONS_KEY);
+    if (cached) return json(JSON.parse(cached));
+    const payload = {
+      success: true,
+      customSections: readCustomSectionRows(false),
+      sectionOrder: readSectionOrder()
+    };
+    safeCachePut(PUBLIC_CACHE_SECTIONS_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
+    return json(payload);
+  } catch (err) {
+    return json({ success: false, error: err.message });
+  }
+}
+
+// ADMIN: liệt kê tất cả (kể cả tắt)
+function handleListCustomSections(params) {
+  requireSession(params, ['admin', 'editor']);
+  try {
+    return json({
+      success: true,
+      customSections: readCustomSectionRows(true),
+      sectionOrder: readSectionOrder()
+    });
+  } catch (err) {
+    return json({ success: false, error: err.message });
+  }
+}
+
+// ADMIN: tạo mới hoặc cập nhật section
+function handleSaveCustomSection(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const sheet = ensureCustomSectionsSheet();
+  const map = getColumnMap(sheet);
+
+  const id = String(params.id || '').trim();
+  const enabled = String(params.enabled || 'true').toLowerCase() !== 'false';
+  const label = String(params.label || '').trim();
+  const title = String(params.title || '').trim();
+  const description = String(params.description || '').trim();
+  const contentHtml = String(params.contentHtml || '').trim();
+  const navLabel = String(params.navLabel || '').trim();
+  const order = Number(params.order || 999);
+
+  if (!id) return json({ success: false, error: 'Thiếu ID section.' });
+
+  // Tìm row hiện có
+  let existingRow = null;
+  if (sheet.getLastRow() >= 2) {
+    const ids = sheet.getRange(2, map.ID, sheet.getLastRow() - 1, 1).getValues().flat();
+    const found = ids.findIndex(v => String(v).trim() === id);
+    if (found >= 0) existingRow = found + 2;
+  }
+
+  const now = new Date();
+  const rowData = [enabled, id, label, title, description, contentHtml, navLabel, order, now, session.username];
+
+  if (existingRow) {
+    sheet.getRange(existingRow, 1, 1, CUSTOM_SECTIONS_HEADERS.length).setValues([rowData]);
+  } else {
+    // Thêm vào thứ tự section order nếu chưa có
+    const orderSheet = ensureSectionOrderSheet();
+    const orderRows = orderSheet.getLastRow() >= 2
+      ? orderSheet.getRange(2, 1, orderSheet.getLastRow() - 1, 1).getValues().flat().map(v => String(v).trim())
+      : [];
+    if (!orderRows.includes(id)) {
+      const nextOrder = orderRows.length + 1;
+      orderSheet.appendRow([id, nextOrder]);
+    }
+    sheet.appendRow(rowData);
+  }
+
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  return json({ success: true, message: 'Đã lưu section.' });
+}
+
+// ADMIN: xóa section
+function handleDeleteCustomSection(params) {
+  const session = requireSession(params, ['admin']);
+  const sheet = ensureCustomSectionsSheet();
+  const map = getColumnMap(sheet);
+  const id = String(params.id || '').trim();
+  if (!id) return json({ success: false, error: 'Thiếu ID section.' });
+
+  if (sheet.getLastRow() >= 2) {
+    const ids = sheet.getRange(2, map.ID, sheet.getLastRow() - 1, 1).getValues().flat();
+    const found = ids.findIndex(v => String(v).trim() === id);
+    if (found >= 0) sheet.deleteRow(found + 2);
+  }
+
+  // Xóa khỏi section order
+  const orderSheet = getSheetIfExists(SECTION_ORDER_SHEET_NAME);
+  if (orderSheet && orderSheet.getLastRow() >= 2) {
+    const keys = orderSheet.getRange(2, 1, orderSheet.getLastRow() - 1, 1).getValues().flat();
+    const oi = keys.findIndex(v => String(v).trim() === id);
+    if (oi >= 0) orderSheet.deleteRow(oi + 2);
+  }
+
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  return json({ success: true, message: 'Đã xóa section.' });
+}
+
+// ADMIN: cập nhật thứ tự tất cả sections (gốc + custom)
+// params.order: JSON array of section keys in display order
+function handleReorderAllSections(params) {
+  requireSession(params, ['admin', 'editor']);
+  let order;
+  try {
+    order = JSON.parse(params.order || '[]');
+  } catch (e) {
+    return json({ success: false, error: 'Dữ liệu thứ tự không hợp lệ.' });
+  }
+  if (!Array.isArray(order) || !order.length) return json({ success: false, error: 'Danh sách rỗng.' });
+
+  const sheet = ensureSectionOrderSheet();
+  // Xóa hết dữ liệu cũ, ghi lại
+  if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
+  const rows = order.map((key, i) => [String(key).trim(), i + 1]);
+  sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
+  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  return json({ success: true, message: 'Đã cập nhật thứ tự section.' });
 }

@@ -15,7 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="../hinh/favicon.png" />
-  <link rel="stylesheet" href="./style.css?v=20260616-magical-loader" />
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
+  <link rel="stylesheet" href="./style.css?v=20260617-custom-sections" />
 </head>
 <body>
   <div class="admin-bg">
@@ -179,11 +180,98 @@
           </form>
         </article>
       </section>
+
+      <!-- SECTIONS PANEL -->
+      <section class="sections-panel is-hidden" id="sections-panel">
+        <div class="sections-topbar">
+          <div>
+            <div class="eyebrow">Quan ly noi dung</div>
+            <h2>Section trang chu</h2>
+          </div>
+          <button type="button" class="primary-action" id="btn-add-section">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tao section moi</span>
+          </button>
+        </div>
+
+        <div class="sections-order-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          Keo tha cac o ben duoi de sap xep lai thu tu hien thi tren trang. Hero luon co dinh o dau.
+        </div>
+
+        <div class="sections-order-list" id="sections-order-list">
+          <!-- JS render -->
+        </div>
+
+        <div class="sections-save-order">
+          <button type="button" class="primary-action" id="btn-save-order">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Luu thu tu hien thi</span>
+          </button>
+        </div>
+      </section>
     </section>
   </main>
 
+  <!-- MODAL: Tao / Sua Section -->
+  <div class="section-modal-overlay is-hidden" id="section-modal-overlay">
+    <div class="section-modal">
+      <div class="section-modal-header">
+        <h3 id="section-modal-title">Tao Section Moi</h3>
+        <button type="button" class="modal-close-btn" id="section-modal-close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="section-modal-body">
+        <input type="hidden" id="section-edit-id" />
+        <div class="modal-row">
+          <label class="modal-label">
+            <span>ID Section <em>(khong dau, khong cach, VD: faq)</em></span>
+            <input type="text" id="section-id" placeholder="vd: faq" class="modal-input" />
+          </label>
+          <label class="modal-label modal-toggle-wrap">
+            <span>Hien thi</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="section-enabled" checked />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </label>
+        </div>
+        <label class="modal-label">
+          <span>Nhan section <em>(chu hoa mau vang, VD: CAU HOI THUONG GAP)</em></span>
+          <input type="text" id="section-label-input" placeholder="CAU HOI THUONG GAP" class="modal-input" />
+        </label>
+        <label class="modal-label">
+          <span>Tieu de lon</span>
+          <input type="text" id="section-title-input" placeholder="Tieu de hien thi lon" class="modal-input" />
+        </label>
+        <label class="modal-label">
+          <span>Dien giai ngan <em>(mau trang, ben duoi tieu de)</em></span>
+          <textarea id="section-description" placeholder="Mo ta ngan ve noi dung section..." class="modal-input" rows="2"></textarea>
+        </label>
+        <label class="modal-label">
+          <span>Link tren thanh dieu huong <em>(de trong neu khong muon hien thi)</em></span>
+          <input type="text" id="section-nav-label" placeholder="VD: Cau hoi" class="modal-input" />
+        </label>
+        <div class="modal-label">
+          <span>Noi dung <em>(ho tro dinh dang phong phu va canh le: trai / giua / phai / deu)</em></span>
+          <div id="quill-editor" class="quill-editor-wrap"></div>
+        </div>
+      </div>
+      <div class="section-modal-footer">
+        <button type="button" class="ghost-action" id="section-modal-cancel">Huy</button>
+        <button type="button" class="danger-action" id="section-modal-delete" style="display:none">
+          <i class="fa-solid fa-trash"></i> Xoa section
+        </button>
+        <button type="button" class="primary-action" id="section-modal-save">
+          <i class="fa-solid fa-floppy-disk"></i> Luu section
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=20260616-admin-perf"></script>
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <script src="./app.js?v=20260617-custom-sections"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
   <link rel="dns-prefetch" href="https://script.google.com" />
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="./style.css?v=production-v1" />
+  <link rel="stylesheet" href="./style.css?v=production-v2" />
   <link rel="icon" type="image/png" href="hinh/favicon.png" />
   
   <!-- Open Graph / Facebook -->
@@ -83,8 +83,11 @@
     </div>
   </section>
 
+  <!-- SECTIONS WRAPPER: JS sắp xếp thứ tự bằng CSS order -->
+  <div id="sections-wrapper">
+
   <!-- ABOUT / PROBLEM -->
-  <section class="about" id="about">
+  <section class="about" id="about" data-section-key="about">
     <div class="container">
       <div class="section-label">Bạn có đang trải qua điều này?</div>
       <h2 class="section-title">Khi Cuộc Sống Cảm Thấy <span style="white-space: nowrap;"><em>Mù Mịt</em></span></h2>
@@ -132,7 +135,7 @@
   </section>
 
   <!-- GUIDE -->
-  <section class="guide" id="guide">
+  <section class="guide" id="guide" data-section-key="guide">
     <div class="container">
       <div class="guide-header">
         <div class="section-label guide-label">NGƯỜI HƯỚNG DẪN</div>
@@ -176,7 +179,7 @@
   </section>
 
   <!-- BENEFITS -->
-  <section class="benefits" id="benefits">
+  <section class="benefits" id="benefits" data-section-key="benefits">
     <div class="container">
       <div class="section-label">Tại sao chọn chúng tôi?</div>
       <h2 class="section-title">Những Gì Bạn <em>Nhận Được</em></h2>
@@ -216,7 +219,7 @@
   </section>
 
   <!-- TESTIMONIALS -->
-  <section class="testimonials" id="testimonials">
+  <section class="testimonials" id="testimonials" data-section-key="testimonials">
     <div class="testimonials-bg">
       <div class="orb orb-t1"></div>
       <div class="orb orb-t2"></div>
@@ -334,7 +337,7 @@
   </section>
 
   <!-- PRICING -->
-  <section class="pricing" id="pricing">
+  <section class="pricing" id="pricing" data-section-key="pricing">
     <div class="pricing-bg">
       <div class="orb orb-p1"></div>
       <div class="orb orb-p2"></div>
@@ -501,7 +504,7 @@
   </section>
 
   <!-- FLEXIBLE 3-IN-1 -->
-  <section class="flexible-3in1" id="flexible-3in1">
+  <section class="flexible-3in1" id="flexible-3in1" data-section-key="flexible-3in1">
     <div class="flexible-bg">
       <div class="flex-orbit"></div>
       <div class="orb flex-orb-1"></div>
@@ -605,7 +608,7 @@
   </section>
 
   <!-- SPECIAL OFFER -->
-  <section class="offer" id="offer">
+  <section class="offer" id="offer" data-section-key="offer">
     <div class="container">
       <div class="offer-card">
         <div class="offer-glow"></div>
@@ -648,7 +651,7 @@
   </section>
 
   <!-- HOW IT WORKS -->
-  <section class="process" id="process">
+  <section class="process" id="process" data-section-key="process">
     <div class="container">
       <div class="section-label">Quy trình đơn giản</div>
       <h2 class="section-title">Bắt Đầu Hành Trình <em><span style="white-space: nowrap;">Chỉ 3 Bước</span></em></h2>
@@ -678,7 +681,7 @@
   </section>
 
   <!-- CONTACT FORM -->
-  <section class="contact" id="contact">
+  <section class="contact" id="contact" data-section-key="contact">
     <div class="contact-bg">
       <div class="orb orb-c1"></div>
       <div class="orb orb-c2"></div>
@@ -761,6 +764,8 @@
     </div>
   </section>
 
+  </div><!-- end #sections-wrapper -->
+
   <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
@@ -826,6 +831,6 @@
     </a>
   </div>
 
-  <script src="script.js?v=production-v1"></script>
+  <script src="script.js?v=production-v2"></script>
 </body>
 </html>
