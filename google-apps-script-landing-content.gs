@@ -20,16 +20,16 @@ const SESSION_TTL_SECONDS = 21600;
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
-const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v7';
-const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v7';
-const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v1';
+const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
+const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
+const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
 const PUBLIC_CACHE_SECONDS = 60;
 
 // Custom Sections
 const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
 const SECTION_ORDER_SHEET_NAME = 'Section Order';
 const CUSTOM_SECTIONS_HEADERS = ['Bat', 'ID', 'Nhan section', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Nav label', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
-const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu'];
+const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu', 'Hien thi'];
 const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'flexible-3in1', 'offer', 'process', 'contact'];
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
@@ -1151,8 +1151,8 @@ function ensureCustomSectionsSheet() {
 function ensureSectionOrderSheet() {
   const sheet = getOrCreateSheet(SECTION_ORDER_SHEET_NAME, SECTION_ORDER_HEADERS);
   if (sheet.getLastRow() < 2) {
-    const rows = DEFAULT_SECTION_ORDER.map((key, i) => [key, i + 1]);
-    sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+    const rows = DEFAULT_SECTION_ORDER.map((key, i) => [key, i + 1, true]);
+    sheet.getRange(2, 1, rows.length, 3).setValues(rows);
   }
   return sheet;
 }
@@ -1185,12 +1185,17 @@ function readCustomSectionRows(includeDisabled) {
 
 function readSectionOrder() {
   const sheet = getSheetIfExists(SECTION_ORDER_SHEET_NAME);
-  if (!sheet || sheet.getLastRow() < 2) return DEFAULT_SECTION_ORDER;
-  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+  if (!sheet || sheet.getLastRow() < 2) {
+    return DEFAULT_SECTION_ORDER.map(k => ({key: k, enabled: true}));
+  }
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
   return rows
     .filter(r => String(r[0]).trim())
     .sort((a, b) => Number(a[1]) - Number(b[1]))
-    .map(r => String(r[0]).trim());
+    .map(r => ({
+      key: String(r[0]).trim(),
+      enabled: r[2] === '' ? true : (r[2] === true || String(r[2]).toUpperCase() === 'TRUE')
+    }));
 }
 
 // PUBLIC: trả về các custom sections đang bật
@@ -1314,10 +1319,14 @@ function handleReorderAllSections(params) {
   const sheet = ensureSectionOrderSheet();
   // Xóa hết dữ liệu cũ, ghi lại
   if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
-  const rows = order.map((key, i) => [String(key).trim(), i + 1]);
-  sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+  const rows = order.map((obj, i) => {
+    // Hỗ trợ mảng string cũ hoặc mảng object mới
+    if (typeof obj === 'string') return [String(obj).trim(), i + 1, true];
+    return [String(obj.key).trim(), i + 1, !!obj.enabled];
+  });
+  sheet.getRange(2, 1, rows.length, 3).setValues(rows);
 
   CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
   CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
-  return json({ success: true, message: 'Đã cập nhật thứ tự section.' });
+  return json({ success: true, message: 'Đã cập nhật thứ tự và trạng thái section.' });
 }

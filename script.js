@@ -1017,9 +1017,30 @@ function applyAllSectionOrder(sectionOrder, customSections) {
   if (!wrapper) return;
 
   // Gán CSS order cho mỗi section theo thứ tự trong array
-  sectionOrder.forEach((key, index) => {
-    const el = wrapper.querySelector(`[data-section-key="${key}"]`);
-    if (el) el.style.order = index + 1;
+  sectionOrder.forEach((item, index) => {
+    // Hỗ trợ mảng string cũ hoặc mảng object mới
+    if (typeof item === 'string') item = { key: item, enabled: true };
+
+    const el = wrapper.querySelector(`[data-section-key="${item.key}"]`);
+    if (el) {
+      el.style.order = index + 1;
+      
+      // Ẩn/hiện section
+      if (!item.enabled) {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+      
+      // Ẩn/hiện link menu nếu là native section
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks) {
+        const a = navLinks.querySelector(`a[href="#${item.key}"]`);
+        if (a && a.parentElement) {
+          a.parentElement.style.display = item.enabled ? '' : 'none';
+        }
+      }
+    }
   });
 
   // Cập nhật nav links cho custom sections có nav label

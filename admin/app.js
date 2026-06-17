@@ -1064,58 +1064,79 @@ function renderSectionsOrderList() {
 
   // Neu chua co order, dung default
   let order = state.sectionOrder.length ? state.sectionOrder
-    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','contact'];
+    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','contact'].map(k => ({key: k, enabled: true}));
+
+  // Đảm bảo tương thích ngược với order cũ là mảng string
+  order = order.map(o => typeof o === 'string' ? {key: o, enabled: true} : o);
 
   list.innerHTML = '';
 
-  order.forEach(key => {
+  order.forEach(item => {
+    const key = item.key;
     const isNative   = !!NATIVE_SECTION_LABELS[key];
     const customSec  = customMap[key];
     const label      = isNative
       ? NATIVE_SECTION_LABELS[key]
       : (customSec ? (customSec.label || customSec.id) : key);
-    const isEnabled  = isNative ? true : (customSec ? customSec.enabled : true);
+    const isEnabled  = isNative ? item.enabled : (customSec ? customSec.enabled : true);
     const isCustom   = !isNative;
 
-    const item = document.createElement('div');
-    item.className = 'order-item' + (isNative ? ' order-item--native' : '') + (!isEnabled ? ' order-item--disabled' : '');
-    item.dataset.key = key;
-    item.draggable = true;
-    item.innerHTML = `
+    const el = document.createElement('div');
+    el.className = 'order-item' + (isNative ? ' order-item--native' : '') + (!isEnabled ? ' order-item--disabled' : '');
+    el.dataset.key = key;
+    el.draggable = true;
+    el.innerHTML = `
       <span class="order-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
       <span class="order-item-label">${escHtml(label)}</span>
-      ${isNative ? '<span class="order-badge order-badge--native">Gốc</span>' : ''}
+      ${isNative ? `
+        <label class="toggle-switch toggle-switch-small" style="margin-right: 10px;" title="Bật/tắt section này">
+          <input type="checkbox" class="native-toggle" data-key="${escAttr(key)}" ${isEnabled ? 'checked' : ''} />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+        <span class="order-badge order-badge--native">Gốc</span>
+      ` : ''}
       ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'Ẩn'}</span>` : ''}
       ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
     `;
 
+    // Cập nhật giao diện khi toggle native
+    if (isNative) {
+      const toggle = el.querySelector('.native-toggle');
+      if (toggle) {
+        toggle.addEventListener('change', () => {
+          if (toggle.checked) el.classList.remove('order-item--disabled');
+          else el.classList.add('order-item--disabled');
+        });
+      }
+    }
+
     // Drag events
-    item.addEventListener('dragstart', e => {
-      state.draggingOrderItem = item;
-      item.classList.add('is-dragging');
+    el.addEventListener('dragstart', e => {
+      state.draggingOrderItem = el;
+      el.classList.add('is-dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
-    item.addEventListener('dragend', () => {
-      item.classList.remove('is-dragging');
+    el.addEventListener('dragend', () => {
+      el.classList.remove('is-dragging');
       state.draggingOrderItem = null;
       list.querySelectorAll('.order-item').forEach(i => i.classList.remove('drag-over'));
     });
-    item.addEventListener('dragover', e => {
+    el.addEventListener('dragover', e => {
       e.preventDefault();
-      if (state.draggingOrderItem && state.draggingOrderItem !== item) {
-        item.classList.add('drag-over');
-        const bounding = item.getBoundingClientRect();
+      if (state.draggingOrderItem && state.draggingOrderItem !== el) {
+        el.classList.add('drag-over');
+        const bounding = el.getBoundingClientRect();
         const offset   = bounding.y + bounding.height / 2;
         if (e.clientY < offset) {
-          list.insertBefore(state.draggingOrderItem, item);
+          list.insertBefore(state.draggingOrderItem, el);
         } else {
-          list.insertBefore(state.draggingOrderItem, item.nextSibling);
+          list.insertBefore(state.draggingOrderItem, el.nextSibling);
         }
       }
     });
-    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
 
-    list.appendChild(item);
+    list.appendChild(el);
   });
 
   // Nut edit cho cac custom section
@@ -1128,11 +1149,20 @@ function renderSectionsOrderList() {
 async function saveSectionOrder() {
   const list = document.getElementById('sections-order-list');
   if (!list) return;
-  const keys = Array.from(list.querySelectorAll('.order-item')).map(i => i.dataset.key);
+  const items = Array.from(list.querySelectorAll('.order-item')).map(el => {
+    const key = el.dataset.key;
+    const isNative = !!NATIVE_SECTION_LABELS[key];
+    let enabled = true;
+    if (isNative) {
+      const cb = el.querySelector('.native-toggle');
+      if (cb) enabled = cb.checked;
+    }
+    return { key, enabled };
+  });
   try {
-    await api('reorderAllSections', { order: JSON.stringify(keys) });
+    await api('reorderAllSections', { order: JSON.stringify(items) });
     showToast('Đã cập nhật thứ tự section!');
-    state.sectionOrder = keys;
+    state.sectionOrder = items;
   } catch (err) {
     showToast(err.message, 'error');
   }
