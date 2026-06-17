@@ -1236,7 +1236,9 @@ function handleSaveCustomSection(params) {
   const map = getColumnMap(sheet);
 
   const id = String(params.id || '').trim();
-  const enabled = String(params.enabled || 'true').toLowerCase() !== 'false';
+  const enabled = params.enabled !== undefined
+    ? String(params.enabled).toLowerCase() !== 'false'
+    : true;
   const label = String(params.label || '').trim();
   const title = String(params.title || '').trim();
   const description = String(params.description || '').trim();
@@ -1286,17 +1288,31 @@ function handleDeleteCustomSection(params) {
   if (!id) return json({ success: false, error: 'Thiếu ID section.' });
 
   if (sheet.getLastRow() >= 2) {
-    const ids = sheet.getRange(2, map.ID, sheet.getLastRow() - 1, 1).getValues().flat();
-    const found = ids.findIndex(v => String(v).trim() === id);
-    if (found >= 0) sheet.deleteRow(found + 2);
+    while (true) {
+      if (sheet.getLastRow() < 2) break;
+      const ids = sheet.getRange(2, map.ID, sheet.getLastRow() - 1, 1).getValues().flat();
+      const found = ids.findIndex(v => String(v).trim() === id);
+      if (found >= 0) {
+        sheet.deleteRow(found + 2);
+      } else {
+        break;
+      }
+    }
   }
 
   // Xóa khỏi section order
   const orderSheet = getSheetIfExists(SECTION_ORDER_SHEET_NAME);
   if (orderSheet && orderSheet.getLastRow() >= 2) {
-    const keys = orderSheet.getRange(2, 1, orderSheet.getLastRow() - 1, 1).getValues().flat();
-    const oi = keys.findIndex(v => String(v).trim() === id);
-    if (oi >= 0) orderSheet.deleteRow(oi + 2);
+    while (true) {
+      if (orderSheet.getLastRow() < 2) break;
+      const keys = orderSheet.getRange(2, 1, orderSheet.getLastRow() - 1, 1).getValues().flat();
+      const oi = keys.findIndex(v => String(v).trim() === id);
+      if (oi >= 0) {
+        orderSheet.deleteRow(oi + 2);
+      } else {
+        break;
+      }
+    }
   }
 
   CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
