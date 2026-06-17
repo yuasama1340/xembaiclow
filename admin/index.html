@@ -185,18 +185,18 @@
       <section class="sections-panel is-hidden" id="sections-panel">
         <div class="sections-topbar">
           <div>
-            <div class="eyebrow">Quan ly noi dung</div>
-            <h2>Section trang chu</h2>
+            <div class="eyebrow">Quản lý nội dung</div>
+            <h2>Section trang chủ</h2>
           </div>
           <button type="button" class="primary-action" id="btn-add-section">
             <i class="fa-solid fa-plus"></i>
-            <span>Tao section moi</span>
+            <span>Tạo section mới</span>
           </button>
         </div>
 
         <div class="sections-order-hint">
           <i class="fa-solid fa-circle-info"></i>
-          Keo tha cac o ben duoi de sap xep lai thu tu hien thi tren trang. Hero luon co dinh o dau.
+          Kéo thả các ô bên dưới để sắp xếp lại thứ tự hiển thị trên trang. Hero luôn cố định ở đầu.
         </div>
 
         <div class="sections-order-list" id="sections-order-list">
@@ -206,7 +206,7 @@
         <div class="sections-save-order">
           <button type="button" class="primary-action" id="btn-save-order">
             <i class="fa-solid fa-floppy-disk"></i>
-            <span>Luu thu tu hien thi</span>
+            <span>Lưu thứ tự hiển thị</span>
           </button>
         </div>
       </section>
@@ -217,7 +217,7 @@
   <div class="section-modal-overlay is-hidden" id="section-modal-overlay">
     <div class="section-modal">
       <div class="section-modal-header">
-        <h3 id="section-modal-title">Tao Section Moi</h3>
+        <h3 id="section-modal-title">Tạo Section Mới</h3>
         <button type="button" class="modal-close-btn" id="section-modal-close">
           <i class="fa-solid fa-xmark"></i>
         </button>
@@ -226,11 +226,11 @@
         <input type="hidden" id="section-edit-id" />
         <div class="modal-row">
           <label class="modal-label">
-            <span>ID Section <em>(khong dau, khong cach, VD: faq)</em></span>
+            <span>ID Section <em>(không dấu, không cách, VD: faq)</em></span>
             <input type="text" id="section-id" placeholder="vd: faq" class="modal-input" />
           </label>
           <label class="modal-label modal-toggle-wrap">
-            <span>Hien thi</span>
+            <span>Hiển thị</span>
             <label class="toggle-switch">
               <input type="checkbox" id="section-enabled" checked />
               <span class="toggle-track"><span class="toggle-thumb"></span></span>
@@ -238,33 +238,33 @@
           </label>
         </div>
         <label class="modal-label">
-          <span>Nhan section <em>(chu hoa mau vang, VD: CAU HOI THUONG GAP)</em></span>
-          <input type="text" id="section-label-input" placeholder="CAU HOI THUONG GAP" class="modal-input" />
+          <span>Nhãn section <em>(chữ hoa màu vàng, VD: CÂU HỎI THƯỜNG GẶP)</em></span>
+          <input type="text" id="section-label-input" placeholder="CÂU HỎI THƯỜNG GẶP" class="modal-input" />
         </label>
         <label class="modal-label">
-          <span>Tieu de lon</span>
-          <input type="text" id="section-title-input" placeholder="Tieu de hien thi lon" class="modal-input" />
+          <span>Tiêu đề lớn</span>
+          <input type="text" id="section-title-input" placeholder="Tiêu đề hiển thị lớn" class="modal-input" />
         </label>
         <label class="modal-label">
-          <span>Dien giai ngan <em>(mau trang, ben duoi tieu de)</em></span>
-          <textarea id="section-description" placeholder="Mo ta ngan ve noi dung section..." class="modal-input" rows="2"></textarea>
+          <span>Diễn giải ngắn <em>(màu trắng, bên dưới tiêu đề)</em></span>
+          <textarea id="section-description" placeholder="Mô tả ngắn về nội dung section..." class="modal-input" rows="2"></textarea>
         </label>
         <label class="modal-label">
-          <span>Link tren thanh dieu huong <em>(de trong neu khong muon hien thi)</em></span>
-          <input type="text" id="section-nav-label" placeholder="VD: Cau hoi" class="modal-input" />
+          <span>Link trên thanh điều hướng <em>(để trống nếu không muốn hiển thị)</em></span>
+          <input type="text" id="section-nav-label" placeholder="VD: Câu hỏi" class="modal-input" />
         </label>
         <div class="modal-label">
-          <span>Noi dung <em>(ho tro dinh dang phong phu va canh le: trai / giua / phai / deu)</em></span>
+          <span>Nội dung <em>(hỗ trợ định dạng phong phú và canh lề: trái / giữa / phải / đều)</em></span>
           <div id="quill-editor" class="quill-editor-wrap"></div>
         </div>
       </div>
       <div class="section-modal-footer">
-        <button type="button" class="ghost-action" id="section-modal-cancel">Huy</button>
+        <button type="button" class="ghost-action" id="section-modal-cancel">Hủy</button>
         <button type="button" class="danger-action" id="section-modal-delete" style="display:none">
-          <i class="fa-solid fa-trash"></i> Xoa section
+          <i class="fa-solid fa-trash"></i> Xóa section
         </button>
         <button type="button" class="primary-action" id="section-modal-save">
-          <i class="fa-solid fa-floppy-disk"></i> Luu section
+          <i class="fa-solid fa-floppy-disk"></i> Lưu section
         </button>
       </div>
     </div>

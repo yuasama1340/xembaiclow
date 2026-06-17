@@ -972,15 +972,15 @@ init();
 // ============================================================
 
 const NATIVE_SECTION_LABELS = {
-  about:        'Ve dich vu',
-  guide:        'Nguoi huong dan',
-  benefits:     'Loi ich',
-  testimonials: 'Khach hang',
-  pricing:      'Bang gia',
+  about:        'Về dịch vụ',
+  guide:        'Người hướng dẫn',
+  benefits:     'Lợi ích',
+  testimonials: 'Khách hàng',
+  pricing:      'Bảng giá',
   'flexible-3in1': '3 trong 1',
-  offer:        'Uu dai',
-  process:      'Quy trinh',
-  contact:      'Dat lich'
+  offer:        'Ưu đãi',
+  process:      'Quy trình',
+  contact:      'Đặt lịch'
 };
 
 let quillEditor = null;
@@ -993,7 +993,7 @@ function initQuillEditor() {
 
   quillEditor = new Quill(container, {
     theme: 'snow',
-    placeholder: 'Nhap noi dung section tai day...',
+    placeholder: 'Nhập nội dung section tại đây...',
     modules: {
       toolbar: [
         [{ header: [1, 2, 3, false] }],
@@ -1084,8 +1084,8 @@ function renderSectionsOrderList() {
     item.innerHTML = `
       <span class="order-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
       <span class="order-item-label">${escHtml(label)}</span>
-      ${isNative ? '<span class="order-badge order-badge--native">Goc</span>' : ''}
-      ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'An'}</span>` : ''}
+      ${isNative ? '<span class="order-badge order-badge--native">Gốc</span>' : ''}
+      ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'Ẩn'}</span>` : ''}
       ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
     `;
 
@@ -1131,7 +1131,7 @@ async function saveSectionOrder() {
   const keys = Array.from(list.querySelectorAll('.order-item')).map(i => i.dataset.key);
   try {
     await api('reorderAllSections', { order: JSON.stringify(keys) });
-    showToast('Da cap nhat thu tu section!');
+    showToast('Đã cập nhật thứ tự section!');
     state.sectionOrder = keys;
   } catch (err) {
     showToast(err.message, 'error');
@@ -1155,7 +1155,7 @@ function openSectionModal(editId) {
 
   if (editId) {
     const sec = state.customSections.find(s => s.id === editId);
-    titleEl.textContent = 'Chinh sua Section';
+    titleEl.textContent = 'Chỉnh sửa Section';
     deleteBtn.style.display = '';
     hiddenId.value   = editId;
     idInput.value    = sec ? sec.id : editId;
@@ -1167,7 +1167,7 @@ function openSectionModal(editId) {
     navInp.value     = sec ? (sec.navLabel || '') : '';
     if (quillEditor) quillEditor.root.innerHTML = sec ? (sec.contentHtml || '') : '';
   } else {
-    titleEl.textContent = 'Tao Section Moi';
+    titleEl.textContent = 'Tạo Section Mới';
     deleteBtn.style.display = 'none';
     hiddenId.value   = '';
     idInput.value    = '';
@@ -1200,7 +1200,7 @@ async function saveSectionFromModal() {
   const navLabel = document.getElementById('section-nav-label').value.trim();
   const html     = quillEditor ? quillEditor.root.innerHTML : '';
 
-  if (!id) { showToast('Vui long nhap ID section.', 'error'); return; }
+  if (!id) { showToast('Vui lòng nhập ID section.', 'error'); return; }
 
   const saveBtn = document.getElementById('section-modal-save');
   await withButtonPending(saveBtn, async () => {
@@ -1211,7 +1211,7 @@ async function saveSectionFromModal() {
         contentHtml: html,
         navLabel
       });
-      showToast('Da luu section!');
+      showToast('Đã lưu section!');
       closeSectionModal();
       await loadAndRenderSections();
     } catch (err) {
@@ -1223,12 +1223,12 @@ async function saveSectionFromModal() {
 // --- Xoa section ---
 async function deleteSection(id) {
   if (!id) return;
-  if (!confirm(`Xoa section "${id}"? Hanh dong nay khong the hoan tac.`)) return;
+  if (!confirm(`Xóa section "${id}"? Hành động này không thể hoàn tác.`)) return;
   const deleteBtn = document.getElementById('section-modal-delete');
   await withButtonPending(deleteBtn, async () => {
     try {
       await api('deleteCustomSection', { id });
-      showToast('Da xoa section!');
+      showToast('Đã xóa section!');
       closeSectionModal();
       await loadAndRenderSections();
     } catch (err) {
