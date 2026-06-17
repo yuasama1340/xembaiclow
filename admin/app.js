@@ -184,7 +184,7 @@ function renderSectionNav(groups) {
   Object.entries(groups).forEach(([section, items]) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `nav-section${section === state.activeSection ? ' is-active' : ''}`;
+    button.className = `nav-section${section === state.activeSection && !document.getElementById('sections-panel').classList.contains('is-hidden') === false ? ' is-active' : ''}`;
     const isPricing = section.toLowerCase().includes('bang') || section.toLowerCase().includes('giá') || section.toLowerCase().includes('gia');
     button.innerHTML = `<span>${section}</span><span>${isPricing ? '⭐ ' : ''}${items.length}</span>`;
     button.addEventListener('click', () => {
@@ -193,6 +193,10 @@ function renderSectionNav(groups) {
     });
     nav.appendChild(button);
   });
+  // Restore the Custom Sections button at the bottom of the nav
+  if (typeof renderSectionsNavButton === 'function') {
+    renderSectionsNavButton();
+  }
 }
 
 function createField(item) {
@@ -318,6 +322,9 @@ function renderContent() {
   renderStats();
 
   const board = $('#content-board');
+  const sectionsPanel = $('#sections-panel');
+  if (sectionsPanel) sectionsPanel.classList.add('is-hidden');
+  board.classList.remove('is-hidden');
   board.innerHTML = '';
 
   if (!state.activeSection) {
