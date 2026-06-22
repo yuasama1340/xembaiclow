@@ -1346,3 +1346,78 @@ function handleReorderAllSections(params) {
   CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
   return json({ success: true, message: 'Đã cập nhật thứ tự và trạng thái section.' });
 }
+
+// ============================================================
+// 🔑  RESET MẬT KHẨU ADMIN — Chạy 1 lần khi deploy mới bị mất salt
+// Sau khi chạy xong: đăng nhập bằng  admin / admin123
+// ============================================================
+function resetAdminPassword() {
+  try {
+    // 1. Xóa salt cũ → tạo salt mới
+    const props = PropertiesService.getScriptProperties();
+    props.deleteProperty(PASSWORD_SALT_PROPERTY);
+    Logger.log('✅ Đã xóa salt cũ');
+
+    // 2. Tạo salt mới và hash mật khẩu mặc định
+    const newSalt = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
+    props.setProperty(PASSWORD_SALT_PROPERTY, newSalt);
+    Logger.log('✅ Đã tạo salt mới: ' + newSalt);
+
+    const newHash = hashPasswordWithSalt(ADMIN_DEFAULT_PASSWORD, newSalt);
+
+    // 3. Tìm tài khoản admin trong sheet
+    const sheet = ensureAdminUsersSheet();
+    const map = getColumnMap(sheet);
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow < 2) {
+      // Sheet trống → tạo mới tài khoản admin
+      sheet.appendRow([
+        ADMIN_DEFAULT_USERNAME,
+        newHash,
+        'admin',
+        'active',
+        'Admin',
+        new Date(),
+        new Date(),
+        ''
+      ]);
+      Logger.log('✅ Đã tạo tài khoản admin mới');
+    } else {
+      // Tìm dòng admin và update hash
+      const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+      let found = false;
+      for (let i = 0; i < rows.length; i++) {
+        const uname = String(rows[i][map.Username - 1]).trim().toLowerCase();
+        if (uname === ADMIN_DEFAULT_USERNAME) {
+          sheet.getRange(i + 2, map['Password hash']).setValue(newHash);
+          sheet.getRange(i + 2, map['Status']).setValue('active');
+          sheet.getRange(i + 2, map['Updated at']).setValue(new Date());
+          Logger.log('✅ Đã reset mật khẩu tài khoản: ' + rows[i][map.Username - 1]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Không tìm thấy admin → tạo mới
+        sheet.appendRow([
+          ADMIN_DEFAULT_USERNAME,
+          newHash,
+          'admin',
+          'active',
+          'Admin',
+          new Date(),
+          new Date(),
+          ''
+        ]);
+        Logger.log('✅ Không tìm thấy admin cũ, đã tạo mới');
+      }
+    }
+
+    Logger.log('🎉 XONG! Đăng nhập bằng: ' + ADMIN_DEFAULT_USERNAME + ' / ' + ADMIN_DEFAULT_PASSWORD);
+    return '✅ Reset thành công! Đăng nhập: admin / admin123';
+  } catch (err) {
+    Logger.log('❌ Lỗi reset: ' + err.message);
+    return '❌ Lỗi: ' + err.message;
+  }
+}
