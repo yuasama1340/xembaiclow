@@ -452,7 +452,10 @@
       window._thankYouUrl = thankUrl;
 
       if (!orderId) {
-        document.getElementById('status-text').textContent = '⚠️ Không tìm thấy thông tin đơn hàng.';
+        // Không có thông tin đơn → có thể đã thanh toán hoặc quay lại sau khi redirect
+        // Redirect về trang chủ để tránh vòng lặp
+        document.getElementById('status-text').textContent = '⚠️ Không tìm thấy thông tin đơn. Đang chuyển hướng...';
+        setTimeout(() => { window.location.replace('/'); }, 2000);
         return;
       }
 
@@ -685,8 +688,9 @@
         document.getElementById('redirect-label').textContent =
           'Đang chuyển hướng đến trang xác nhận...';
 
-        // Để thankyou.html tự dọn dẹp session sau khi đã hiển thị xong dữ liệu
-        
+        // Xóa session ngay trước khi redirect để tránh tải lại trang payment khi back
+        sessionStorage.removeItem('pendingOrder');
+
         // Redirect sau 3s kèm query params dự phòng đề phòng mất session storage
         setTimeout(() => {
           let redirectUrl = window._thankYouUrl || 'thankyou.html';
@@ -700,7 +704,7 @@
           } else {
             redirectUrl += '?' + params.toString();
           }
-          window.location.href = redirectUrl;
+          window.location.replace(redirectUrl); // dùng replace thay vì href để không lưu vào history
         }, 3100);
       }, 500);
     }

@@ -647,6 +647,35 @@ function sendManualTransferNotice(payload) {
   sendLoggedEmail('owner-manual-transfer', CONFIG.BOOKING_NOTIFY_EMAIL, ownerSubject, ownerBody);
 }
 
+function sendManualCustomerConfirmation(payload) {
+  if (!isValidEmail(payload.email)) return;
+
+  const amountText = payload.amount
+    ? Number(payload.amount).toLocaleString('vi-VN') + 'đ'
+    : 'Chưa xác định';
+
+  const subject = 'ClowCat đã nhận xác nhận đặt lịch của bạn - ' + payload.orderId;
+  const body = [
+    'Xin chào ' + (payload.name || 'bạn') + ',',
+    '',
+    'Clow Cat Patronus đã nhận được xác nhận đặt lịch từ bạn.',
+    '',
+    'Mã đơn: ' + payload.orderId,
+    'Gói dịch vụ: ' + (payload.package || ''),
+    'Hình thức: ' + (payload.format || ''),
+    'Số tiền: ' + amountText,
+    '',
+    'Chúng mình sẽ kiểm tra thông tin chuyển khoản và liên hệ xác nhận lịch hẹn trong vòng 24 giờ.',
+    '',
+    'Cảm ơn bạn đã tin tưởng Clow Cat Patronus.'
+  ].join('\n');
+
+  const htmlPayload = Object.assign({}, payload, { paymentEnabled: false });
+  const htmlBody = buildCustomerEmailHtml(htmlPayload, 'booking');
+
+  sendLoggedEmail('customer-manual-confirm', payload.email, subject, body, htmlBody);
+}
+
 // ============================================================
 // 📨  LUỒNG 1A — action=register
 //     Ghi đơn mới vào Sheet, trả về mã đơn
@@ -789,7 +818,7 @@ function handleManualConfirm(params) {
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.TRANSACTION_ID, matchRow, 'MANUAL-CONFIRM');
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT, matchRow, amount || '');
 
-    sendManualTransferNotice({
+    const manualPayload = {
       orderId: orderId,
       amount: amount,
       name: getCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.NAME, matchRow),
@@ -797,7 +826,17 @@ function handleManualConfirm(params) {
       package: getCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.PACKAGE, matchRow),
       format: getCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.FORMAT, matchRow),
       phone: getCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.PHONE, matchRow)
-    });
+    };
+
+    // Gửi email thông báo cho chủ
+    sendManualTransferNotice(manualPayload);
+
+    // Gửi email xác nhận đăng ký cho khách hàng
+    try {
+      sendManualCustomerConfirmation(manualPayload);
+    } catch (mailErr) {
+      Logger.log('⚠️ Không gửi được email xác nhận cho khách: ' + mailErr.message);
+    }
 
     return buildJson({ success: true, orderId: orderId, status: 'Khách báo đã chuyển khoản ✅' });
   } catch (err) {
