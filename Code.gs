@@ -188,6 +188,24 @@ function setCellAny(sheet, colMap, aliases, row, value) {
   sheet.getRange(row, idx).setValue(value);
 }
 
+// Ghi số điện thoại dạng text để giữ số 0 đầu (0912345678)
+function setCellPhone(sheet, colMap, aliases, row, value) {
+  const idx = findColumnIndex(colMap, aliases);
+  if (!idx) return;
+  const cell = sheet.getRange(row, idx);
+  cell.setNumberFormat('@STRING@'); // ép kiểu text
+  cell.setValue(String(value || ''));
+}
+
+// Ghi số tiền dạng số nhưng format phân cách nghìn (500.000) để SUM được
+function setCellAmount(sheet, colMap, colName, row, value) {
+  const idx = colMap[colName];
+  if (!idx) return;
+  const cell = sheet.getRange(row, idx);
+  cell.setNumberFormat('#,##0'); // format: 500.000 (dấu phân cách theo locale Sheet)
+  cell.setValue(Number(value) || 0);
+}
+
 function getCellAny(sheet, colMap, aliases, row) {
   const idx = findColumnIndex(colMap, aliases);
   if (!idx) return '';
@@ -697,7 +715,7 @@ function handleRegister(params) {
 
     // Ghi thông tin khách hàng, hỗ trợ cả sheet cũ và schema trong migration-kit
     setCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.NAME,       newRow, params.name    || '');
-    setCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.PHONE,      newRow, params.phone   || '');
+    setCellPhone(sheet, colMap, BOOKING_COLUMN_ALIASES.PHONE,    newRow, params.phone   || '');
     setCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.EMAIL,      newRow, params.email   || '');
     setCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.PACKAGE,    newRow, params.package || '');
     setCellAny(sheet, colMap, BOOKING_COLUMN_ALIASES.FORMAT,     newRow, params.format  || '');
@@ -708,7 +726,8 @@ function handleRegister(params) {
     // Ghi thông tin thanh toán
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.ORDER_ID, newRow, orderId);
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.STATUS,   newRow, paymentConfig.enabled ? 'Chờ thanh toán ⏳' : 'Chờ khách chuyển khoản thủ công ⏳');
-    setCell(sheet, colMap, CONFIG.COL_PAYMENT.AMOUNT,   newRow, amount);
+    setCellAmount(sheet, colMap, CONFIG.COL_PAYMENT.AMOUNT, newRow, amount);
+    setCellAmount(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT, newRow, 0); // khởi tạo 0, sẽ cập nhật khi thanh toán
 
     try {
       sendBookingNotification({
@@ -816,7 +835,7 @@ function handleManualConfirm(params) {
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.STATUS, matchRow, 'Khách báo đã chuyển khoản ✅');
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AT, matchRow, new Date());
     setCell(sheet, colMap, CONFIG.COL_PAYMENT.TRANSACTION_ID, matchRow, 'MANUAL-CONFIRM');
-    setCell(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT, matchRow, amount || '');
+    setCellAmount(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT, matchRow, amount || 0);
 
     const manualPayload = {
       orderId: orderId,
@@ -942,7 +961,7 @@ function doPost(e) {
       setCell(sheet, colMap, CONFIG.COL_PAYMENT.STATUS,         matchRow, 'Đã thanh toán ✅');
       setCell(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AT,        matchRow, new Date());
       setCell(sheet, colMap, CONFIG.COL_PAYMENT.TRANSACTION_ID, matchRow, txId);
-      setCell(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT,    matchRow, txAmount);
+      setCellAmount(sheet, colMap, CONFIG.COL_PAYMENT.PAID_AMOUNT, matchRow, txAmount);
 
       try {
         sendPaymentConfirmation({

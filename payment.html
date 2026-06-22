@@ -154,6 +154,25 @@
       object-fit: contain;
       background: #fff;
       padding: 8px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .qr-image.loaded {
+      opacity: 1;
+    }
+    /* Skeleton loader hiện trong khi QR đang tải */
+    .qr-skeleton {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #1e1828 25%, #2a2240 50%, #1e1828 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .qr-skeleton.hidden { display: none; }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
     /* Scanning animation overlay */
     .qr-scan-line {
@@ -351,7 +370,8 @@
 
     <!-- QR Code -->
     <div class="qr-wrapper" id="qr-wrapper">
-      <img id="qr-image" class="qr-image" src="" alt="QR Code Thanh Toán SePay" loading="eager" decoding="async" fetchpriority="high" />
+      <div class="qr-skeleton" id="qr-skeleton"></div>
+      <img id="qr-image" class="qr-image" src="" alt="QR Code Thanh Toán" loading="eager" decoding="async" fetchpriority="high" />
       <div class="qr-scan-line"></div>
       <div class="qr-corner tl"></div>
       <div class="qr-corner tr"></div>
@@ -407,10 +427,10 @@
     // ============================================================
     const CLIENT_CONFIG = {
       // URL Web App GAS của bạn (sau khi deploy)
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbxMPY2MZi9tcpiHdM1M0dYql-EVOhA7GTf2v9vSLM6a6O8ypDgBAcTzgYlKvQN54XZj8Q/exec',
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxoKbEWAyMBg4P0DxWg1_M4L1nPWCoyouveb8bOEI0Z3EBrQBTSbPRTK1vuH1bxyzuZ/exec',
 
       // URL Web App GAS quản trị nội dung/cấu hình
-      ADMIN_CONFIG_URL: 'https://script.google.com/macros/s/AKfycbzyCylVrkdL_GywER7_U9i3HDzdgKWrT0ZZzR0OGFp2Ob9RLDi3HB7DpgpuR50TOYQp/exec',
+      ADMIN_CONFIG_URL: 'https://script.google.com/macros/s/AKfycbxinHi-_fGecitYSTW_qy87RSzzEfJa_GIIj7LEH5tA-j5uaO66Ub9S85Ya5UTeOke_/exec',
 
       // Khoảng thời gian polling (ms) – check SePay mỗi X ms
       POLL_INTERVAL: 4000,
@@ -568,17 +588,41 @@
     function buildQrCode(orderId, amount) {
       const bank    = CLIENT_CONFIG.SEPAY_BANK_CODE;
       const account = CLIENT_CONFIG.SEPAY_ACCOUNT_NO;
+      const imgEl   = document.getElementById('qr-image');
+      const skeleton = document.getElementById('qr-skeleton');
+
+      // Reset trạng thái: ẩn ảnh, hiện skeleton
+      imgEl.classList.remove('loaded');
+      if (skeleton) skeleton.classList.remove('hidden');
 
       if (!bank || !account || bank === 'THAY_MA_NGAN_HANG' || account === 'THAY_SO_TAI_KHOAN') {
-        // Chế độ demo: dùng QR placeholder đẹp
-        document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('DEMO:' + orderId + ':' + amount)}&bgcolor=ffffff&color=1a0a2e&margin=10`;
+        // Chế độ demo
+        const demoUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('DEMO:' + orderId + ':' + amount)}&bgcolor=ffffff&color=1a0a2e&margin=10`;
+        _loadQrImage(imgEl, skeleton, demoUrl);
         document.getElementById('status-text').textContent = '⚠️ Chưa cấu hình đủ thông tin ngân hàng.';
         return;
       }
 
-      // QR thực từ VietQR (ổn định, không bị chặn CORS)
+      // QR thực từ VietQR
       const qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderId)}&accountName=${encodeURIComponent(CLIENT_CONFIG.SEPAY_ACCOUNT_NAME)}`;
-      document.getElementById('qr-image').src = qrUrl;
+      _loadQrImage(imgEl, skeleton, qrUrl);
+    }
+
+    // Load ảnh QR vào img element, fade-in khi xong, ẩn skeleton
+    function _loadQrImage(imgEl, skeleton, url) {
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        imgEl.src = url;
+        imgEl.classList.add('loaded');
+        if (skeleton) skeleton.classList.add('hidden');
+      };
+      tempImg.onerror = () => {
+        // Nếu lỗi load, vẫn gán src để thấy broken image thay vì trắng mãi
+        imgEl.src = url;
+        imgEl.classList.add('loaded');
+        if (skeleton) skeleton.classList.add('hidden');
+      };
+      tempImg.src = url;
     }
 
     function setupManualTransferMode() {

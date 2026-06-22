@@ -1,4 +1,4 @@
-const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyCylVrkdL_GywER7_U9i3HDzdgKWrT0ZZzR0OGFp2Ob9RLDi3HB7DpgpuR50TOYQp/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxinHi-_fGecitYSTW_qy87RSzzEfJa_GIIj7LEH5tA-j5uaO66Ub9S85Ya5UTeOke_/exec';
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
 const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null') || {};
