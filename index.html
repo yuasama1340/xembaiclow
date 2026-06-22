@@ -757,6 +757,11 @@
             <label for="topic">Chủ đề / Vấn đề muốn chia sẻ</label>
             <textarea id="topic" name="topic" placeholder="Ví dụ: Tôi đang phân vân về chọn ngành học..." rows="3"></textarea>
           </div>
+          <!-- Honeypot: ẩn với người thật, bot sẽ tự điền → từ chối -->
+          <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;tab-index:-1;">
+            <label for="website">Website (không điền)</label>
+            <input type="text" id="website" name="website" autocomplete="off" tabindex="-1" />
+          </div>
           <button type="submit" class="btn-primary btn-full" id="submit-btn">✦ Gửi Đăng Ký</button>
           <p class="form-note">Chúng tôi sẽ liên hệ xác nhận lịch trong vòng 24 giờ.</p>
         </form>

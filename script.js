@@ -317,6 +317,42 @@ async function handleSubmit(e) {
   const submitBtn     = document.getElementById('submit-btn');
   const originalText  = submitBtn.innerHTML;
 
+  // ── Lớp 1: Honeypot — bot sẽ điền vào ô ẩn này, người thật không thấy ──
+  const honeypot = document.getElementById('website');
+  if (honeypot && honeypot.value.trim() !== '') {
+    // Giả vờ thành công để bot không biết bị chặn
+    console.warn('🤖 Bot detected via honeypot');
+    return;
+  }
+
+  // ── Lớp 2: Validate dữ liệu trước khi gửi ──
+  const nameVal  = document.getElementById('name').value.trim();
+  const phoneVal = document.getElementById('phone').value.trim();
+  const emailVal = document.getElementById('email').value.trim();
+
+  // Validate tên (2–80 ký tự)
+  if (nameVal.length < 2 || nameVal.length > 80) {
+    alert('❌ Họ và tên phải từ 2 đến 80 ký tự.');
+    return;
+  }
+
+  // Validate số điện thoại VN: 10 chữ số, bắt đầu bằng 0
+  const phoneClean = phoneVal.replace(/[\s\-\.]/g, '');
+  if (!/^0[0-9]{9}$/.test(phoneClean)) {
+    alert('❌ Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số, bắt đầu bằng số 0 (ví dụ: 0912345678).');
+    return;
+  }
+
+  // Validate email
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailVal)) {
+    alert('❌ Email không hợp lệ. Vui lòng kiểm tra lại.');
+    return;
+  }
+
+  // ── Lớp 3: Chống double-submit ──
+  if (submitBtn.dataset.submitting === 'true') return;
+  submitBtn.dataset.submitting = 'true';
+
   // UI: loading state
   submitBtn.innerHTML = '✦ Đang xử lý...';
   submitBtn.disabled  = true;
@@ -330,8 +366,8 @@ async function handleSubmit(e) {
     const demoOrder = {
       orderId:    'CLOW-DEMO',
       amount:     amount,
-      name:       document.getElementById('name').value || 'Khách Demo',
-      email:      document.getElementById('email').value || '',
+      name:       nameVal,
+      email:      emailVal,
       package:    pkgVal,
       paymentEnabled: runtimeConfig.payment.enabled !== false,
       paymentConfig: runtimeConfig.payment,
@@ -350,13 +386,14 @@ async function handleSubmit(e) {
 
     const params = {
       action:  'register',
-      name:    document.getElementById('name').value.trim(),
-      phone:   document.getElementById('phone').value.trim(),
-      email:   document.getElementById('email').value.trim(),
+      name:    nameVal,
+      phone:   phoneClean,   // gửi số đã chuẩn hóa (không dấu cách)
+      email:   emailVal,
       package: selectedPkg,
       amount:  selectedAmount,
       format:  formatVal,
       topic:   document.getElementById('topic').value.trim(),
+      _hp:     honeypot ? honeypot.value : '', // gửi kèm để backend double-check
     };
 
     const res  = await fetch(GOOGLE_SCRIPT_URL, {
@@ -374,11 +411,11 @@ async function handleSubmit(e) {
       sessionStorage.setItem('pendingOrder', JSON.stringify({
         orderId:    data.orderId,
         amount:     data.amount,
-        name:       document.getElementById('name').value.trim(),
-        email:      document.getElementById('email').value.trim(),
+        name:       nameVal,
+        email:      emailVal,
         package:    selectedPkg,
         format:     formatVal,
-        phone:      document.getElementById('phone').value.trim(),
+        phone:      phoneClean,
         topic:      document.getElementById('topic').value.trim(),
         paymentEnabled,
         paymentConfig: data.paymentConfig || runtimeConfig.payment,
@@ -396,8 +433,10 @@ async function handleSubmit(e) {
     alert('❌ ' + (error.message || 'Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.'));
     submitBtn.innerHTML = originalText;
     submitBtn.disabled  = false;
+    submitBtn.dataset.submitting = 'false';
   }
 }
+
 
 // ============================================================
 // 🎴  PRICING SLIDER — Logic

@@ -576,7 +576,10 @@ function sendBookingNotification(payload) {
 
   sendLoggedEmail('owner-booking', CONFIG.BOOKING_NOTIFY_EMAIL, ownerSubject, ownerBody);
 
-  if (isValidEmail(payload.email)) {
+  // Khi SePay BẬT: chưa gửi email khách ở đây.
+  // Email xác nhận sẽ được gửi sau khi thanh toán thành công qua webhook (sendPaymentConfirmation).
+  // Khi SePay TẮT: gửi email hướng dẫn chuyển khoản thủ công ngay lúc này.
+  if (!paymentEnabled && isValidEmail(payload.email)) {
     const customerSubject = 'ClowCat đã nhận đăng ký đặt lịch của bạn - ' + payload.orderId;
     const customerBody = [
       'Xin chào ' + (payload.name || 'bạn') + ',',
@@ -589,14 +592,11 @@ function sendBookingNotification(payload) {
       'Số tiền: ' + amountText,
       'Chủ đề: ' + (payload.topic || ''),
       '',
-      paymentEnabled
-        ? 'Bạn vui lòng hoàn tất bước thanh toán theo mã QR trên trang kế tiếp. Chúng mình sẽ liên hệ xác nhận lịch trong vòng 24 giờ.'
-        : 'Bạn vui lòng chuyển khoản theo mã QR trên trang kế tiếp, sau đó bấm nút xác nhận đã chuyển khoản để hoàn tất đăng ký.',
+      'Bạn vui lòng chuyển khoản theo mã QR trên trang kế tiếp, sau đó bấm nút xác nhận đã chuyển khoản để hoàn tất đăng ký.',
       '',
       'Cảm ơn bạn đã tin tưởng Clow Cat Patronus.'
     ].join('\n');
     const customerHtml = buildCustomerEmailHtml(payload, 'booking');
-
     sendLoggedEmail('customer-booking', payload.email, customerSubject, customerBody, customerHtml);
   }
 }
@@ -700,10 +700,31 @@ function sendManualCustomerConfirmation(payload) {
 // ============================================================
 function handleRegister(params) {
   try {
+    // ── Bảo mật: Kiểm tra honeypot — bot sẽ gửi giá trị _hp ──
+    if (String(params._hp || '').trim() !== '') {
+      Logger.log('🤖 Bot detected via honeypot: ' + params._hp);
+      // Trả về thành công giả để bot không biết bị chặn
+      return buildJson({ success: true, orderId: 'CLOW-BOT', amount: 0 });
+    }
+
+    // ── Validate tên ──
+    const nameVal = String(params.name || '').trim();
+    if (nameVal.length < 2 || nameVal.length > 80) {
+      throw new Error('Họ và tên phải từ 2 đến 80 ký tự.');
+    }
+
+    // ── Validate số điện thoại VN: 10 chữ số, bắt đầu bằng 0 ──
+    const phoneClean = String(params.phone || '').replace(/[\s\-\.]/g, '');
+    if (!/^0[0-9]{9}$/.test(phoneClean)) {
+      throw new Error('Số điện thoại không hợp lệ. Vui lòng nhập 10 số bắt đầu bằng 0.');
+    }
+    params.phone = phoneClean; // chuẩn hóa trước khi ghi
+
     if (!isValidEmail(params.email)) {
       throw new Error('Email chưa đúng định dạng. Vui lòng kiểm tra lại.');
     }
     assertBookingRateLimit(params);
+
 
     const sheet  = getSheet();
     const colMap = ensurePaymentColumns(sheet); // đảm bảo cột TT tồn tại
