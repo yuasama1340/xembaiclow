@@ -7,7 +7,7 @@ window.addEventListener('scroll', () => {
 // ============================================================
 // ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy
 // ============================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9Bm4nWbeLvmr9eKDcMNwwTvGo9MH3C5O8nUzXOSz-zmr6FllaQPlDqQw37AmgQQMz7Q/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMPY2MZi9tcpiHdM1M0dYql-EVOhA7GTf2v9vSLM6a6O8ypDgBAcTzgYlKvQN54XZj8Q/exec';
 const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM_j_XyRS2g0kLCytzDU5ESQ-s6Bavy8W4D5XODBLFFzG_yngH53LV7ZYrt6lx9TjO/exec';
 
 const runtimeConfig = {
