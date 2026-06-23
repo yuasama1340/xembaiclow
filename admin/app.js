@@ -1312,6 +1312,8 @@ const blogState = {
   posts: [],
   currentPage: 1,
   filterTopicId: '',
+  postsCurrentPage: 1,
+  postsPerPage: 10,
   blogQuill: null,
   blogExcerptQuill: null,
 };
@@ -1446,13 +1448,33 @@ async function loadBlogPosts() {
 
 function renderPostsTable() {
   const tbody = document.getElementById('blog-posts-body');
+  const pag = document.getElementById('blog-pagination');
   if (!tbody) return;
-  if (!blogState.posts.length) {
+
+  // Lọc bài viết (nếu có filterTopicId)
+  let filtered = blogState.posts;
+  if (blogState.filterTopicId) {
+    filtered = filtered.filter(p => p.topicId === blogState.filterTopicId);
+  }
+
+  if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;opacity:.5">Chưa có bài viết nào.</td></tr>';
+    if (pag) pag.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = blogState.posts.map(p => {
+  // Logic phân trang
+  const totalPosts = filtered.length;
+  const totalPages = Math.ceil(totalPosts / blogState.postsPerPage);
+  
+  if (blogState.postsCurrentPage > totalPages) blogState.postsCurrentPage = totalPages;
+  if (blogState.postsCurrentPage < 1) blogState.postsCurrentPage = 1;
+
+  const startIndex = (blogState.postsCurrentPage - 1) * blogState.postsPerPage;
+  const endIndex = startIndex + blogState.postsPerPage;
+  const postsToShow = filtered.slice(startIndex, endIndex);
+
+  tbody.innerHTML = postsToShow.map(p => {
     const topic = blogState.topics.find(t => t.id === p.topicId);
     const date = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '--';
     return `
@@ -1486,6 +1508,26 @@ function renderPostsTable() {
       </td>
     </tr>`;
   }).join('');
+
+  // Render pagination UI
+  if (pag) {
+    if (totalPages > 1) {
+      let pageHtml = '';
+      for (let i = 1; i <= totalPages; i++) {
+        pageHtml += `<button type="button" class="${i === blogState.postsCurrentPage ? 'is-active' : ''} js-blog-page" data-page="${i}">${i}</button>`;
+      }
+      pag.innerHTML = pageHtml;
+
+      pag.querySelectorAll('.js-blog-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+          blogState.postsCurrentPage = parseInt(btn.dataset.page, 10);
+          renderPostsTable();
+        });
+      });
+    } else {
+      pag.innerHTML = '';
+    }
+  }
 
   tbody.querySelectorAll('.js-toggle-post').forEach(chk => {
     chk.addEventListener('change', async () => {
