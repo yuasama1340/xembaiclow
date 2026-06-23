@@ -1132,6 +1132,18 @@ async function fetchBlogApi(action, params = {}) {
   }
 }
 
+// ── Xử lý link ảnh Google Drive ──
+function getGoogleDriveImageUrl(url) {
+  if (!url) return 'hinh/baiclow.png';
+  if (url.includes('drive.google.com')) {
+    const match = url.match(/id=([^&]+)/);
+    if (match) {
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+    }
+  }
+  return url;
+}
+
 // ── Tải danh sách Topics ──
 async function loadBlogTopics() {
   try {
@@ -1189,7 +1201,7 @@ function renderPostsGrid(posts, containerId) {
     const topic = blogState.topics.find(t => t.id === p.topicId);
     const topicLabel = topic ? `${topic.icon || ''} ${topic.name}` : '';
     const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
-    const coverUrl = p.coverImage || 'hinh/baiclow.png'; // Fallback ảnh gốc
+    const coverUrl = getGoogleDriveImageUrl(p.coverImage);
 
     return `
       <a href="clow-post.html?id=${p.id}" class="blog-card">
@@ -1327,8 +1339,8 @@ async function loadSinglePost() {
       </div>
 
       ${p.coverImage ? `
-      <div class="post-cover-wrap">
-        <img src="${p.coverImage}" alt="${p.title}" class="post-cover" />
+        <div style="text-align:center; margin-bottom: 40px;">
+        <img src="${getGoogleDriveImageUrl(p.coverImage)}" alt="${p.title}" class="post-cover" />
       </div>` : ''}
 
       <div class="post-body">
@@ -1419,7 +1431,7 @@ async function initBlogPage() {
           <div class="blog-scroll-row">
             ${topicPosts.map(p => {
               const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
-              const coverUrl = p.coverImage || 'hinh/baiclow.png';
+              const coverUrl = getGoogleDriveImageUrl(p.coverImage);
               return `
                 <a href="clow-post.html?id=${p.id}" class="blog-card">
                   ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}

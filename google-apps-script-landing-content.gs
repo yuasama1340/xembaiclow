@@ -1840,12 +1840,8 @@ function handleUploadBlogImage(params) {
   const maxBytes = 5 * 1024 * 1024; // 5MB
   if (base64.length * 0.75 > maxBytes) throw new Error('Ảnh quá lớn. Tối đa 5MB.');
 
-  const parts = CLOW_BLOG_FOLDER.split('/');
-  let folder = DriveApp.getRootFolder();
-  for (const part of parts) {
-    const found = folder.getFoldersByName(part);
-    folder = found.hasNext() ? found.next() : folder.createFolder(part);
-  }
+  const folderId = '1zk7531iZv_U34gUFyB1Y7AZ7ezhpHJ8K';
+  const folder = DriveApp.getFolderById(folderId);
 
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
   const file = folder.createFile(blob);
