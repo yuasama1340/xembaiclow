@@ -1324,10 +1324,11 @@ async function loadSinglePost() {
     const currentUrl = encodeURIComponent(window.location.href);
 
     const html = `
-      <div class="post-breadcrumb">
-        <a href="clow-blog.html">Blog</a> <span>/</span> 
-        ${topicName ? `<a href="clow-blog.html?topic=${p.topicId}">${topicName}</a> <span>/</span>` : ''}
-        <span style="color:var(--white)">Chi tiết</span>
+      <div class="post-breadcrumb" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="clow-blog.html" class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem;"><i class="fa-solid fa-house"></i> Blog</a>
+        ${topicName ? `<span style="color:rgba(201,168,76,0.5)">/</span> <a href="clow-blog.html?topic=${p.topicId}" class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem;">${topicName}</a>` : ''}
+        <span style="color:rgba(201,168,76,0.5)">/</span>
+        <span class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem; border-color:rgba(201,168,76,0.8); background:rgba(201,168,76,0.15); cursor:default;">Chi tiết</span>
       </div>
       
       <h1 class="post-title">${p.title}</h1>
@@ -1360,7 +1361,7 @@ async function loadSinglePost() {
             <i class="fa-solid fa-link"></i>
           </button>
         </div>
-        <a href="clow-blog.html" class="cta-button primary-action" style="padding:10px 24px;"><i class="fa-solid fa-arrow-left" style="margin-right:8px;"></i> Về danh sách</a>
+        <a href="clow-blog.html" class="blog-card-readmore" style="margin:0;"><i class="fa-solid fa-arrow-left"></i> Về danh sách</a>
       </div>
       
       <!-- BÀI VIẾT LIÊN QUAN -->
