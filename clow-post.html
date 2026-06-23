@@ -13,29 +13,33 @@
   <!-- Dynamic SEO meta will be injected by JS -->
   <meta name="description" content="Khám phá chi tiết bài Clow cùng ClowCat Patronus">
 </head>
-<body class="post-page">
-  <!-- Background Elements -->
-  <div class="stars" aria-hidden="true"></div>
-  <div class="glow glow-one" aria-hidden="true"></div>
-  <div class="glow glow-two" aria-hidden="true"></div>
-  
-  <!-- Navigation -->
-  <nav class="nav" id="nav">
-    <div class="nav-container">
-      <a href="index.html" class="nav-brand">
+<body class="js-loading post-page">
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
         <picture>
-          <source srcset="hinh/logo.webp" type="image/webp">
-          <img src="hinh/logo.png" alt="Clow Cat Patronus Logo" class="nav-logo" loading="lazy">
+          <source srcset="hinh/logo.webp" type="image/webp" />
+          <img src="hinh/logo.png" alt="ClowCat Logo" class="nav-logo-img" decoding="async" fetchpriority="high" />
         </picture>
-        <span class="nav-name">ClowCat Patronus</span>
+        <span style="font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--gold-light); margin-left:8px; font-weight:700;">ClowCat Patronus</span>
       </a>
-      <a href="clow-blog.html" class="cta-button secondary-action" style="font-size:0.9rem; padding: 10px 16px;">
-        <i class="fa-solid fa-list"></i> Xem tất cả bài
-      </a>
+      <ul class="nav-links">
+        <li><a href="clow-blog.html">← Xem tất cả bài</a></li>
+        <li><a href="index.html#contact" class="nav-cta">Đặt lịch ngay</a></li>
+      </ul>
     </div>
   </nav>
 
-  <main class="post-main container">
+  <!-- Background Elements -->
+  <div class="hero-bg" style="position:fixed; z-index:-1; inset:0;">
+    <div class="star-field"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
+  <main class="post-main container" style="padding-top: 120px; min-height: 80vh;">
     <article class="post-article" id="post-container">
       <div class="post-loading" style="text-align:center; padding: 80px 0; opacity: 0.6;">
         <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 16px;"></i>

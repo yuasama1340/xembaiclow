@@ -1193,16 +1193,15 @@ function renderPostsGrid(posts, containerId) {
 
     return `
       <a href="clow-post.html?id=${p.id}" class="blog-card">
-        ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i></div>' : ''}
+        ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
         <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
         <div class="blog-card-content">
           <div class="blog-card-meta">
-            ${topicLabel ? `<span class="blog-card-topic">${topicLabel}</span>` : '<span></span>'}
-            <span class="blog-card-date">${dateStr}</span>
+            <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
           </div>
           <h3 class="blog-card-title">${p.title}</h3>
           <p class="blog-card-excerpt">${p.excerpt || ''}</p>
-          <div class="blog-card-readmore">Đọc tiếp <i class="fa-solid fa-arrow-right"></i></div>
+          <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
         </div>
       </a>
     `;

@@ -13,47 +13,45 @@
   <!-- SEO tags -->
   <meta name="description" content="Khám phá và giải mã ý nghĩa các lá bài Clow cùng ClowCat Patronus. Thông điệp chữa lành, ý nghĩa các lá bài, các trải bài và hướng dẫn chi tiết.">
 </head>
-<body class="blog-page">
-  <!-- Background Elements -->
-  <div class="stars" aria-hidden="true"></div>
-  <div class="glow glow-one" aria-hidden="true"></div>
-  <div class="glow glow-two" aria-hidden="true"></div>
-  
-  <!-- Navigation -->
-  <nav class="nav" id="nav">
-    <div class="nav-container">
-      <a href="index.html" class="nav-brand">
+<body class="js-loading blog-page">
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
         <picture>
-          <source srcset="hinh/logo.webp" type="image/webp">
-          <img src="hinh/logo.png" alt="Clow Cat Patronus Logo" class="nav-logo" loading="lazy">
+          <source srcset="hinh/logo.webp" type="image/webp" />
+          <img src="hinh/logo.png" alt="ClowCat Logo" class="nav-logo-img" decoding="async" fetchpriority="high" />
         </picture>
-        <span class="nav-name">ClowCat Patronus</span>
+        <span style="font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--gold-light); margin-left:8px; font-weight:700;">ClowCat Patronus</span>
       </a>
-      <a href="index.html" class="cta-button primary-action" style="font-size:0.9rem; padding: 10px 16px;">
-        <i class="fa-solid fa-arrow-left"></i> Về trang chủ
-      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Về trang chủ</a></li>
+        <li><a href="index.html#contact" class="nav-cta">Đặt lịch ngay</a></li>
+      </ul>
     </div>
   </nav>
 
-  <!-- Blog Header -->
-  <header class="blog-header">
-    <div class="container text-center">
-      <div class="section-label">BLOG</div>
-      <h1 class="section-title">Giải Mã Bài Clow</h1>
-      <p class="blog-header-desc">Khám phá ý nghĩa ẩn sâu trong từng lá bài, tìm kiếm thông điệp chữa lành và năng lượng vũ trụ dành cho bạn.</p>
-    </div>
-  </header>
+  <!-- Background Elements -->
+  <div class="hero-bg" style="position:fixed; z-index:-1; inset:0;">
+    <div class="star-field"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
 
-  <main class="blog-main container">
-    <!-- Sidebar: Topics -->
-    <aside class="blog-sidebar">
-      <h3 class="blog-sidebar-title">Chủ Đề</h3>
-      <div class="blog-topic-list" id="public-topics-list">
-        <button class="blog-topic-btn is-active" data-topic="">Tất cả bài viết</button>
-        <!-- Render from JS -->
-        <div style="opacity:0.5; font-size:0.9rem; padding: 10px;">Đang tải...</div>
+  <main class="blog-main container" style="padding-top: 120px; min-height: 80vh;">
+    <!-- Blog Header -->
+    <div class="text-center" style="margin-bottom: 40px;">
+      <div class="section-label" style="margin-bottom: 12px; letter-spacing: 2px;">✦ GIẢI MÃ BÀI CLOW ✦</div>
+      
+      <!-- Topics Ribbon -->
+      <div class="blog-topics-ribbon">
+        <div class="blog-topic-list" id="public-topics-list">
+          <!-- Render from JS -->
+          <div style="opacity:0.5; font-size:0.9rem; padding: 10px;">Đang tải...</div>
+        </div>
       </div>
-    </aside>
+    </div>
 
     <!-- Main Content: Posts -->
     <div class="blog-content">
