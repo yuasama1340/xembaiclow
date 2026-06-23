@@ -1191,8 +1191,16 @@ async function saveSectionOrder() {
     if (isNative) {
       const cb = el.querySelector('.native-toggle');
       if (cb) enabled = cb.checked;
+    } else {
+      enabled = !el.classList.contains('order-item--disabled');
     }
-    return { key, enabled };
+    
+    // Giữ lại navLabel từ state cũ
+    let navLabel = '';
+    const oldItem = state.sectionOrder.find(o => (o.key || o) === key);
+    if (oldItem && oldItem.navLabel) navLabel = oldItem.navLabel;
+
+    return { key, enabled, navLabel };
   });
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
