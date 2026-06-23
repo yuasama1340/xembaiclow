@@ -1347,24 +1347,79 @@ async function loadSinglePost() {
         ${p.content || ''}
       </div>
 
-      <div class="post-footer">
-        <div class="post-share">
-          Chia sẻ:
-          <a href="https://www.facebook.com/sharer/sharer.php?u=${currentUrl}" target="_blank" class="share-btn" title="Chia sẻ Facebook">
+      <div class="post-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(201, 168, 76, 0.2); padding-top: 24px;">
+        <div class="post-share" style="display:flex; align-items:center; gap: 12px; border: none; padding: 0;">
+          <span style="color:var(--gold); font-family:'Playfair Display',serif; font-size:1.1rem;">Chia sẻ:</span>
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${currentUrl}" target="_blank" class="share-btn" title="Chia sẻ Facebook" style="background:#1a150d; border:1px solid var(--gold); color:var(--gold); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:all 0.3s;">
             <i class="fa-brands fa-facebook-f"></i>
           </a>
-          <a href="https://twitter.com/intent/tweet?url=${currentUrl}&text=${encodeURIComponent(p.title)}" target="_blank" class="share-btn" title="Chia sẻ X">
+          <a href="https://twitter.com/intent/tweet?url=${currentUrl}&text=${encodeURIComponent(p.title)}" target="_blank" class="share-btn" title="Chia sẻ X" style="background:#1a150d; border:1px solid var(--gold); color:var(--gold); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:all 0.3s;">
             <i class="fa-brands fa-x-twitter"></i>
           </a>
-          <button class="share-btn js-copy-link" title="Copy link">
+          <button class="share-btn js-copy-link" title="Copy link" style="background:#1a150d; border:1px solid var(--gold); color:var(--gold); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:all 0.3s; cursor:pointer;">
             <i class="fa-solid fa-link"></i>
           </button>
         </div>
-        <a href="clow-blog.html" class="cta-button ghost-action" style="padding:8px 16px; border:1px solid var(--border)"><i class="fa-solid fa-arrow-left"></i> Các bài khác</a>
+        <a href="clow-blog.html" class="cta-button primary-action" style="padding:10px 24px;"><i class="fa-solid fa-arrow-left" style="margin-right:8px;"></i> Về danh sách</a>
+      </div>
+      
+      <!-- BÀI VIẾT LIÊN QUAN -->
+      <div id="related-posts-wrapper">
+        <div style="text-align:center; padding:40px; opacity:0.6;"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tải bài viết liên quan...</div>
       </div>
     `;
 
     container.innerHTML = html;
+
+    // Load bài viết liên quan song song sau khi đã render nội dung bài chính
+    if (p.topicId) {
+      fetchBlogApi('getclowposts', { topic: p.topicId, limit: 6 }).then(relatedData => {
+        const relatedPosts = (relatedData.posts || []).filter(rp => rp.id !== p.id).slice(0, 5);
+        const relatedWrapper = document.getElementById('related-posts-wrapper');
+        
+        if (relatedPosts.length === 0) {
+          relatedWrapper.innerHTML = '';
+          return;
+        }
+
+        let relatedHtml = `
+          <div class="related-posts-section">
+            <div class="blog-section-header" style="margin-bottom: 20px;">
+              <div class="blog-section-label">✦ BÀI VIẾT LIÊN QUAN ✦</div>
+              <h2 style="text-align: center; color: var(--gold); font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-top: 16px;">Khám Phá Thêm</h2>
+            </div>
+            <div class="related-posts-list">
+        `;
+
+        relatedPosts.forEach(rp => {
+          const rDateStr = rp.publishedAt ? new Date(rp.publishedAt).toLocaleDateString('vi-VN') : '';
+          const rCover = getGoogleDriveImageUrl(rp.coverImage);
+          relatedHtml += `
+            <a href="clow-post.html?id=${rp.id}" class="related-post-card">
+              <img src="${rCover}" alt="${rp.title}" class="related-post-thumb" loading="lazy" />
+              <div class="related-post-info">
+                <h4 class="related-post-title">${rp.title}</h4>
+                <div class="related-post-meta">
+                  <i class="fa-regular fa-clock"></i> <span>${rDateStr}</span>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right related-post-arrow"></i>
+            </a>
+          `;
+        });
+
+        relatedHtml += `
+            </div>
+          </div>
+        `;
+        relatedWrapper.innerHTML = relatedHtml;
+      }).catch(err => {
+        console.error('Lỗi tải bài viết liên quan:', err);
+        document.getElementById('related-posts-wrapper').innerHTML = '';
+      });
+    } else {
+      document.getElementById('related-posts-wrapper').innerHTML = '';
+    }
 
     // Gắn sự kiện copy link
     const copyBtn = container.querySelector('.js-copy-link');

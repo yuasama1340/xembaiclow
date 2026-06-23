@@ -1809,7 +1809,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  align-self: flex-start;
+  align-self: center;
 }
 .blog-card:hover .blog-card-readmore {
   background: rgba(201, 168, 76, 0.1);
@@ -2088,9 +2088,89 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .post-body p { margin-bottom: 1.5em; }
 .post-body img {
   max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* ============================================================
+   🃏  RELATED POSTS LIST
+   ============================================================ */
+.related-posts-section {
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(201, 168, 76, 0.2);
+}
+.related-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.related-post-card {
+  display: flex;
+  align-items: center;
+  background: #110e08;
+  border: 1px solid rgba(201, 168, 76, 0.3);
   border-radius: 12px;
-  margin: 2em auto;
-  display: block;
+  padding: 16px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+.related-post-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(201, 168, 76, 0.1);
+}
+.related-post-thumb {
+  width: 140px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 20px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.related-post-info {
+  flex: 1;
+}
+.related-post-title {
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.related-post-meta {
+  color: rgba(201, 168, 76, 0.8);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.related-post-arrow {
+  color: rgba(201, 168, 76, 0.5);
+  font-size: 1.2rem;
+  margin-left: 16px;
+  transition: color 0.3s ease;
+}
+.related-post-card:hover .related-post-arrow {
+  color: var(--gold);
+}
+@media (max-width: 768px) {
+  .related-post-card {
+    padding: 12px;
+  }
+  .related-post-thumb {
+    width: 100px;
+    height: 70px;
+    margin-right: 12px;
+  }
+  .related-post-title {
+    font-size: 1rem;
+  }
 }
 .post-body ul, .post-body ol {
   margin-bottom: 1.5em;
