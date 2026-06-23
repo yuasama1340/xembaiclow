@@ -1313,6 +1313,7 @@ const blogState = {
   currentPage: 1,
   filterTopicId: '',
   blogQuill: null,
+  blogExcerptQuill: null,
 };
 
 // ── Nav button ──────────────────────────────────────────────
@@ -1535,6 +1536,17 @@ function initBlogQuill() {
     modules: { toolbar: toolbarOptions },
     placeholder: 'Viết nội dung bài tại đây...',
   });
+
+  const excerptToolbarOptions = [
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    ['clean']
+  ];
+  blogState.blogExcerptQuill = new Quill('#blog-excerpt-quill-editor', {
+    theme: 'snow',
+    modules: { toolbar: excerptToolbarOptions },
+    placeholder: 'Tóm tắt ngắn nội dung bài...',
+  });
 }
 
 function openPostModal(postId) {
@@ -1548,6 +1560,7 @@ function openPostModal(postId) {
   document.getElementById('blog-post-edit-id').value = '';
   document.getElementById('blog-post-title').value = '';
   document.getElementById('blog-post-topic').value = '';
+  if (blogState.blogExcerptQuill) blogState.blogExcerptQuill.setText('');
   document.getElementById('blog-post-excerpt').value = '';
   document.getElementById('blog-post-date').value = new Date().toISOString().slice(0, 16);
   document.getElementById('blog-post-enabled').checked = true;
@@ -1564,6 +1577,13 @@ function openPostModal(postId) {
       document.getElementById('blog-post-title').value = post.title;
       document.getElementById('blog-post-topic').value = post.topicId;
       document.getElementById('blog-post-excerpt').value = post.excerpt;
+      if (blogState.blogExcerptQuill) {
+        if (post.excerpt) {
+          blogState.blogExcerptQuill.root.innerHTML = post.excerpt;
+        } else {
+          blogState.blogExcerptQuill.setText('');
+        }
+      }
       if (post.publishedAt) document.getElementById('blog-post-date').value = new Date(post.publishedAt).toISOString().slice(0, 16);
       document.getElementById('blog-post-enabled').checked = post.enabled;
       document.getElementById('blog-post-pinned').checked = post.pinned;
@@ -1594,7 +1614,9 @@ async function savePost() {
   const id = document.getElementById('blog-post-edit-id').value.trim();
   const title = document.getElementById('blog-post-title').value.trim();
   const topicId = document.getElementById('blog-post-topic').value;
-  const excerpt = document.getElementById('blog-post-excerpt').value.trim();
+  // Lấy nội dung từ Quill editor (nếu trống thì lấy chuỗi rỗng)
+  let excerpt = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.root.innerHTML : '';
+  if (excerpt === '<p><br></p>') excerpt = '';
   const content = blogState.blogQuill ? blogState.blogQuill.root.innerHTML : '';
   const coverImage = document.getElementById('blog-cover-url').value.trim();
   const publishedAt = document.getElementById('blog-post-date').value;
