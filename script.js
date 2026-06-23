@@ -1385,13 +1385,11 @@ async function initBlogPage() {
   if (!container) return;
   
   try {
-    // Tải toàn bộ chủ đề và bài viết
-    const [topicsData, postsData] = await Promise.all([
-      fetchBlogApi('getclowtopics'),
-      fetchBlogApi('getclowposts', { limit: 500 })
-    ]);
-    
+    // Tải tuần tự để tránh lỗi kẹt kết nối của Google Apps Script
+    const topicsData = await fetchBlogApi('getclowtopics');
     const topics = topicsData.topics || [];
+    
+    const postsData = await fetchBlogApi('getclowposts', { limit: 500 });
     const allPosts = postsData.posts || [];
     
     if (topics.length === 0) {
@@ -1475,7 +1473,7 @@ async function initBlogPage() {
     });
 
   } catch (err) {
-    container.innerHTML = '<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu.</div>';
+    container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu: ${err.message}</div>`;
   }
 }
 
