@@ -1122,7 +1122,7 @@ const blogState = {
 async function fetchBlogApi(action, params = {}) {
   const urlParams = new URLSearchParams({ action, ...params });
   try {
-    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${urlParams.toString()}`);
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${urlParams.toString()}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Lỗi không xác định từ máy chủ');
     return data;
