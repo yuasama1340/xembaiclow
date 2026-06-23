@@ -1381,13 +1381,102 @@ async function initBlogHome() {
 
 // ── Khởi tạo cho trang Danh sách Blog (clow-blog.html) ──
 async function initBlogPage() {
-  // Lấy topic từ query param nếu có
-  const urlParams = new URLSearchParams(window.location.search);
-  const topicParam = urlParams.get('topic');
-  if (topicParam) blogState.currentTopic = topicParam;
+  const container = document.getElementById('blog-topics-container');
+  if (!container) return;
+  
+  try {
+    // Tải toàn bộ chủ đề và bài viết
+    const [topicsData, postsData] = await Promise.all([
+      fetchBlogApi('getclowtopics'),
+      fetchBlogApi('getclowposts', { limit: 500 })
+    ]);
+    
+    const topics = topicsData.topics || [];
+    const allPosts = postsData.posts || [];
+    
+    if (topics.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding: 60px; opacity:0.6;">Chưa có chủ đề nào.</div>';
+      return;
+    }
 
-  await loadBlogTopics();
-  await loadBlogPosts();
+    let html = '';
+
+    topics.forEach(t => {
+      // Lấy bài viết thuộc chủ đề này
+      const topicPosts = allPosts.filter(p => p.topicId === t.id);
+      if (topicPosts.length === 0) return; // Ẩn chủ đề nếu không có bài
+
+      // Build section HTML
+      html += `
+        <div class="blog-topic-section">
+          <!-- Ribbon chủ đề -->
+          <div class="blog-section-header">
+            <div class="blog-section-label">✦ GIẢI MÃ BÀI CLOW ✦</div>
+            <div class="blog-section-ribbon">
+              <span>${t.name}</span>
+            </div>
+          </div>
+          
+          <!-- Hàng bài viết cuộn ngang -->
+          <div class="blog-scroll-row">
+            ${topicPosts.map(p => {
+              const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
+              const coverUrl = p.coverImage || 'hinh/baiclow.png';
+              return \`
+                <a href="clow-post.html?id=\${p.id}" class="blog-card">
+                  \${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
+                  <img src="\${coverUrl}" alt="\${p.title}" class="blog-card-thumb" loading="lazy" />
+                  <div class="blog-card-content">
+                    <div class="blog-card-meta">
+                      <i class="fa-regular fa-clock"></i> <span>\${dateStr}</span>
+                    </div>
+                    <h3 class="blog-card-title">\${p.title}</h3>
+                    <p class="blog-card-excerpt">\${p.excerpt || ''}</p>
+                    <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
+                  </div>
+                </a>
+              \`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html || '<div style="text-align:center; padding: 60px; opacity:0.6;">Chưa có bài viết nào.</div>';
+    
+    // Gắn sự kiện drag scroll ngang bằng chuột
+    const scrollRows = document.querySelectorAll('.blog-scroll-row');
+    scrollRows.forEach(row => {
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+      
+      row.addEventListener('mousedown', (e) => {
+        isDown = true;
+        row.style.cursor = 'grabbing';
+        startX = e.pageX - row.offsetLeft;
+        scrollLeft = row.scrollLeft;
+      });
+      row.addEventListener('mouseleave', () => {
+        isDown = false;
+        row.style.cursor = 'grab';
+      });
+      row.addEventListener('mouseup', () => {
+        isDown = false;
+        row.style.cursor = 'grab';
+      });
+      row.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - row.offsetLeft;
+        const walk = (x - startX) * 2; // Tốc độ cuộn
+        row.scrollLeft = scrollLeft - walk;
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = '<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu.</div>';
+  }
 }
 
 // ── Khởi tạo cho trang Chi tiết (clow-post.html) ──

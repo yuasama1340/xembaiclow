@@ -22,7 +22,6 @@
           <source srcset="hinh/logo.webp" type="image/webp" />
           <img src="hinh/logo.png" alt="ClowCat Logo" class="nav-logo-img" decoding="async" fetchpriority="high" />
         </picture>
-        <span style="font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--gold-light); margin-left:8px; font-weight:700;">ClowCat Patronus</span>
       </a>
       <ul class="nav-links">
         <li><a href="index.html">Về trang chủ</a></li>
@@ -40,46 +39,78 @@
   </div>
 
   <main class="blog-main container" style="padding-top: 120px; min-height: 80vh;">
-    <!-- Blog Header -->
-    <div class="text-center" style="margin-bottom: 40px;">
-      <div class="section-label" style="margin-bottom: 12px; letter-spacing: 2px;">✦ GIẢI MÃ BÀI CLOW ✦</div>
-      
-      <!-- Topics Ribbon -->
-      <div class="blog-topics-ribbon">
-        <div class="blog-topic-list" id="public-topics-list">
-          <!-- Render from JS -->
-          <div style="opacity:0.5; font-size:0.9rem; padding: 10px;">Đang tải...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content: Posts -->
-    <div class="blog-content">
-      <div class="blog-grid" id="public-posts-grid">
-        <!-- Render from JS -->
-        <div style="grid-column: 1/-1; text-align:center; opacity:0.5; padding: 40px;">Đang tải bài viết...</div>
-      </div>
-      
-      <!-- Pagination -->
-      <div class="blog-pagination" id="public-posts-pagination">
-        <!-- Render from JS -->
+    <div id="blog-topics-container">
+      <div style="text-align:center; padding: 60px; opacity: 0.6;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 16px;"></i>
+        <p>Đang tải dữ liệu...</p>
       </div>
     </div>
   </main>
 
+  <!-- FOOTER -->
   <footer class="footer">
-    <div class="container text-center">
-      <picture>
-        <source srcset="hinh/logo.webp" type="image/webp">
-        <img src="hinh/logo.png" alt="Logo ClowCat Patronus" class="footer-logo" loading="lazy">
-      </picture>
-      <div class="footer-brand">
-        <h3 class="footer-title">ClowCat Patronus</h3>
-        <p>KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG</p>
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-links">
+          <h4>Liên hệ</h4>
+          <p class="footer-contact-text">Tìm hiểu thêm qua các nền tảng mạng xã hội của Clow Cat Patronus:</p>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="https://www.instagram.com/clow_cat_patronus/" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@clow_cat_patronus" target="_blank" rel="noopener" class="social-icon" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="https://www.youtube.com/@ClowCatPatronusOfficial-1340" target="_blank" rel="noopener" class="social-icon" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+        <div class="footer-brand" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+          <picture>
+            <source srcset="hinh/logo.webp" type="image/webp" />
+            <img src="hinh/logo.png" alt="ClowCat Logo" class="footer-logo-img" loading="lazy" decoding="async" style="width: 140px; height: 140px; margin-bottom: 12px;" />
+          </picture>
+          <p style="white-space: nowrap; font-size: 1.05rem; letter-spacing: 1px; color: var(--gold-light);">KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG</p>
+        </div>
+        <div class="footer-links">
+          <h4>Dịch vụ</h4>
+          <ul id="footer-services-list">
+            <li><a href="index.html#pricing">Gói Khám Phá</a></li>
+            <li><a href="index.html#pricing">Gói Kết Nối</a></li>
+            <li><a href="index.html#pricing">Gói Toàn Diện</a></li>
+          </ul>
+        </div>
       </div>
-      <p class="footer-copyright">© 2024 ClowCat Patronus. All rights reserved.</p>
+      <div class="footer-bottom">
+        <p>© 2026 ClowCat Patronus. Tất cả quyền được bảo lưu.</p>
+        <p class="footer-tagline">✦ Được tạo ra với tình yêu và năng lượng tích cực ✦</p>
+      </div>
     </div>
   </footer>
+
+  <!-- AUDIO PLAYER -->
+  <audio id="bg-music" loop>
+    <source src="nhac.mp3" type="audio/mpeg">
+  </audio>
+  <button id="audio-toggle" class="audio-btn">
+    <span class="audio-icon">🔇</span>
+  </button>
+
+  <!-- FLOATING SOCIAL BUTTONS -->
+  <div class="floating-socials" id="floating-socials">
+    <a href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener" class="float-btn float-facebook" aria-label="Facebook" title="Facebook">
+      <i class="fa-brands fa-facebook-f"></i>
+      <span class="float-label">Facebook</span>
+    </a>
+    <a href="https://www.instagram.com/clow_cat_patronus/" target="_blank" rel="noopener" class="float-btn float-instagram" aria-label="Instagram" title="Instagram">
+      <i class="fa-brands fa-instagram"></i>
+      <span class="float-label">Instagram</span>
+    </a>
+    <a href="https://www.tiktok.com/@clow_cat_patronus" target="_blank" rel="noopener" class="float-btn float-tiktok" aria-label="TikTok" title="TikTok">
+      <i class="fa-brands fa-tiktok"></i>
+      <span class="float-label">TikTok</span>
+    </a>
+    <a href="https://www.youtube.com/@ClowCatPatronusOfficial-1340" target="_blank" rel="noopener" class="float-btn float-youtube" aria-label="YouTube" title="YouTube">
+      <i class="fa-brands fa-youtube"></i>
+      <span class="float-label">YouTube</span>
+    </a>
+  </div>
 
   <script>
     // Blog logic init
