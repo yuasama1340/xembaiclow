@@ -1420,20 +1420,20 @@ async function initBlogPage() {
             ${topicPosts.map(p => {
               const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
               const coverUrl = p.coverImage || 'hinh/baiclow.png';
-              return \`
-                <a href="clow-post.html?id=\${p.id}" class="blog-card">
-                  \${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
-                  <img src="\${coverUrl}" alt="\${p.title}" class="blog-card-thumb" loading="lazy" />
+              return `
+                <a href="clow-post.html?id=${p.id}" class="blog-card">
+                  ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
+                  <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
                   <div class="blog-card-content">
                     <div class="blog-card-meta">
-                      <i class="fa-regular fa-clock"></i> <span>\${dateStr}</span>
+                      <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
                     </div>
-                    <h3 class="blog-card-title">\${p.title}</h3>
-                    <p class="blog-card-excerpt">\${p.excerpt || ''}</p>
+                    <h3 class="blog-card-title">${p.title}</h3>
+                    <p class="blog-card-excerpt">${p.excerpt || ''}</p>
                     <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
                   </div>
                 </a>
-              \`;
+              `;
             }).join('')}
           </div>
         </div>
