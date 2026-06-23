@@ -1203,8 +1203,6 @@ async function saveSectionOrder() {
     return { key, enabled, navLabel };
   });
 
-  alert("ĐANG LƯU BẰNG URL:\n" + ADMIN_SCRIPT_URL + "\n\nPayload Blog: " + JSON.stringify(items.find(i => i.key === 'blog')) + "\n\nState Blog: " + JSON.stringify(state.sectionOrder.find(o => (o.key || o) === 'blog')));
-
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
     showToast('Đã cập nhật thứ tự section!');
