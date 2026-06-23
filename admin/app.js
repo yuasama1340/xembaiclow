@@ -1389,6 +1389,12 @@ function openBlogPanel() {
   document.getElementById('content-board')?.parentElement?.querySelectorAll('.content-board, .management-grid, .sections-panel').forEach(el => el.classList.add('is-hidden'));
   const blogPanel = document.getElementById('blog-panel');
   if (blogPanel) blogPanel.classList.remove('is-hidden');
+
+  // Set active state for nav
+  document.querySelectorAll('.nav-section').forEach(b => b.classList.remove('is-active'));
+  const blogBtn = document.querySelector('.nav-blog-btn');
+  if (blogBtn) blogBtn.classList.add('is-active');
+
   loadBlogTopics();
   loadBlogPosts();
 }
