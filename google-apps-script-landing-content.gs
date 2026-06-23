@@ -1606,30 +1606,46 @@ function handleGetPublicClowPosts(params) {
   const page    = Math.max(1, parseInt(params.page || '1', 10));
   const limit   = Math.min(50, parseInt(params.limit || '12', 10));
 
-  const sheet = ensureClowPostsSheet();
-  const map = getColumnMap(sheet);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return json({ success: true, posts: [], total: 0, page, limit });
+  const cache = CacheService.getScriptCache();
+  let allPosts = null;
+  const cached = cache.get(PUBLIC_CLOW_POSTS_CACHE_KEY);
 
-  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-  let posts = rows
-    .map(row => clowPostToObj(row, map))
-    .filter(p => p.id && p.enabled);
+  if (cached) {
+    try { allPosts = JSON.parse(cached); } catch(e) {}
+  }
 
+  if (!allPosts) {
+    const sheet = ensureClowPostsSheet();
+    const map = getColumnMap(sheet);
+    const lastRow = sheet.getLastRow();
+    
+    if (lastRow < 2) {
+      allPosts = [];
+    } else {
+      const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+      allPosts = rows
+        .map(row => clowPostToObj(row, map))
+        .filter(p => p.id && p.enabled)
+        .map(p => { delete p.content; return p; });
+        
+      allPosts.sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return new Date(b.publishedAt || b.updatedAt) - new Date(a.publishedAt || a.updatedAt);
+      });
+    }
+
+    try {
+      cache.put(PUBLIC_CLOW_POSTS_CACHE_KEY, JSON.stringify(allPosts), PUBLIC_CACHE_SECONDS);
+    } catch(e) {}
+  }
+
+  let posts = allPosts;
   if (topicId) posts = posts.filter(p => p.topicId === topicId);
-
-  // Ghim lên đầu, sau đó sắp theo ngày mới nhất
-  posts.sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return new Date(b.publishedAt) - new Date(a.publishedAt);
-  });
 
   const total = posts.length;
   const paged = posts.slice((page - 1) * limit, page * limit);
-  // Không trả content HTML để giảm payload
-  const postsPublic = paged.map(p => Object.assign({}, p, { content: undefined }));
 
-  return json({ success: true, posts: postsPublic, total, page, limit, pages: Math.ceil(total / limit) });
+  return json({ success: true, posts: paged, total, page, limit, pages: Math.ceil(total / limit) });
 }
 
 function handleGetPublicClowPost(params) {

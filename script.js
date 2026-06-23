@@ -8,7 +8,7 @@ window.addEventListener('scroll', () => {
 // ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy
 // ============================================================
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoKbEWAyMBg4P0DxWg1_M4L1nPWCoyouveb8bOEI0Z3EBrQBTSbPRTK1vuH1bxyzuZ/exec';
-const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGy5kt87ZN4xka81RgU4bb6JF_hvp7wPYWFCZQzbf0Obp2jgez9vU72YN7SkLEWVHR/exec';
+const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr5AsulNW6ZaqxVl2PGjle17OnM5lPS6WIMWAhBdph0fq3hpLDzec1lPE44nrCsDrJ/exec';
 
 const runtimeConfig = {
   payment: {
@@ -1125,10 +1125,23 @@ const blogState = {
 // ── Gọi API chung ──
 async function fetchBlogApi(action, params = {}) {
   const urlParams = new URLSearchParams({ action, ...params });
+  const cacheKey = `clowcat_cache_${action}_${urlParams.toString()}`;
+  
+  // Cache client-side 2 phút
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < 120000) return parsed.data;
+    } catch(e) {}
+  }
+
   try {
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${urlParams.toString()}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Lỗi không xác định từ máy chủ');
+    
+    sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
     return data;
   } catch (err) {
     console.error(`Lỗi gọi API Blog [${action}]:`, err);
