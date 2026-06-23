@@ -1200,6 +1200,8 @@ async function saveSectionOrder() {
     const oldItem = state.sectionOrder.find(o => (o.key || o) === key);
     if (oldItem && oldItem.navLabel) navLabel = oldItem.navLabel;
 
+    if (key === 'blog') navLabel = "TEST_BLOG_FIX";
+
     return { key, enabled, navLabel };
   });
 
