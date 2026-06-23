@@ -299,6 +299,8 @@ function doPost(e) {
       case 'login':
       case 'adminlogin':
         return handleLogin(params);
+      case 'admininit':
+        return handleAdminInit(params);
       case 'listcontent':
       case 'admingetcontent':
         return handleListContent(params);
@@ -487,39 +489,62 @@ function initializeLandingContentSheet() {
 function syncLandingContentSheet() {
   const sheet = getOrCreateSheet(LANDING_CONTENT_SHEET_NAME, CONTENT_HEADERS);
   const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  const data = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues() : [];
+  
   const existing = {};
-
-  if (sheet.getLastRow() >= 2 && map.Khoa) {
-    sheet.getRange(2, map.Khoa, sheet.getLastRow() - 1, 1).getValues().flat().forEach((key, index) => {
-      if (key) existing[String(key)] = index + 2;
-    });
-  }
+  data.forEach((row, index) => {
+    const key = row[map.Khoa - 1];
+    if (key) existing[String(key)] = { index, row };
+  });
 
   const defaults = buildDefaultLandingContentRows();
   const rowsToAppend = [];
+  let hasUpdates = false;
 
-  defaults.forEach(row => {
-    const key = String(row[1]);
-    const existingRow = existing[key];
+  defaults.forEach(defaultRow => {
+    const key = String(defaultRow[1]);
+    const existingItem = existing[key];
 
-    if (!existingRow) {
-      rowsToAppend.push(row);
+    if (!existingItem) {
+      rowsToAppend.push(defaultRow);
       return;
     }
 
-    // Cập nhật metadata hiển thị để Việt hoá admin, không ghi đè cột Nội dung.
-    sheet.getRange(existingRow, map.Section).setValue(row[2]);
-    sheet.getRange(existingRow, map['Mo ta']).setValue(row[3]);
-    sheet.getRange(existingRow, map.Selector).setValue(row[4]);
-    sheet.getRange(existingRow, map.Kieu).setValue(row[5]);
-    sheet.getRange(existingRow, map['Thuoc tinh']).setValue(row[6]);
+    const r = existingItem.row;
+    let rowChanged = false;
+    
+    const updates = [
+      { col: map.Section, val: defaultRow[2] },
+      { col: map['Mo ta'], val: defaultRow[3] },
+      { col: map.Selector, val: defaultRow[4] },
+      { col: map.Kieu, val: defaultRow[5] },
+      { col: map['Thuoc tinh'], val: defaultRow[6] }
+    ];
+
+    updates.forEach(u => {
+      if (u.col && String(r[u.col - 1]) !== String(u.val)) {
+        r[u.col - 1] = u.val;
+        rowChanged = true;
+      }
+    });
+
+    if (rowChanged) hasUpdates = true;
   });
 
-  if (rowsToAppend.length) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, CONTENT_HEADERS.length).setValues(rowsToAppend);
+  if (hasUpdates && lastRow >= 2) {
+    sheet.getRange(2, 1, lastRow - 1, lastCol).setValues(data);
   }
-  formatLandingContentSheet(sheet);
-  if (rowsToAppend.length) clearPublicCache();
+
+  if (rowsToAppend.length) {
+    sheet.getRange(lastRow + 1, 1, rowsToAppend.length, CONTENT_HEADERS.length).setValues(rowsToAppend);
+  }
+
+  if (hasUpdates || rowsToAppend.length) {
+    formatLandingContentSheet(sheet);
+    clearPublicCache();
+  }
 }
 
 function formatLandingContentSheet(sheet) {
@@ -685,6 +710,17 @@ function handleGetPublicConfig() {
     success: true,
     scriptVersion: SCRIPT_VERSION,
     config: buildPublicConfig()
+  });
+}
+
+function handleAdminInit(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  return json({
+    success: true,
+    scriptVersion: SCRIPT_VERSION,
+    user: session,
+    items: readContentRows(true),
+    packages: readPackageRows(true)
   });
 }
 

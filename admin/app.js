@@ -1,4 +1,4 @@
-const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyShAgNvvI_rlJvAq2dn39_t7ccedPR5ThBYLTs1kh5nmlov_wS6uZc_PYyLraFbdYz/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvaQgkwYrVJbn8-XGTOWcHGnMISy27Y4qHPay0IrP3qzYoALHPYZkNPzrdO2O3GPX-/exec';
 
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
@@ -828,10 +828,7 @@ async function deleteFeedbackImage(slot) {
 // ============================================================
 async function loadContent() {
   renderSkeleton();
-  const [data, packagesData] = await Promise.all([
-    api('listContent'),
-    api('listPackages')
-  ]);
+  const data = await api('adminInit');
   
   if (data.user) {
     state.user = { ...(state.user || {}), ...data.user };
@@ -842,7 +839,7 @@ async function loadContent() {
   state.originals = new Map(state.items.map(item => [item.key, item.content ?? '']));
   state.pending.clear();
   
-  state.packages = (packagesData.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   
   renderContent();
 }
