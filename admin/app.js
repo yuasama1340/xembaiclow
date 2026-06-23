@@ -1,4 +1,4 @@
-const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyCylVrkdL_GywER7_U9i3HDzdgKWrT0ZZzR0OGFp2Ob9RLDi3HB7DpgpuR50TOYQp/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyShAgNvvI_rlJvAq2dn39_t7ccedPR5ThBYLTs1kh5nmlov_wS6uZc_PYyLraFbdYz/exec';
 
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
@@ -1202,9 +1202,6 @@ async function saveSectionOrder() {
 
     return { key, enabled, navLabel };
   });
-  
-  // DEBUG
-  alert("Payload chuẩn bị gửi: " + JSON.stringify(items));
   
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
