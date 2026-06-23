@@ -210,6 +210,81 @@
           </button>
         </div>
       </section>
+
+      <!-- BLOG CLOW PANEL -->
+      <section class="blog-panel is-hidden" id="blog-panel">
+        <div class="blog-topbar">
+          <div>
+            <div class="eyebrow">Blog</div>
+            <h2>Giải mã bài Clow</h2>
+            <p style="color:var(--text-muted,#9ca3af);margin-top:4px;font-size:.85rem">Quản lý chủ đề và bài viết thuộc chuyên mục Giải mã bài Clow.</p>
+          </div>
+          <div class="blog-topbar-actions">
+            <button type="button" class="primary-action" id="btn-new-post">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>+ Viết bài mới</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="blog-tabs">
+          <button type="button" class="blog-tab is-active" data-tab="posts">
+            <i class="fa-solid fa-file-lines"></i> Bài viết
+          </button>
+          <button type="button" class="blog-tab" data-tab="topics">
+            <i class="fa-solid fa-layer-group"></i> Chủ đề
+          </button>
+        </div>
+
+        <!-- Tab: Bài viết -->
+        <div class="blog-tab-content" id="blog-tab-posts">
+          <div class="blog-filter-bar">
+            <span style="font-weight:600">Danh sách bài viết</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <i class="fa-solid fa-filter" style="color:var(--gold,#c9a84c)"></i>
+              <span style="font-size:.85rem">Lọc theo:</span>
+              <select id="blog-filter-topic" class="blog-select">
+                <option value="">Tất cả chủ đề</option>
+              </select>
+            </div>
+            <button type="button" class="primary-action" id="btn-new-post-2">
+              + Viết bài mới
+            </button>
+          </div>
+          <div class="blog-posts-table-wrap">
+            <table class="blog-table" id="blog-posts-table">
+              <thead>
+                <tr>
+                  <th style="width:48px">Bật</th>
+                  <th>Tiêu đề</th>
+                  <th style="width:160px">Chủ đề</th>
+                  <th style="width:110px">Ngày đăng</th>
+                  <th style="width:56px">Ghim</th>
+                  <th style="width:80px">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="blog-posts-body">
+                <tr><td colspan="6" style="text-align:center;padding:32px;opacity:.5">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="blog-pagination" id="blog-pagination"></div>
+        </div>
+
+        <!-- Tab: Chủ đề -->
+        <div class="blog-tab-content is-hidden" id="blog-tab-topics">
+          <div class="blog-filter-bar">
+            <span style="font-weight:600">Danh sách chủ đề</span>
+            <button type="button" class="primary-action" id="btn-new-topic">
+              <i class="fa-solid fa-plus"></i> Thêm chủ đề
+            </button>
+          </div>
+          <div id="blog-topics-list" class="blog-topics-list">
+            <div style="text-align:center;padding:32px;opacity:.5">Đang tải...</div>
+          </div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -270,8 +345,138 @@
     </div>
   </div>
 
+  <!-- MODAL: Viết / Sửa Bài Clow -->
+  <div class="blog-modal-overlay is-hidden" id="blog-post-modal-overlay">
+    <div class="blog-modal">
+      <div class="blog-modal-header">
+        <h3 id="blog-post-modal-title">Viết Bài Mới</h3>
+        <button type="button" class="modal-close-btn" id="blog-post-modal-close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="blog-modal-body">
+        <input type="hidden" id="blog-post-edit-id" />
+        <!-- Hàng 1: Tiêu đề + Chủ đề -->
+        <div class="blog-modal-row">
+          <label class="modal-label" style="flex:2">
+            <span>Tiêu đề bài viết *</span>
+            <input type="text" id="blog-post-title" class="modal-input" placeholder="Tiêu đề bài viết..." />
+          </label>
+          <label class="modal-label" style="flex:1">
+            <span>Chủ đề *</span>
+            <select id="blog-post-topic" class="modal-input blog-select">
+              <option value="">-- Chọn chủ đề --</option>
+            </select>
+          </label>
+        </div>
+        <!-- Hàng 2: Mô tả ngắn -->
+        <label class="modal-label">
+          <span>Mô tả ngắn <em>(hiển thị trên card, tối đa 200 ký tự)</em></span>
+          <textarea id="blog-post-excerpt" class="modal-input" rows="2" placeholder="Tóm tắt ngắn nội dung bài..."></textarea>
+        </label>
+        <!-- Hàng 3: Ảnh đại diện -->
+        <div class="modal-label">
+          <span>Ảnh đại diện bài viết</span>
+          <div class="blog-cover-upload-area">
+            <div class="blog-cover-preview" id="blog-cover-preview">
+              <i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i>
+              <span>Chưa chọn ảnh</span>
+            </div>
+            <div class="blog-cover-actions">
+              <label class="secondary-action" style="cursor:pointer">
+                <i class="fa-solid fa-upload"></i>
+                <span>Upload từ máy</span>
+                <input type="file" id="blog-cover-file" accept="image/*" style="display:none" />
+              </label>
+              <span style="opacity:.4">hoặc</span>
+              <input type="url" id="blog-cover-url" class="modal-input" placeholder="Dán URL ảnh..." style="flex:1;min-width:200px" />
+            </div>
+          </div>
+        </div>
+        <!-- Hàng 4: Ngày đăng + trạng thái + ghim -->
+        <div class="blog-modal-row">
+          <label class="modal-label">
+            <span>Ngày đăng</span>
+            <input type="datetime-local" id="blog-post-date" class="modal-input" />
+          </label>
+          <label class="modal-label modal-toggle-wrap">
+            <span>Hiển thị</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="blog-post-enabled" checked />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </label>
+          <label class="modal-label modal-toggle-wrap">
+            <span>Ghim lên đầu</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="blog-post-pinned" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </label>
+        </div>
+        <!-- Nội dung rich text -->
+        <div class="modal-label">
+          <span>Nội dung bài viết</span>
+          <div id="blog-quill-editor" class="blog-quill-wrap"></div>
+        </div>
+      </div>
+      <div class="blog-modal-footer">
+        <button type="button" class="ghost-action" id="blog-post-modal-cancel">Hủy</button>
+        <button type="button" class="danger-action" id="blog-post-modal-delete" style="display:none">
+          <i class="fa-solid fa-trash"></i> Xóa bài
+        </button>
+        <button type="button" class="primary-action" id="blog-post-modal-save">
+          <i class="fa-solid fa-floppy-disk"></i> Lưu bài viết
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Tạo / Sửa Chủ đề -->
+  <div class="blog-modal-overlay is-hidden" id="blog-topic-modal-overlay">
+    <div class="blog-modal" style="max-width:480px">
+      <div class="blog-modal-header">
+        <h3 id="blog-topic-modal-title">Thêm Chủ Đề</h3>
+        <button type="button" class="modal-close-btn" id="blog-topic-modal-close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="blog-modal-body">
+        <input type="hidden" id="blog-topic-edit-id" />
+        <label class="modal-label">
+          <span>Tên chủ đề *</span>
+          <input type="text" id="blog-topic-name" class="modal-input" placeholder="VD: Ý nghĩa 52 lá bài" />
+        </label>
+        <label class="modal-label">
+          <span>Mô tả</span>
+          <textarea id="blog-topic-desc" class="modal-input" rows="2" placeholder="Mô tả ngắn về chủ đề..."></textarea>
+        </label>
+        <label class="modal-label">
+          <span>Biểu tượng <em>(emoji)</em></span>
+          <input type="text" id="blog-topic-icon" class="modal-input" placeholder="🃏" style="max-width:80px" />
+        </label>
+        <label class="modal-label modal-toggle-wrap">
+          <span>Hiển thị</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="blog-topic-enabled" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </label>
+      </div>
+      <div class="blog-modal-footer">
+        <button type="button" class="ghost-action" id="blog-topic-modal-cancel">Hủy</button>
+        <button type="button" class="danger-action" id="blog-topic-modal-delete" style="display:none">
+          <i class="fa-solid fa-trash"></i> Xóa chủ đề
+        </button>
+        <button type="button" class="primary-action" id="blog-topic-modal-save">
+          <i class="fa-solid fa-floppy-disk"></i> Lưu chủ đề
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-  <script src="./app.js?v=20260617-custom-sections"></script>
+  <script src="./app.js?v=20260623-clow-blog"></script>
 </body>
 </html>

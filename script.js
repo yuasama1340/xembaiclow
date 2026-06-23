@@ -1104,3 +1104,307 @@ function applyAllSectionOrder(sectionOrder, customSections) {
     });
   }
 }
+
+// ============================================================
+// 🃏  BLOG GIẢI MÃ BÀI CLOW — Logic xử lý Frontend
+// ============================================================
+
+const blogState = {
+  topics: [],
+  currentTopic: '',
+  posts: [],
+  currentPage: 1,
+  limit: 12,
+  totalPages: 1
+};
+
+// ── Gọi API chung ──
+async function fetchBlogApi(action, params = {}) {
+  const urlParams = new URLSearchParams({ action, ...params });
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${urlParams.toString()}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Lỗi không xác định từ máy chủ');
+    return data;
+  } catch (err) {
+    console.error(`Lỗi gọi API Blog [${action}]:`, err);
+    throw err;
+  }
+}
+
+// ── Tải danh sách Topics ──
+async function loadBlogTopics() {
+  try {
+    const data = await fetchBlogApi('getclowtopics');
+    blogState.topics = data.topics || [];
+    renderBlogTopics('home-blog-topics');
+    renderBlogTopics('public-topics-list');
+  } catch (err) {
+    console.error('Không thể tải chủ đề Clow', err);
+  }
+}
+
+// ── Render danh sách Topics dạng Tabs/Sidebar ──
+function renderBlogTopics(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const html = [
+    `<button class="blog-topic-btn ${!blogState.currentTopic ? 'is-active' : ''}" data-topic="">Tất cả bài viết</button>`
+  ];
+  
+  blogState.topics.forEach(t => {
+    const isActive = blogState.currentTopic === t.id ? 'is-active' : '';
+    html.push(`<button class="blog-topic-btn ${isActive}" data-topic="${t.id}">${t.icon || ''} ${t.name}</button>`);
+  });
+
+  container.innerHTML = html.join('');
+
+  // Gắn sự kiện click
+  container.querySelectorAll('.blog-topic-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      blogState.currentTopic = btn.dataset.topic;
+      blogState.currentPage = 1;
+      
+      // Update UI active state trên tất cả container
+      document.querySelectorAll('.blog-topic-btn').forEach(b => b.classList.remove('is-active'));
+      document.querySelectorAll(`.blog-topic-btn[data-topic="${blogState.currentTopic}"]`).forEach(b => b.classList.add('is-active'));
+      
+      loadBlogPosts(); // Gọi hàm load lại bài viết
+    });
+  });
+}
+
+// ── Render danh sách Posts dưới dạng Grid ──
+function renderPostsGrid(posts, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!posts || posts.length === 0) {
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; opacity:0.5; padding: 40px;">Chưa có bài viết nào trong chủ đề này.</div>';
+    return;
+  }
+
+  const html = posts.map(p => {
+    const topic = blogState.topics.find(t => t.id === p.topicId);
+    const topicLabel = topic ? `${topic.icon || ''} ${topic.name}` : '';
+    const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
+    const coverUrl = p.coverImage || 'hinh/baiclow.png'; // Fallback ảnh gốc
+
+    return `
+      <a href="clow-post.html?id=${p.id}" class="blog-card">
+        ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i></div>' : ''}
+        <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
+        <div class="blog-card-content">
+          <div class="blog-card-meta">
+            ${topicLabel ? `<span class="blog-card-topic">${topicLabel}</span>` : '<span></span>'}
+            <span class="blog-card-date">${dateStr}</span>
+          </div>
+          <h3 class="blog-card-title">${p.title}</h3>
+          <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+          <div class="blog-card-readmore">Đọc tiếp <i class="fa-solid fa-arrow-right"></i></div>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+// ── Tải danh sách bài viết (theo Topic, Phân trang) ──
+async function loadBlogPosts() {
+  const isHomePage = !!document.getElementById('home-blog-grid');
+  const isBlogPage = !!document.getElementById('public-posts-grid');
+  
+  if (!isHomePage && !isBlogPage) return; // Không có chỗ render
+
+  const containerId = isHomePage ? 'home-blog-grid' : 'public-posts-grid';
+  const container = document.getElementById(containerId);
+  if (container) container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; opacity:0.5; padding: 40px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tải...</div>';
+
+  try {
+    const params = {
+      topic: blogState.currentTopic,
+      page: blogState.currentPage,
+      limit: isHomePage ? 3 : blogState.limit // Trang chủ chỉ load 3 bài mới nhất
+    };
+    
+    const data = await fetchBlogApi('getclowposts', params);
+    blogState.posts = data.posts || [];
+    blogState.totalPages = data.pages || 1;
+    
+    renderPostsGrid(blogState.posts, containerId);
+
+    if (isBlogPage) {
+      renderPagination('public-posts-pagination');
+    }
+  } catch (err) {
+    if (container) container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--danger); padding: 40px;">Lỗi tải bài viết. Vui lòng thử lại sau.</div>';
+  }
+}
+
+// ── Render Phân trang trên trang clow-blog.html ──
+function renderPagination(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (blogState.totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  // Prev button
+  if (blogState.currentPage > 1) {
+    html += `<button class="blog-page-btn" data-page="${blogState.currentPage - 1}"><i class="fa-solid fa-angle-left"></i></button>`;
+  }
+
+  // Page numbers
+  for (let i = 1; i <= blogState.totalPages; i++) {
+    const active = i === blogState.currentPage ? 'is-active' : '';
+    html += `<button class="blog-page-btn ${active}" data-page="${i}">${i}</button>`;
+  }
+
+  // Next button
+  if (blogState.currentPage < blogState.totalPages) {
+    html += `<button class="blog-page-btn" data-page="${blogState.currentPage + 1}"><i class="fa-solid fa-angle-right"></i></button>`;
+  }
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.blog-page-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      blogState.currentPage = parseInt(btn.dataset.page, 10);
+      loadBlogPosts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+// ── Tải chi tiết 1 bài viết trên clow-post.html ──
+async function loadSinglePost() {
+  const container = document.getElementById('post-container');
+  if (!container) return;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const postId = urlParams.get('id');
+  
+  if (!postId) {
+    container.innerHTML = '<div style="text-align:center; padding: 80px 0;"><h2 style="color:var(--danger)">Bài viết không tồn tại</h2><a href="clow-blog.html" class="cta-button primary-action" style="margin-top:20px;display:inline-block">Quay lại danh sách</a></div>';
+    return;
+  }
+
+  try {
+    const data = await fetchBlogApi('getclowpost', { id: postId });
+    if (!data.post) throw new Error('Không tìm thấy bài viết');
+    const p = data.post;
+    
+    // Tìm topic
+    const topic = blogState.topics.find(t => t.id === p.topicId);
+    const topicName = topic ? topic.name : '';
+    const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
+    
+    // Đổi Title page & meta
+    document.title = `${p.title} | ClowCat Patronus`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && p.excerpt) metaDesc.setAttribute('content', p.excerpt);
+
+    // Xử lý content share link
+    const currentUrl = encodeURIComponent(window.location.href);
+
+    const html = `
+      <div class="post-breadcrumb">
+        <a href="clow-blog.html">Blog</a> <span>/</span> 
+        ${topicName ? `<a href="clow-blog.html?topic=${p.topicId}">${topicName}</a> <span>/</span>` : ''}
+        <span style="color:var(--white)">Chi tiết</span>
+      </div>
+      
+      <h1 class="post-title">${p.title}</h1>
+      
+      <div class="post-meta">
+        <div><i class="fa-solid fa-calendar-days" style="margin-right:6px"></i> ${dateStr}</div>
+        <div><i class="fa-solid fa-eye" style="margin-right:6px"></i> ${p.views || 0} lượt xem</div>
+        ${topicName ? `<div><i class="fa-solid fa-tag" style="margin-right:6px"></i> ${topicName}</div>` : ''}
+      </div>
+
+      ${p.coverImage ? `
+      <div class="post-cover-wrap">
+        <img src="${p.coverImage}" alt="${p.title}" class="post-cover" />
+      </div>` : ''}
+
+      <div class="post-body">
+        ${p.content || ''}
+      </div>
+
+      <div class="post-footer">
+        <div class="post-share">
+          Chia sẻ:
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${currentUrl}" target="_blank" class="share-btn" title="Chia sẻ Facebook">
+            <i class="fa-brands fa-facebook-f"></i>
+          </a>
+          <a href="https://twitter.com/intent/tweet?url=${currentUrl}&text=${encodeURIComponent(p.title)}" target="_blank" class="share-btn" title="Chia sẻ X">
+            <i class="fa-brands fa-x-twitter"></i>
+          </a>
+          <button class="share-btn js-copy-link" title="Copy link">
+            <i class="fa-solid fa-link"></i>
+          </button>
+        </div>
+        <a href="clow-blog.html" class="cta-button ghost-action" style="padding:8px 16px; border:1px solid var(--border)"><i class="fa-solid fa-arrow-left"></i> Các bài khác</a>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Gắn sự kiện copy link
+    const copyBtn = container.querySelector('.js-copy-link');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href);
+        const icon = copyBtn.querySelector('i');
+        icon.className = 'fa-solid fa-check';
+        icon.style.color = 'var(--ok)';
+        setTimeout(() => { icon.className = 'fa-solid fa-link'; icon.style.color = ''; }, 2000);
+      });
+    }
+
+  } catch (err) {
+    container.innerHTML = `<div style="text-align:center; padding: 80px 0;"><h2 style="color:var(--danger)">Lỗi: ${err.message}</h2><a href="clow-blog.html" class="cta-button primary-action" style="margin-top:20px;display:inline-block">Quay lại</a></div>`;
+  }
+}
+
+// ── Khởi tạo cho trang chủ ──
+async function initBlogHome() {
+  if (document.getElementById('home-blog-topics') && document.getElementById('home-blog-grid')) {
+    await loadBlogTopics();
+    await loadBlogPosts();
+  }
+}
+
+// ── Khởi tạo cho trang Danh sách Blog (clow-blog.html) ──
+async function initBlogPage() {
+  // Lấy topic từ query param nếu có
+  const urlParams = new URLSearchParams(window.location.search);
+  const topicParam = urlParams.get('topic');
+  if (topicParam) blogState.currentTopic = topicParam;
+
+  await loadBlogTopics();
+  await loadBlogPosts();
+}
+
+// ── Khởi tạo cho trang Chi tiết (clow-post.html) ──
+async function initPostPage() {
+  await loadBlogTopics(); // Tải topic trước để ánh xạ tên
+  await loadSinglePost();
+}
+
+// Inject vào app init
+const _origInitContent = typeof loadLandingContent === 'function' ? loadLandingContent : null;
+if (_origInitContent) {
+  loadLandingContent = async function() {
+    await _origInitContent();
+    await initBlogHome();
+  };
+} else {
+  // Dự phòng nếu DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', initBlogHome);
+}

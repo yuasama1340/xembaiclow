@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đọc Bài Clow | ClowCat Patronus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" type="image/png" href="hinh/favicon.png">
+  <link rel="stylesheet" href="style.css?v=20260623">
+  <!-- Dynamic SEO meta will be injected by JS -->
+  <meta name="description" content="Khám phá chi tiết bài Clow cùng ClowCat Patronus">
+</head>
+<body class="post-page">
+  <!-- Background Elements -->
+  <div class="stars" aria-hidden="true"></div>
+  <div class="glow glow-one" aria-hidden="true"></div>
+  <div class="glow glow-two" aria-hidden="true"></div>
+  
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <picture>
+          <source srcset="hinh/logo.webp" type="image/webp">
+          <img src="hinh/logo.png" alt="Clow Cat Patronus Logo" class="nav-logo" loading="lazy">
+        </picture>
+        <span class="nav-name">ClowCat Patronus</span>
+      </a>
+      <a href="clow-blog.html" class="cta-button secondary-action" style="font-size:0.9rem; padding: 10px 16px;">
+        <i class="fa-solid fa-list"></i> Xem tất cả bài
+      </a>
+    </div>
+  </nav>
+
+  <main class="post-main container">
+    <article class="post-article" id="post-container">
+      <div class="post-loading" style="text-align:center; padding: 80px 0; opacity: 0.6;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 16px;"></i>
+        <p>Đang tải nội dung bài viết...</p>
+      </div>
+      <!-- Post content will be injected here -->
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="container text-center">
+      <picture>
+        <source srcset="hinh/logo.webp" type="image/webp">
+        <img src="hinh/logo.png" alt="Logo ClowCat Patronus" class="footer-logo" loading="lazy">
+      </picture>
+      <div class="footer-brand">
+        <h3 class="footer-title">ClowCat Patronus</h3>
+        <p>KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG</p>
+      </div>
+      <p class="footer-copyright">© 2024 ClowCat Patronus. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Post logic init
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof initPostPage === 'function') {
+        initPostPage();
+      } else {
+        console.error('script.js not loaded or initPostPage missing');
+      }
+    });
+  </script>
+  <script src="script.js?v=20260623-blog"></script>
+</body>
+</html>

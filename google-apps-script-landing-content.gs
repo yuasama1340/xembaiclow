@@ -32,6 +32,15 @@ const CUSTOM_SECTIONS_HEADERS = ['Bat', 'ID', 'Nhan section', 'Tieu de', 'Mo ta 
 const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu', 'Hien thi'];
 const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'flexible-3in1', 'offer', 'process', 'contact'];
 
+// Blog Bài Clow
+const CLOW_TOPICS_SHEET_NAME = 'Clow Topics';
+const CLOW_POSTS_SHEET_NAME = 'Clow Posts';
+const CLOW_TOPICS_HEADERS = ['ID', 'Ten chu de', 'Mo ta', 'Bieu tuong', 'Thu tu', 'Bat', 'Ngay tao'];
+const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Anh dai dien', 'Ngay dang', 'Bat', 'Ghim', 'Luot xem', 'Tac gia', 'Cap nhat luc'];
+const CLOW_BLOG_FOLDER = 'ClowCat Patronus/Blog';
+const PUBLIC_CLOW_TOPICS_CACHE_KEY = 'clowcat_public_clow_topics_v1';
+const PUBLIC_CLOW_POSTS_CACHE_KEY = 'clowcat_public_clow_posts_v1';
+
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
   return [bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung, new Date(), 'system'];
 }
@@ -238,6 +247,12 @@ function doGet(e) {
         return handleListPublicPackages();
       case 'getcustomsections':
         return handleGetPublicCustomSections();
+      case 'getclowtopics':
+        return handleGetPublicClowTopics(params);
+      case 'getclowposts':
+        return handleGetPublicClowPosts(params);
+      case 'getclowpost':
+        return handleGetPublicClowPost(params);
       case 'login':
       case 'adminlogin':
       case 'listcontent':
@@ -329,6 +344,25 @@ function doPost(e) {
       case 'changepassword':
       case 'adminchangepassword':
         return handleChangePassword(params);
+      // Blog Clow
+      case 'listclowtopics':
+        return handleListClowTopics(params);
+      case 'saveclowtopic':
+        return handleSaveClowTopic(params);
+      case 'deleteclowtopic':
+        return handleDeleteClowTopic(params);
+      case 'reorderclowtopics':
+        return handleReorderClowTopics(params);
+      case 'listclowposts':
+        return handleListClowPosts(params);
+      case 'saveclowpost':
+        return handleSaveClowPost(params);
+      case 'deleteclowpost':
+        return handleDeleteClowPost(params);
+      case 'toggleclowpost':
+        return handleToggleClowPost(params);
+      case 'uploadblogimage':
+        return handleUploadBlogImage(params);
       default:
         return json({ success: false, error: 'Thao tác không hợp lệ.' });
     }
@@ -1420,4 +1454,404 @@ function resetAdminPassword() {
     Logger.log('❌ Lỗi reset: ' + err.message);
     return '❌ Lỗi: ' + err.message;
   }
+}
+
+// ============================================================
+// 🃏  BLOG BÀI CLOW — Sheet "Clow Topics" & "Clow Posts"
+// ============================================================
+
+function ensureClowTopicsSheet() {
+  return getOrCreateSheet(CLOW_TOPICS_SHEET_NAME, CLOW_TOPICS_HEADERS);
+}
+
+function ensureClowPostsSheet() {
+  return getOrCreateSheet(CLOW_POSTS_SHEET_NAME, CLOW_POSTS_HEADERS);
+}
+
+// --- Seed 4 chủ đề mặc định nếu sheet trống ---
+function seedDefaultClowTopics() {
+  const sheet = ensureClowTopicsSheet();
+  if (sheet.getLastRow() > 1) return; // đã có dữ liệu
+  const defaults = [
+    ['y-nghia-52-la-bai',         'Ý nghĩa 52 lá bài',               'Giải mã ý nghĩa từng lá bài Clow một cách chi tiết', '🃏', 1, true, new Date()],
+    ['y-nghia-trai-bai',          'Ý nghĩa các trải bài',             'Các phương pháp trải bài và cách đọc từng vị trí',  '🔮', 2, true, new Date()],
+    ['y-nghia-nhom-nguyen-to',    'Ý nghĩa các nhóm nguyên tố',       'Phân tích nhóm Lửa, Nước, Gió, Đất trong bài Clow', '🌊', 3, true, new Date()],
+    ['y-nghia-thong-diep-thang',  'Ý nghĩa thông điệp theo tháng',    'Thông điệp vũ trụ và năng lượng từng tháng',         '🌙', 4, true, new Date()],
+  ];
+  sheet.getRange(2, 1, defaults.length, defaults[0].length).setValues(defaults);
+}
+
+// --- Helpers ---
+function clowTopicToObj(row, map) {
+  return {
+    id:          String(row[map['ID'] - 1] || '').trim(),
+    name:        String(row[map['Ten chu de'] - 1] || ''),
+    description: String(row[map['Mo ta'] - 1] || ''),
+    icon:        String(row[map['Bieu tuong'] - 1] || ''),
+    order:       Number(row[map['Thu tu'] - 1] || 0),
+    enabled:     row[map['Bat'] - 1] === true || String(row[map['Bat'] - 1]).toLowerCase() === 'true',
+    createdAt:   row[map['Ngay tao'] - 1] ? new Date(row[map['Ngay tao'] - 1]).toISOString() : '',
+  };
+}
+
+function clowPostToObj(row, map) {
+  return {
+    id:          String(row[map['ID'] - 1] || '').trim(),
+    topicId:     String(row[map['Chu de ID'] - 1] || '').trim(),
+    title:       String(row[map['Tieu de'] - 1] || ''),
+    excerpt:     String(row[map['Mo ta ngan'] - 1] || ''),
+    content:     String(row[map['Noi dung HTML'] - 1] || ''),
+    coverImage:  String(row[map['Anh dai dien'] - 1] || ''),
+    publishedAt: row[map['Ngay dang'] - 1] ? new Date(row[map['Ngay dang'] - 1]).toISOString() : '',
+    enabled:     row[map['Bat'] - 1] === true || String(row[map['Bat'] - 1]).toLowerCase() === 'true',
+    pinned:      row[map['Ghim'] - 1] === true || String(row[map['Ghim'] - 1]).toLowerCase() === 'true',
+    views:       Number(row[map['Luot xem'] - 1] || 0),
+    author:      String(row[map['Tac gia'] - 1] || ''),
+    updatedAt:   row[map['Cap nhat luc'] - 1] ? new Date(row[map['Cap nhat luc'] - 1]).toISOString() : '',
+  };
+}
+
+function generateSlug(title) {
+  // Tạo slug từ tiêu đề tiếng Việt
+  const map = {
+    'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ă':'a','ắ':'a','ặ':'a','ằ':'a','ẳ':'a','ẵ':'a',
+    'â':'a','ấ':'a','ầ':'a','ẩ':'a','ẫ':'a','ậ':'a',
+    'è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ê':'e','ế':'e','ề':'e','ể':'e','ễ':'e','ệ':'e',
+    'ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i',
+    'ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ô':'o','ố':'o','ồ':'o','ổ':'o','ỗ':'o','ộ':'o',
+    'ơ':'o','ớ':'o','ờ':'o','ở':'o','ỡ':'o','ợ':'o',
+    'ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ư':'u','ứ':'u','ừ':'u','ử':'u','ữ':'u','ự':'u',
+    'ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y',
+    'đ':'d',
+  };
+  let slug = String(title || '').toLowerCase();
+  Object.keys(map).forEach(k => { slug = slug.split(k).join(map[k]); });
+  return slug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 80);
+}
+
+// ── PUBLIC API (GET) ──────────────────────────────────────────
+
+function handleGetPublicClowTopics(params) {
+  const cached = CacheService.getScriptCache().get(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+  if (cached) return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
+
+  seedDefaultClowTopics();
+  const sheet = ensureClowTopicsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: true, topics: [] });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  const topics = rows
+    .map(row => clowTopicToObj(row, map))
+    .filter(t => t.id && t.enabled)
+    .sort((a, b) => a.order - b.order);
+
+  const result = JSON.stringify({ success: true, topics });
+  CacheService.getScriptCache().put(PUBLIC_CLOW_TOPICS_CACHE_KEY, result, PUBLIC_CACHE_SECONDS);
+  return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetPublicClowPosts(params) {
+  const topicId = String(params.topicId || params.topic || '').trim();
+  const page    = Math.max(1, parseInt(params.page || '1', 10));
+  const limit   = Math.min(50, parseInt(params.limit || '12', 10));
+
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: true, posts: [], total: 0, page, limit });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  let posts = rows
+    .map(row => clowPostToObj(row, map))
+    .filter(p => p.id && p.enabled);
+
+  if (topicId) posts = posts.filter(p => p.topicId === topicId);
+
+  // Ghim lên đầu, sau đó sắp theo ngày mới nhất
+  posts.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.publishedAt) - new Date(a.publishedAt);
+  });
+
+  const total = posts.length;
+  const paged = posts.slice((page - 1) * limit, page * limit);
+  // Không trả content HTML để giảm payload
+  const postsPublic = paged.map(p => Object.assign({}, p, { content: undefined }));
+
+  return json({ success: true, posts: postsPublic, total, page, limit, pages: Math.ceil(total / limit) });
+}
+
+function handleGetPublicClowPost(params) {
+  const id = String(params.id || '').trim();
+  if (!id) return json({ success: false, error: 'Thiếu id bài viết.' });
+
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: false, error: 'Không tìm thấy bài viết.' });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    const post = clowPostToObj(rows[i], map);
+    if (post.id === id && post.enabled) {
+      // Tăng lượt xem
+      const viewsCol = map['Luot xem'];
+      if (viewsCol) {
+        const currentViews = Number(rows[i][viewsCol - 1] || 0);
+        sheet.getRange(i + 2, viewsCol).setValue(currentViews + 1);
+      }
+      return json({ success: true, post });
+    }
+  }
+  return json({ success: false, error: 'Không tìm thấy bài viết.' });
+}
+
+// ── ADMIN API (POST, cần token) ───────────────────────────────
+
+function handleListClowTopics(params) {
+  requireSession(params, ['admin', 'editor']);
+  seedDefaultClowTopics();
+  const sheet = ensureClowTopicsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: true, topics: [] });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  const topics = rows.map(row => clowTopicToObj(row, map)).filter(t => t.id).sort((a, b) => a.order - b.order);
+  return json({ success: true, topics });
+}
+
+function handleSaveClowTopic(params) {
+  requireSession(params, ['admin', 'editor']);
+  const sheet = ensureClowTopicsSheet();
+  const map = getColumnMap(sheet);
+
+  const id = String(params.id || '').trim();
+  const name = String(params.name || '').trim();
+  if (!name) throw new Error('Tên chủ đề không được để trống.');
+
+  const topicId = id || generateSlug(name);
+  const now = new Date();
+
+  if (!id) {
+    // Tạo mới
+    const lastRow = sheet.getLastRow();
+    const nextOrder = lastRow >= 2 ? lastRow : 1;
+    sheet.appendRow([topicId, name, params.description || '', params.icon || '📖', nextOrder, true, now]);
+  } else {
+    // Sửa — tìm dòng
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) throw new Error('Không tìm thấy chủ đề.');
+    const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+    let found = false;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][map['ID'] - 1]).trim() === id) {
+        sheet.getRange(i + 2, map['Ten chu de']).setValue(name);
+        sheet.getRange(i + 2, map['Mo ta']).setValue(params.description || '');
+        sheet.getRange(i + 2, map['Bieu tuong']).setValue(params.icon || '📖');
+        if (params.enabled !== undefined) sheet.getRange(i + 2, map['Bat']).setValue(params.enabled === true || params.enabled === 'true');
+        found = true;
+        break;
+      }
+    }
+    if (!found) throw new Error('Không tìm thấy chủ đề.');
+  }
+
+  CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+  CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+  return json({ success: true, id: topicId });
+}
+
+function handleDeleteClowTopic(params) {
+  requireSession(params, ['admin']);
+  const id = String(params.id || '').trim();
+  if (!id) throw new Error('Thiếu ID chủ đề.');
+
+  const sheet = ensureClowTopicsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) throw new Error('Không tìm thấy chủ đề.');
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][map['ID'] - 1]).trim() === id) {
+      sheet.deleteRow(i + 2);
+      CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+      return json({ success: true });
+    }
+  }
+  throw new Error('Không tìm thấy chủ đề.');
+}
+
+function handleReorderClowTopics(params) {
+  requireSession(params, ['admin', 'editor']);
+  let order;
+  try { order = JSON.parse(params.order || '[]'); } catch(e) { order = []; }
+  if (!Array.isArray(order)) throw new Error('Dữ liệu không hợp lệ.');
+
+  const sheet = ensureClowTopicsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: true });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  order.forEach((id, idx) => {
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][map['ID'] - 1]).trim() === id) {
+        sheet.getRange(i + 2, map['Thu tu']).setValue(idx + 1);
+        break;
+      }
+    }
+  });
+  CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+  return json({ success: true });
+}
+
+function handleListClowPosts(params) {
+  requireSession(params, ['admin', 'editor']);
+  const topicId = String(params.topicId || '').trim();
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return json({ success: true, posts: [] });
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  let posts = rows.map(row => clowPostToObj(row, map)).filter(p => p.id);
+  if (topicId) posts = posts.filter(p => p.topicId === topicId);
+  posts.sort((a, b) => new Date(b.publishedAt || b.updatedAt) - new Date(a.publishedAt || a.updatedAt));
+
+  // Admin: trả content đầy đủ (chỉ khi params.withContent=true)
+  if (params.withContent !== 'true') posts = posts.map(p => Object.assign({}, p, { content: '' }));
+
+  return json({ success: true, posts });
+}
+
+function handleSaveClowPost(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+
+  const id = String(params.id || '').trim();
+  const title = String(params.title || '').trim();
+  if (!title) throw new Error('Tiêu đề không được để trống.');
+
+  const postId = id || (generateSlug(title) + '-' + Date.now().toString(36));
+  const now = new Date();
+  const publishedAt = params.publishedAt ? new Date(params.publishedAt) : now;
+
+  if (!id) {
+    sheet.appendRow([
+      postId,
+      String(params.topicId || '').trim(),
+      title,
+      String(params.excerpt || '').trim(),
+      String(params.content || ''),
+      String(params.coverImage || '').trim(),
+      publishedAt,
+      params.enabled !== false && params.enabled !== 'false',
+      params.pinned === true || params.pinned === 'true',
+      0,
+      session.username,
+      now
+    ]);
+  } else {
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) throw new Error('Không tìm thấy bài viết.');
+    const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+    let found = false;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][map['ID'] - 1]).trim() === id) {
+        const rowNum = i + 2;
+        sheet.getRange(rowNum, map['Chu de ID']).setValue(String(params.topicId || '').trim());
+        sheet.getRange(rowNum, map['Tieu de']).setValue(title);
+        sheet.getRange(rowNum, map['Mo ta ngan']).setValue(String(params.excerpt || '').trim());
+        if (params.content !== undefined) sheet.getRange(rowNum, map['Noi dung HTML']).setValue(String(params.content || ''));
+        if (params.coverImage !== undefined) sheet.getRange(rowNum, map['Anh dai dien']).setValue(String(params.coverImage || '').trim());
+        if (params.publishedAt) sheet.getRange(rowNum, map['Ngay dang']).setValue(new Date(params.publishedAt));
+        if (params.enabled !== undefined) sheet.getRange(rowNum, map['Bat']).setValue(params.enabled === true || params.enabled === 'true');
+        if (params.pinned !== undefined) sheet.getRange(rowNum, map['Ghim']).setValue(params.pinned === true || params.pinned === 'true');
+        sheet.getRange(rowNum, map['Cap nhat luc']).setValue(now);
+        found = true;
+        break;
+      }
+    }
+    if (!found) throw new Error('Không tìm thấy bài viết.');
+  }
+
+  CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+  return json({ success: true, id: postId });
+}
+
+function handleDeleteClowPost(params) {
+  requireSession(params, ['admin']);
+  const id = String(params.id || '').trim();
+  if (!id) throw new Error('Thiếu ID bài viết.');
+
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) throw new Error('Không tìm thấy bài viết.');
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][map['ID'] - 1]).trim() === id) {
+      sheet.deleteRow(i + 2);
+      CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+      return json({ success: true });
+    }
+  }
+  throw new Error('Không tìm thấy bài viết.');
+}
+
+function handleToggleClowPost(params) {
+  requireSession(params, ['admin', 'editor']);
+  const id = String(params.id || '').trim();
+  const field = String(params.field || 'enabled'); // 'enabled' hoặc 'pinned'
+
+  const sheet = ensureClowPostsSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) throw new Error('Không tìm thấy bài viết.');
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][map['ID'] - 1]).trim() === id) {
+      const colName = field === 'pinned' ? 'Ghim' : 'Bat';
+      const col = map[colName];
+      const current = rows[i][col - 1] === true || String(rows[i][col - 1]).toLowerCase() === 'true';
+      sheet.getRange(i + 2, col).setValue(!current);
+      sheet.getRange(i + 2, map['Cap nhat luc']).setValue(new Date());
+      CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+      return json({ success: true, value: !current });
+    }
+  }
+  throw new Error('Không tìm thấy bài viết.');
+}
+
+function handleUploadBlogImage(params) {
+  requireSession(params, ['admin', 'editor']);
+  const base64 = String(params.data || '').trim();
+  const mimeType = String(params.mimeType || 'image/jpeg');
+  const fileName = String(params.fileName || ('blog-' + Date.now() + '.jpg'));
+
+  if (!base64) throw new Error('Không có dữ liệu ảnh.');
+  const maxBytes = 5 * 1024 * 1024; // 5MB
+  if (base64.length * 0.75 > maxBytes) throw new Error('Ảnh quá lớn. Tối đa 5MB.');
+
+  const parts = CLOW_BLOG_FOLDER.split('/');
+  let folder = DriveApp.getRootFolder();
+  for (const part of parts) {
+    const found = folder.getFoldersByName(part);
+    folder = found.hasNext() ? found.next() : folder.createFolder(part);
+  }
+
+  const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const fileId = file.getId();
+  const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
+
+  return json({ success: true, url, fileId });
 }

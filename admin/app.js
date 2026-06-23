@@ -1295,4 +1295,475 @@ const _origWireEvents = typeof wireEvents === 'function' ? wireEvents : null;
 window.addEventListener('DOMContentLoaded', () => {
   renderSectionsNavButton();
   wireSectionsEvents();
+  renderBlogNavButton();
+  wireBlogEvents();
 });
+
+// ============================================================
+// 🃏  BLOG GIẢI MÃ BÀI CLOW — Admin Module
+// ============================================================
+
+const blogState = {
+  topics: [],
+  posts: [],
+  currentPage: 1,
+  filterTopicId: '',
+  blogQuill: null,
+};
+
+// ── Nav button ──────────────────────────────────────────────
+function renderBlogNavButton() {
+  const nav = document.getElementById('section-nav');
+  if (!nav) return;
+  // Xóa button cũ nếu có
+  const old = nav.querySelector('.nav-blog-btn');
+  if (old) old.remove();
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-section nav-blog-btn';
+  btn.innerHTML = `<span>🃏 Giải mã bài Clow</span><span id="blog-nav-count">--</span>`;
+  btn.addEventListener('click', openBlogPanel);
+  nav.appendChild(btn);
+
+  const landingBtn = nav.querySelector('.nav-landing-btn') || nav.querySelector('[data-nav="landing"]');
+  if (!landingBtn) {
+    const lBtn = document.createElement('button');
+    lBtn.type = 'button';
+    lBtn.className = 'nav-section nav-landing-btn';
+    lBtn.innerHTML = `<span>← Xem landing page</span>`;
+    lBtn.addEventListener('click', () => window.open('../index.html', '_blank'));
+    nav.appendChild(lBtn);
+  }
+}
+
+function openBlogPanel() {
+  // Ẩn các panel khác
+  document.getElementById('content-board')?.closest('section')?.querySelectorAll('.content-board, .management-grid, .sections-panel').forEach(el => el.classList.add('is-hidden'));
+  const blogPanel = document.getElementById('blog-panel');
+  if (blogPanel) blogPanel.classList.remove('is-hidden');
+  loadBlogTopics();
+  loadBlogPosts();
+}
+
+function closeBlogPanel() {
+  document.getElementById('blog-panel')?.classList.add('is-hidden');
+}
+
+// ── Load Topics ─────────────────────────────────────────────
+async function loadBlogTopics() {
+  try {
+    const data = await api('listClowTopics', { token: state.token });
+    blogState.topics = data.topics || [];
+    renderTopicsList();
+    updateTopicDropdowns();
+    const countEl = document.getElementById('blog-nav-count');
+    if (countEl) countEl.textContent = blogState.topics.length;
+  } catch (e) {
+    showToast('Lỗi tải chủ đề: ' + e.message, 'error');
+  }
+}
+
+function renderTopicsList() {
+  const container = document.getElementById('blog-topics-list');
+  if (!container) return;
+  if (!blogState.topics.length) {
+    container.innerHTML = '<div style="text-align:center;padding:32px;opacity:.5">Chưa có chủ đề nào. Nhấn "+ Thêm chủ đề" để tạo.</div>';
+    return;
+  }
+  container.innerHTML = blogState.topics.map(t => `
+    <div class="blog-topic-card">
+      <span class="blog-topic-icon">${escHtml(t.icon || '📖')}</span>
+      <div class="blog-topic-info">
+        <strong>${escHtml(t.name)}</strong>
+        <span>${escHtml(t.description || '')}</span>
+      </div>
+      <div class="blog-topic-actions">
+        <label class="toggle-switch" title="${t.enabled ? 'Đang hiện' : 'Đang ẩn'}">
+          <input type="checkbox" class="js-toggle-topic" data-id="${escAttr(t.id)}" ${t.enabled ? 'checked' : ''} />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+        <button type="button" class="icon-button js-edit-topic" data-id="${escAttr(t.id)}" title="Sửa">
+          <i class="fa-solid fa-pencil"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.js-edit-topic').forEach(btn => {
+    btn.addEventListener('click', () => openTopicModal(btn.dataset.id));
+  });
+  container.querySelectorAll('.js-toggle-topic').forEach(chk => {
+    chk.addEventListener('change', async () => {
+      try {
+        const topic = blogState.topics.find(t => t.id === chk.dataset.id);
+        if (!topic) return;
+        await api('saveClowTopic', { token: state.token, id: topic.id, name: topic.name, description: topic.description, icon: topic.icon, enabled: chk.checked });
+        topic.enabled = chk.checked;
+        showToast(chk.checked ? 'Đã hiện chủ đề' : 'Đã ẩn chủ đề');
+      } catch (e) { showToast(e.message, 'error'); }
+    });
+  });
+}
+
+function updateTopicDropdowns() {
+  ['blog-filter-topic', 'blog-post-topic'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = id === 'blog-filter-topic'
+      ? '<option value="">Tất cả chủ đề</option>'
+      : '<option value="">-- Chọn chủ đề --</option>';
+    blogState.topics.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = (t.icon || '') + ' ' + t.name;
+      sel.appendChild(opt);
+    });
+    if (val) sel.value = val;
+  });
+}
+
+// ── Load Posts ──────────────────────────────────────────────
+async function loadBlogPosts() {
+  try {
+    const params = { token: state.token };
+    if (blogState.filterTopicId) params.topicId = blogState.filterTopicId;
+    const data = await api('listClowPosts', params);
+    blogState.posts = data.posts || [];
+    renderPostsTable();
+    const countEl = document.getElementById('blog-nav-count');
+    if (countEl) countEl.textContent = blogState.posts.length;
+  } catch (e) {
+    showToast('Lỗi tải bài viết: ' + e.message, 'error');
+  }
+}
+
+function renderPostsTable() {
+  const tbody = document.getElementById('blog-posts-body');
+  if (!tbody) return;
+  if (!blogState.posts.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;opacity:.5">Chưa có bài viết nào.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = blogState.posts.map(p => {
+    const topic = blogState.topics.find(t => t.id === p.topicId);
+    const date = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '--';
+    return `
+    <tr>
+      <td>
+        <label class="toggle-switch">
+          <input type="checkbox" class="js-toggle-post" data-id="${escAttr(p.id)}" data-field="enabled" ${p.enabled ? 'checked' : ''} />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </td>
+      <td class="blog-post-title-cell">
+        <span class="blog-post-title-text">${escHtml(p.title)}</span>
+        ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb" onerror="this.style.display='none'"/>` : ''}
+      </td>
+      <td>
+        <span class="blog-topic-badge">${escHtml(topic ? (topic.icon + ' ' + topic.name) : p.topicId || '--')}</span>
+      </td>
+      <td style="font-size:.82rem">${date}</td>
+      <td>
+        <button type="button" class="icon-button js-pin-post ${p.pinned ? 'is-pinned' : ''}" data-id="${escAttr(p.id)}" title="${p.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}">
+          <i class="fa-solid fa-thumbtack"></i>
+        </button>
+      </td>
+      <td>
+        <button type="button" class="icon-button js-edit-post" data-id="${escAttr(p.id)}" title="Sửa">
+          <i class="fa-solid fa-pencil"></i>
+        </button>
+        <button type="button" class="icon-button danger js-delete-post" data-id="${escAttr(p.id)}" title="Xóa">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.js-toggle-post').forEach(chk => {
+    chk.addEventListener('change', async () => {
+      try {
+        await api('toggleClowPost', { token: state.token, id: chk.dataset.id, field: chk.dataset.field });
+        showToast(chk.checked ? 'Đã bật bài viết' : 'Đã ẩn bài viết');
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  });
+  tbody.querySelectorAll('.js-pin-post').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api('toggleClowPost', { token: state.token, id: btn.dataset.id, field: 'pinned' });
+        await loadBlogPosts();
+        showToast('Đã cập nhật ghim');
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  });
+  tbody.querySelectorAll('.js-edit-post').forEach(btn => {
+    btn.addEventListener('click', () => openPostModal(btn.dataset.id));
+  });
+  tbody.querySelectorAll('.js-delete-post').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Xóa bài viết này? Không thể khôi phục!')) return;
+      try {
+        await api('deleteClowPost', { token: state.token, id: btn.dataset.id });
+        showToast('Đã xóa bài viết');
+        loadBlogPosts();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  });
+}
+
+// ── Post Modal ──────────────────────────────────────────────
+function initBlogQuill() {
+  if (blogState.blogQuill) return;
+  const toolbarOptions = [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['link', 'blockquote'],
+    ['clean']
+  ];
+  blogState.blogQuill = new Quill('#blog-quill-editor', {
+    theme: 'snow',
+    modules: { toolbar: toolbarOptions },
+    placeholder: 'Viết nội dung bài tại đây...',
+  });
+}
+
+function openPostModal(postId) {
+  initBlogQuill();
+  updateTopicDropdowns();
+
+  const overlay = document.getElementById('blog-post-modal-overlay');
+  const title = document.getElementById('blog-post-modal-title');
+  const delBtn = document.getElementById('blog-post-modal-delete');
+
+  document.getElementById('blog-post-edit-id').value = '';
+  document.getElementById('blog-post-title').value = '';
+  document.getElementById('blog-post-topic').value = '';
+  document.getElementById('blog-post-excerpt').value = '';
+  document.getElementById('blog-post-date').value = new Date().toISOString().slice(0, 16);
+  document.getElementById('blog-post-enabled').checked = true;
+  document.getElementById('blog-post-pinned').checked = false;
+  document.getElementById('blog-cover-url').value = '';
+  document.getElementById('blog-cover-preview').innerHTML = '<i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i><span>Chưa chọn ảnh</span>';
+  blogState.blogQuill.setText('');
+
+  if (postId) {
+    const post = blogState.posts.find(p => p.id === postId);
+    if (post) {
+      title.textContent = 'Sửa Bài Viết';
+      document.getElementById('blog-post-edit-id').value = post.id;
+      document.getElementById('blog-post-title').value = post.title;
+      document.getElementById('blog-post-topic').value = post.topicId;
+      document.getElementById('blog-post-excerpt').value = post.excerpt;
+      if (post.publishedAt) document.getElementById('blog-post-date').value = new Date(post.publishedAt).toISOString().slice(0, 16);
+      document.getElementById('blog-post-enabled').checked = post.enabled;
+      document.getElementById('blog-post-pinned').checked = post.pinned;
+      if (post.coverImage) {
+        document.getElementById('blog-cover-url').value = post.coverImage;
+        document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(post.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+      }
+      delBtn.style.display = '';
+      // Load full content
+      api('listClowPosts', { token: state.token, withContent: 'true' }).then(data => {
+        const full = (data.posts || []).find(p => p.id === postId);
+        if (full && full.content) blogState.blogQuill.root.innerHTML = full.content;
+      }).catch(() => {});
+    }
+  } else {
+    title.textContent = 'Viết Bài Mới';
+    delBtn.style.display = 'none';
+  }
+
+  overlay.classList.remove('is-hidden');
+}
+
+function closePostModal() {
+  document.getElementById('blog-post-modal-overlay')?.classList.add('is-hidden');
+}
+
+async function savePost() {
+  const id = document.getElementById('blog-post-edit-id').value.trim();
+  const title = document.getElementById('blog-post-title').value.trim();
+  const topicId = document.getElementById('blog-post-topic').value;
+  const excerpt = document.getElementById('blog-post-excerpt').value.trim();
+  const content = blogState.blogQuill ? blogState.blogQuill.root.innerHTML : '';
+  const coverImage = document.getElementById('blog-cover-url').value.trim();
+  const publishedAt = document.getElementById('blog-post-date').value;
+  const enabled = document.getElementById('blog-post-enabled').checked;
+  const pinned = document.getElementById('blog-post-pinned').checked;
+
+  if (!title) { showToast('Vui lòng nhập tiêu đề bài viết', 'error'); return; }
+  if (!topicId) { showToast('Vui lòng chọn chủ đề', 'error'); return; }
+
+  const saveBtn = document.getElementById('blog-post-modal-save');
+  await withButtonPending(saveBtn, async () => {
+    await api('saveClowPost', { token: state.token, id, title, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
+    showToast(id ? 'Đã lưu bài viết' : 'Đã tạo bài viết mới');
+    closePostModal();
+    loadBlogPosts();
+  });
+}
+
+// ── Topic Modal ─────────────────────────────────────────────
+function openTopicModal(topicId) {
+  const overlay = document.getElementById('blog-topic-modal-overlay');
+  const titleEl = document.getElementById('blog-topic-modal-title');
+  const delBtn  = document.getElementById('blog-topic-modal-delete');
+
+  document.getElementById('blog-topic-edit-id').value = '';
+  document.getElementById('blog-topic-name').value = '';
+  document.getElementById('blog-topic-desc').value = '';
+  document.getElementById('blog-topic-icon').value = '🃏';
+  document.getElementById('blog-topic-enabled').checked = true;
+
+  if (topicId) {
+    const topic = blogState.topics.find(t => t.id === topicId);
+    if (topic) {
+      titleEl.textContent = 'Sửa Chủ Đề';
+      document.getElementById('blog-topic-edit-id').value = topic.id;
+      document.getElementById('blog-topic-name').value = topic.name;
+      document.getElementById('blog-topic-desc').value = topic.description || '';
+      document.getElementById('blog-topic-icon').value = topic.icon || '🃏';
+      document.getElementById('blog-topic-enabled').checked = topic.enabled;
+      delBtn.style.display = '';
+    }
+  } else {
+    titleEl.textContent = 'Thêm Chủ Đề';
+    delBtn.style.display = 'none';
+  }
+
+  overlay.classList.remove('is-hidden');
+}
+
+function closeTopicModal() {
+  document.getElementById('blog-topic-modal-overlay')?.classList.add('is-hidden');
+}
+
+async function saveTopic() {
+  const id = document.getElementById('blog-topic-edit-id').value.trim();
+  const name = document.getElementById('blog-topic-name').value.trim();
+  const description = document.getElementById('blog-topic-desc').value.trim();
+  const icon = document.getElementById('blog-topic-icon').value.trim() || '🃏';
+  const enabled = document.getElementById('blog-topic-enabled').checked;
+
+  if (!name) { showToast('Vui lòng nhập tên chủ đề', 'error'); return; }
+
+  const saveBtn = document.getElementById('blog-topic-modal-save');
+  await withButtonPending(saveBtn, async () => {
+    await api('saveClowTopic', { token: state.token, id, name, description, icon, enabled });
+    showToast(id ? 'Đã cập nhật chủ đề' : 'Đã tạo chủ đề mới');
+    closeTopicModal();
+    loadBlogTopics();
+  });
+}
+
+async function deleteTopic() {
+  const id = document.getElementById('blog-topic-edit-id').value.trim();
+  if (!id) return;
+  if (!confirm('Xóa chủ đề này? Các bài viết thuộc chủ đề này sẽ mất liên kết!')) return;
+  try {
+    await api('deleteClowTopic', { token: state.token, id });
+    showToast('Đã xóa chủ đề');
+    closeTopicModal();
+    loadBlogTopics();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Upload ảnh cover ─────────────────────────────────────────
+function handleCoverFileChange(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Ảnh quá lớn (tối đa 5MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const base64Full = e.target.result;
+    const comma = base64Full.indexOf(',');
+    const base64 = comma !== -1 ? base64Full.slice(comma + 1) : base64Full;
+    const mimeType = file.type || 'image/jpeg';
+
+    // Preview tạm
+    document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(base64Full)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+
+    try {
+      showToast('Đang upload ảnh lên Drive...');
+      const data = await api('uploadBlogImage', { token: state.token, data: base64, mimeType, fileName: file.name });
+      document.getElementById('blog-cover-url').value = data.url;
+      showToast('Upload ảnh thành công!');
+    } catch (err) {
+      showToast('Lỗi upload: ' + err.message, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Wire Events ─────────────────────────────────────────────
+function wireBlogEvents() {
+  // Tab switching
+  document.querySelectorAll('.blog-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.blog-tab').forEach(t => t.classList.remove('is-active'));
+      tab.classList.add('is-active');
+      const tabName = tab.dataset.tab;
+      document.getElementById('blog-tab-posts')?.classList.toggle('is-hidden', tabName !== 'posts');
+      document.getElementById('blog-tab-topics')?.classList.toggle('is-hidden', tabName !== 'topics');
+    });
+  });
+
+  // New post buttons
+  ['btn-new-post', 'btn-new-post-2'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => openPostModal(null));
+  });
+
+  // Filter topic
+  document.getElementById('blog-filter-topic')?.addEventListener('change', e => {
+    blogState.filterTopicId = e.target.value;
+    loadBlogPosts();
+  });
+
+  // Post modal
+  document.getElementById('blog-post-modal-save')?.addEventListener('click', savePost);
+  document.getElementById('blog-post-modal-cancel')?.addEventListener('click', closePostModal);
+  document.getElementById('blog-post-modal-close')?.addEventListener('click', closePostModal);
+  document.getElementById('blog-post-modal-overlay')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closePostModal();
+  });
+  document.getElementById('blog-post-modal-delete')?.addEventListener('click', async () => {
+    const id = document.getElementById('blog-post-edit-id').value;
+    if (!id || !confirm('Xóa bài viết này?')) return;
+    try {
+      await api('deleteClowPost', { token: state.token, id });
+      showToast('Đã xóa bài viết');
+      closePostModal();
+      loadBlogPosts();
+    } catch(e) { showToast(e.message, 'error'); }
+  });
+
+  // Cover image
+  document.getElementById('blog-cover-file')?.addEventListener('change', e => {
+    handleCoverFileChange(e.target.files?.[0]);
+  });
+  document.getElementById('blog-cover-url')?.addEventListener('change', e => {
+    const url = e.target.value.trim();
+    const preview = document.getElementById('blog-cover-preview');
+    if (url) {
+      preview.innerHTML = `<img src="${escAttr(url)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+    } else {
+      preview.innerHTML = '<i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i><span>Chưa chọn ảnh</span>';
+    }
+  });
+
+  // Topic modal
+  document.getElementById('btn-new-topic')?.addEventListener('click', () => openTopicModal(null));
+  document.getElementById('blog-topic-modal-save')?.addEventListener('click', saveTopic);
+  document.getElementById('blog-topic-modal-cancel')?.addEventListener('click', closeTopicModal);
+  document.getElementById('blog-topic-modal-close')?.addEventListener('click', closeTopicModal);
+  document.getElementById('blog-topic-modal-delete')?.addEventListener('click', deleteTopic);
+  document.getElementById('blog-topic-modal-overlay')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeTopicModal();
+  });
+}
+
