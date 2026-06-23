@@ -1202,6 +1202,10 @@ async function saveSectionOrder() {
 
     return { key, enabled, navLabel };
   });
+  
+  // DEBUG
+  alert("Payload chuẩn bị gửi: " + JSON.stringify(items));
+  
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
     showToast('Đã cập nhật thứ tự section!');
