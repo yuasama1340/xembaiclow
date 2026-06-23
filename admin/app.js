@@ -1088,7 +1088,7 @@ function renderSectionsOrderList() {
     const isNative   = !!NATIVE_SECTION_LABELS[key];
     const customSec  = customMap[key];
     const label      = isNative
-      ? NATIVE_SECTION_LABELS[key]
+      ? (item.navLabel || NATIVE_SECTION_LABELS[key])
       : (customSec ? (customSec.label || customSec.id) : key);
     const isEnabled  = isNative ? item.enabled : (customSec ? customSec.enabled : true);
     const isCustom   = !isNative;
