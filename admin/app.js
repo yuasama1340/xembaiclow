@@ -1200,12 +1200,10 @@ async function saveSectionOrder() {
     const oldItem = state.sectionOrder.find(o => (o.key || o) === key);
     if (oldItem && oldItem.navLabel) navLabel = oldItem.navLabel;
 
-    if (key === 'blog') navLabel = "TEST_BLOG_FIX";
-
     return { key, enabled, navLabel };
   });
 
-  alert("ĐANG LƯU BẰNG URL:\n" + ADMIN_SCRIPT_URL + "\n\nPayload sẽ gửi:\n" + JSON.stringify(items.find(i => i.key === 'blog')));
+  alert("ĐANG LƯU BẰNG URL:\n" + ADMIN_SCRIPT_URL + "\n\nPayload Blog: " + JSON.stringify(items.find(i => i.key === 'blog')) + "\n\nState Blog: " + JSON.stringify(state.sectionOrder.find(o => (o.key || o) === 'blog')));
 
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
