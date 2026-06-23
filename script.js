@@ -8,7 +8,7 @@ window.addEventListener('scroll', () => {
 // ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy
 // ============================================================
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoKbEWAyMBg4P0DxWg1_M4L1nPWCoyouveb8bOEI0Z3EBrQBTSbPRTK1vuH1bxyzuZ/exec';
-const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvaQgkwYrVJbn8-XGTOWcHGnMISy27Y4qHPay0IrP3qzYoALHPYZkNPzrdO2O3GPX-/exec';
+const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGy5kt87ZN4xka81RgU4bb6JF_hvp7wPYWFCZQzbf0Obp2jgez9vU72YN7SkLEWVHR/exec';
 
 const runtimeConfig = {
   payment: {

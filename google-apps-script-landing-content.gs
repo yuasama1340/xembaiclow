@@ -713,6 +713,16 @@ function handleGetPublicConfig() {
   });
 }
 
+function getCustomSectionsCount() {
+  const sheet = getSheetIfExists(CUSTOM_SECTIONS_SHEET_NAME);
+  return sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
+}
+
+function getClowPostsCount() {
+  const sheet = getSheetIfExists(CLOW_POSTS_SHEET_NAME);
+  return sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
+}
+
 function handleAdminInit(params) {
   const session = requireSession(params, ['admin', 'editor']);
   return json({
@@ -720,7 +730,9 @@ function handleAdminInit(params) {
     scriptVersion: SCRIPT_VERSION,
     user: session,
     items: readContentRows(true),
-    packages: readPackageRows(true)
+    packages: readPackageRows(true),
+    customSectionsCount: getCustomSectionsCount(),
+    clowPostsCount: getClowPostsCount()
   });
 }
 

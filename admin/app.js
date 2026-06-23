@@ -1,4 +1,4 @@
-const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvaQgkwYrVJbn8-XGTOWcHGnMISy27Y4qHPay0IrP3qzYoALHPYZkNPzrdO2O3GPX-/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGy5kt87ZN4xka81RgU4bb6JF_hvp7wPYWFCZQzbf0Obp2jgez9vU72YN7SkLEWVHR/exec';
 
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
@@ -841,6 +841,9 @@ async function loadContent() {
   
   state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   
+  state.customSectionsCount = data.customSectionsCount || 0;
+  state.clowPostsCount = data.clowPostsCount || 0;
+
   renderContent();
 }
 
@@ -1021,7 +1024,8 @@ function renderSectionsNavButton() {
   btn.type = 'button';
   btn.className = 'nav-section';
   btn.setAttribute('data-tab', 'sections');
-  btn.innerHTML = '<span>📄 Sections</span><span></span>';
+  const count = state.customSectionsCount !== undefined ? state.customSectionsCount : '--';
+  btn.innerHTML = `<span>Sections</span><span>${count}</span>`;
   btn.addEventListener('click', () => showSectionsPanel());
   nav.appendChild(btn);
 }
@@ -1369,7 +1373,8 @@ function renderBlogNavButton() {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'nav-section nav-blog-btn';
-  btn.innerHTML = `<span>🃏 Giải Mã Clow</span><span id="blog-nav-count">--</span>`;
+  const count = state.clowPostsCount !== undefined ? state.clowPostsCount : '--';
+  btn.innerHTML = `<span>Giải Mã Clow</span><span id="blog-nav-count">${count}</span>`;
   btn.addEventListener('click', openBlogPanel);
   nav.appendChild(btn);
 
@@ -1378,7 +1383,7 @@ function renderBlogNavButton() {
     const lBtn = document.createElement('button');
     lBtn.type = 'button';
     lBtn.className = 'nav-section nav-landing-btn';
-    lBtn.innerHTML = `<span>← Xem landing page</span>`;
+    lBtn.innerHTML = `<span>Xem landing page</span>`;
     lBtn.addEventListener('click', () => window.open('../index.html', '_blank'));
     nav.appendChild(lBtn);
   }
