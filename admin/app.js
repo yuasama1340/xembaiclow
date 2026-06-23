@@ -985,6 +985,7 @@ const NATIVE_SECTION_LABELS = {
   'flexible-3in1': '3 trong 1',
   offer:        'Ưu đãi',
   process:      'Quy trình',
+  blog:         'Giải Mã Clow (Blog)',
   contact:      'Đặt lịch'
 };
 
@@ -1069,10 +1070,16 @@ function renderSectionsOrderList() {
 
   // Neu chua co order, dung default
   let order = state.sectionOrder.length ? state.sectionOrder
-    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','contact'].map(k => ({key: k, enabled: true}));
+    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','blog','contact'].map(k => ({key: k, enabled: true}));
 
   // Đảm bảo tương thích ngược với order cũ là mảng string
   order = order.map(o => typeof o === 'string' ? {key: o, enabled: true} : o);
+
+  // Đảm bảo luôn có blog nếu trước đó chưa có
+  if (!order.find(o => o.key === 'blog')) {
+    const processIndex = order.findIndex(o => o.key === 'process');
+    order.splice(processIndex !== -1 ? processIndex + 1 : order.length - 1, 0, {key: 'blog', enabled: true});
+  }
 
   list.innerHTML = '';
 
@@ -1102,6 +1109,7 @@ function renderSectionsOrderList() {
       ` : ''}
       ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'Ẩn'}</span>` : ''}
       ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
+      ${isNative  ? `<button type="button" class="native-edit-btn" data-key="${escAttr(key)}" data-label="${escAttr(item.navLabel || label)}" title="Đổi tên Menu"><i class="fa-solid fa-pen"></i></button>` : ''}
     `;
 
     // Cập nhật giao diện khi toggle native
@@ -1147,6 +1155,28 @@ function renderSectionsOrderList() {
   // Nut edit cho cac custom section
   list.querySelectorAll('.order-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openSectionModal(btn.dataset.id));
+  });
+
+  // Nut edit cho cac native section (để đổi tên menu)
+  list.querySelectorAll('.native-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const current = btn.dataset.label;
+      const newLabel = prompt('Nhập tên hiển thị trên menu cho mục này (để trống để dùng tên gốc):', current);
+      if (newLabel !== null) {
+        const key = btn.dataset.key;
+        let item = state.sectionOrder.find(o => (o.key || o) === key);
+        if (!item) {
+          item = { key: key, enabled: true };
+          state.sectionOrder.push(item);
+        }
+        if (typeof item === 'string') {
+          const idx = state.sectionOrder.indexOf(item);
+          state.sectionOrder[idx] = item = { key, enabled: true };
+        }
+        item.navLabel = newLabel.trim();
+        renderSectionsOrderList();
+      }
+    });
   });
 }
 

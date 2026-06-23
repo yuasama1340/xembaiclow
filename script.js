@@ -1070,14 +1070,18 @@ function applyAllSectionOrder(sectionOrder, customSections) {
       } else {
         el.style.display = '';
       }
-      
-      // Ẩn/hiện link menu nếu là native section
-      const navLinks = document.querySelector('.nav-links');
-      if (navLinks) {
-        const a = navLinks.querySelector(`a[href="#${item.key}"]`);
-        if (a && a.parentElement) {
-          a.parentElement.style.display = item.enabled ? '' : 'none';
-        }
+    }
+
+    // Ẩn/hiện và đổi tên link menu nếu là native section hoặc blog
+    const navLinks = document.querySelector('.nav-links');
+    if (navLinks) {
+      const a = item.key === 'blog'
+        ? navLinks.querySelector(`a[href="clow-blog.html"]`)
+        : navLinks.querySelector(`a[href="#${item.key}"]`);
+        
+      if (a && a.parentElement) {
+        a.parentElement.style.display = item.enabled ? '' : 'none';
+        if (item.navLabel) a.textContent = item.navLabel;
       }
     }
   });
