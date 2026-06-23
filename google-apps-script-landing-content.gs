@@ -1222,13 +1222,14 @@ function readSectionOrder() {
   if (!sheet || sheet.getLastRow() < 2) {
     return DEFAULT_SECTION_ORDER.map(k => ({key: k, enabled: true}));
   }
-  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
   return rows
     .filter(r => String(r[0]).trim())
     .sort((a, b) => Number(a[1]) - Number(b[1]))
     .map(r => ({
       key: String(r[0]).trim(),
-      enabled: r[2] === '' ? true : (r[2] === true || String(r[2]).toUpperCase() === 'TRUE')
+      enabled: r[2] === '' ? true : (r[2] === true || String(r[2]).toUpperCase() === 'TRUE'),
+      navLabel: r[3] ? String(r[3]).trim() : ''
     }));
 }
 
@@ -1371,10 +1372,10 @@ function handleReorderAllSections(params) {
   if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
   const rows = order.map((obj, i) => {
     // Hỗ trợ mảng string cũ hoặc mảng object mới
-    if (typeof obj === 'string') return [String(obj).trim(), i + 1, true];
-    return [String(obj.key).trim(), i + 1, !!obj.enabled];
+    if (typeof obj === 'string') return [String(obj).trim(), i + 1, true, ''];
+    return [String(obj.key).trim(), i + 1, !!obj.enabled, obj.navLabel || ''];
   });
-  sheet.getRange(2, 1, rows.length, 3).setValues(rows);
+  sheet.getRange(2, 1, rows.length, 4).setValues(rows);
 
   CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
   CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
