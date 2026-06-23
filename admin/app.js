@@ -328,7 +328,9 @@ function renderContent() {
 
   const board = $('#content-board');
   const sectionsPanel = $('#sections-panel');
+  const blogPanel = $('#blog-panel');
   if (sectionsPanel) sectionsPanel.classList.add('is-hidden');
+  if (blogPanel) blogPanel.classList.add('is-hidden');
   board.classList.remove('is-hidden');
   board.innerHTML = '';
 
@@ -1031,7 +1033,9 @@ function showSectionsPanel() {
   // An content board, hien sections panel
   const board = document.getElementById('content-board');
   const panel = document.getElementById('sections-panel');
+  const blogPanel = document.getElementById('blog-panel');
   if (board) board.classList.add('is-hidden');
+  if (blogPanel) blogPanel.classList.add('is-hidden');
   if (panel) panel.classList.remove('is-hidden');
 
   // Bo active cac nav buttons khac, set active cho sections
@@ -1385,7 +1389,7 @@ function renderBlogNavButton() {
 
 function openBlogPanel() {
   // Ẩn các panel khác
-  document.getElementById('content-board')?.closest('section')?.querySelectorAll('.content-board, .management-grid, .sections-panel').forEach(el => el.classList.add('is-hidden'));
+  document.getElementById('content-board')?.parentElement?.querySelectorAll('.content-board, .management-grid, .sections-panel').forEach(el => el.classList.add('is-hidden'));
   const blogPanel = document.getElementById('blog-panel');
   if (blogPanel) blogPanel.classList.remove('is-hidden');
   loadBlogTopics();
