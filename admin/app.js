@@ -198,6 +198,10 @@ function renderSectionNav(groups) {
   if (typeof renderSectionsNavButton === 'function') {
     renderSectionsNavButton();
   }
+  // Restore the Blog button
+  if (typeof renderBlogNavButton === 'function') {
+    renderBlogNavButton();
+  }
 }
 
 function createField(item) {
@@ -1322,7 +1326,7 @@ function renderBlogNavButton() {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'nav-section nav-blog-btn';
-  btn.innerHTML = `<span>🃏 Giải mã bài Clow</span><span id="blog-nav-count">--</span>`;
+  btn.innerHTML = `<span>🃏 Giải Mã Clow</span><span id="blog-nav-count">--</span>`;
   btn.addEventListener('click', openBlogPanel);
   nav.appendChild(btn);
 
