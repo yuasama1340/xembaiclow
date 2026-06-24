@@ -1550,11 +1550,39 @@ input:disabled, textarea:disabled {
   white-space: nowrap;
 }
 .blog-post-toggle-cell .toggle-switch {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   margin: 0 auto;
-  height: 44px;
+}
+.blog-post-toggle-cell .blog-list-toggle {
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  vertical-align: middle;
+}
+.blog-post-toggle-cell .blog-list-toggle .toggle-track {
+  inset: 0;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+}
+.blog-post-toggle-cell .blog-list-toggle .toggle-thumb {
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.3);
+}
+.blog-post-toggle-cell .blog-list-toggle input:checked + .toggle-track {
+  background: linear-gradient(135deg, var(--purple-main), #8e54d1);
+}
+.blog-post-toggle-cell .blog-list-toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(22px);
+}
+.blog-post-toggle-cell .blog-list-toggle:hover .toggle-track {
+  border-color: rgba(201,168,76,.5);
+}
+.blog-post-toggle-cell .blog-list-toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
 }
 .blog-post-date-cell {
   font-size: .82rem;
@@ -1735,13 +1763,11 @@ input:disabled, textarea:disabled {
   margin-left: 10px;
   border-left: 1px solid #d1d5db;
   padding-left: 12px !important;
+  width: 40px !important;
+  border-radius: 6px;
 }
-.ql-toolbar.ql-snow .ql-clean::after {
-  content: 'Xoa format';
-  margin-left: 6px;
-  font-size: 11px;
-  color: #4b5563;
-  vertical-align: middle;
+.ql-toolbar.ql-snow .ql-clean:hover {
+  background: rgba(107,63,160,.12) !important;
 }
 
 /* Pagination */

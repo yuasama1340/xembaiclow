@@ -1583,7 +1583,7 @@ function renderPostsTable() {
     return `
     <tr>
       <td class="blog-post-toggle-cell">
-        <label class="toggle-switch">
+        <label class="toggle-switch blog-list-toggle" title="${p.enabled ? 'Đang bật' : 'Đang tắt'}">
           <input type="checkbox" class="js-toggle-post" data-id="${escAttr(p.id)}" data-field="enabled" ${p.enabled ? 'checked' : ''} />
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
@@ -1762,6 +1762,19 @@ function closePostModal() {
   document.getElementById('blog-post-modal-overlay')?.classList.add('is-hidden');
 }
 
+function hasPostDraftContent() {
+  const title = document.getElementById('blog-post-title')?.value.trim();
+  const cover = document.getElementById('blog-cover-url')?.value.trim();
+  const excerptText = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.getText().trim() : '';
+  const contentText = blogState.blogQuill ? blogState.blogQuill.getText().trim() : '';
+  return Boolean(title || cover || excerptText || contentText);
+}
+
+function requestClosePostModal() {
+  if (hasPostDraftContent() && !confirm('Bạn có nội dung chưa lưu. Bạn chắc chắn muốn đóng cửa sổ soạn thảo?')) return;
+  closePostModal();
+}
+
 async function savePost() {
   const id = document.getElementById('blog-post-edit-id').value.trim();
   const title = document.getElementById('blog-post-title').value.trim();
@@ -1904,10 +1917,10 @@ function wireBlogEvents() {
 
   // Post modal
   document.getElementById('blog-post-modal-save')?.addEventListener('click', savePost);
-  document.getElementById('blog-post-modal-cancel')?.addEventListener('click', closePostModal);
-  document.getElementById('blog-post-modal-close')?.addEventListener('click', closePostModal);
+  document.getElementById('blog-post-modal-cancel')?.addEventListener('click', requestClosePostModal);
+  document.getElementById('blog-post-modal-close')?.addEventListener('click', requestClosePostModal);
   document.getElementById('blog-post-modal-overlay')?.addEventListener('click', e => {
-    if (e.target === e.currentTarget) closePostModal();
+    if (e.target === e.currentTarget) showToast('Bài đang soạn vẫn được giữ. Bấm Lưu, Hủy hoặc nút X để đóng.');
   });
   document.getElementById('blog-post-modal-delete')?.addEventListener('click', async () => {
     const id = document.getElementById('blog-post-edit-id').value;
