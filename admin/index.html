@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="../hinh/favicon.png" />
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
-  <link rel="stylesheet" href="./style.css?v=20260624-blog-editor-fix" />
+  <link rel="stylesheet" href="./style.css?v=20260624-blog-editor-polish" />
 </head>
 <body>
   <div class="admin-bg">
@@ -261,7 +261,7 @@
                   <th style="width:160px">Chủ đề</th>
                   <th style="width:110px">Ngày đăng</th>
                   <th style="width:56px">Ghim</th>
-                  <th style="width:80px">Thao tác</th>
+                  <th style="width:104px">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="blog-posts-body">
@@ -372,7 +372,7 @@
         <!-- Hàng 2: Mô tả ngắn -->
         <label class="modal-label">
           <span>Mô tả ngắn <em>(hiển thị trên card, không nên quá dài)</em></span>
-          <div id="blog-excerpt-quill-editor" style="height: 120px; border-radius: 4px; margin-top: 8px;"></div>
+          <div id="blog-excerpt-quill-editor" class="blog-excerpt-editor"></div>
           <!-- Ẩn textarea đi để dự phòng nếu cần -->
           <textarea id="blog-post-excerpt" style="display:none;"></textarea>
         </label>
@@ -479,6 +479,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-  <script src="./app.js?v=20260624-blog-editor-fix"></script>
+  <script src="./app.js?v=20260624-blog-editor-polish"></script>
 </body>
 </html>

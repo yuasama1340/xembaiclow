@@ -1021,6 +1021,28 @@ function attachStrongCleanHandler(quill) {
   toolbar.addHandler('clean', () => applyStrongClean(quill));
 }
 
+function decorateQuillToolbar(quill) {
+  const toolbar = quill && quill.getModule('toolbar');
+  const root = toolbar && toolbar.container;
+  if (!root) return;
+  const titles = {
+    bold: 'In đậm',
+    italic: 'In nghiêng',
+    underline: 'Gạch chân',
+    strike: 'Gạch ngang',
+    color: 'Chọn màu chữ',
+    background: 'Chọn màu nền',
+    align: 'Canh lề',
+    clean: 'Xóa định dạng'
+  };
+  Object.entries(titles).forEach(([name, title]) => {
+    root.querySelectorAll(`.ql-${name}`).forEach(el => {
+      el.setAttribute('title', title);
+      el.setAttribute('aria-label', title);
+    });
+  });
+}
+
 // --- Khoi tao Quill Editor ---
 function initQuillEditor() {
   if (quillEditor) return;
@@ -1042,6 +1064,7 @@ function initQuillEditor() {
     }
   });
   attachStrongCleanHandler(quillEditor);
+  decorateQuillToolbar(quillEditor);
 }
 
 // --- Nav button cho tab Sections ---
@@ -1566,8 +1589,10 @@ function renderPostsTable() {
         </label>
       </td>
       <td class="blog-post-title-cell">
-        <span class="blog-post-title-text">${escHtml(p.title)}</span>
-        ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb" onerror="this.style.display='none'"/>` : ''}
+        <div class="blog-post-title-wrap">
+          <span class="blog-post-title-text">${escHtml(p.title)}</span>
+          ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb" onerror="this.style.display='none'"/>` : ''}
+        </div>
       </td>
       <td>
         <span class="blog-topic-badge">${escHtml(topic ? (topic.icon + ' ' + topic.name) : p.topicId || '--')}</span>
@@ -1659,6 +1684,7 @@ function initBlogQuill() {
     placeholder: 'Viết nội dung bài tại đây...',
   });
   attachStrongCleanHandler(blogState.blogQuill);
+  decorateQuillToolbar(blogState.blogQuill);
 
   const excerptToolbarOptions = [
     ['bold', 'italic', 'underline', 'strike'],
@@ -1672,6 +1698,7 @@ function initBlogQuill() {
     placeholder: 'Tóm tắt ngắn nội dung bài...',
   });
   attachStrongCleanHandler(blogState.blogExcerptQuill);
+  decorateQuillToolbar(blogState.blogExcerptQuill);
 }
 
 function openPostModal(postId) {
