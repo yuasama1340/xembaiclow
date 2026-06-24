@@ -1633,6 +1633,7 @@ function initBlogQuill() {
   const excerptToolbarOptions = [
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
     ['clean']
   ];
   blogState.blogExcerptQuill = new Quill('#blog-excerpt-quill-editor', {

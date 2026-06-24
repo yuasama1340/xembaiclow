@@ -1380,51 +1380,13 @@ input:disabled, textarea:disabled {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 8px;
-}
-.quill-editor-wrap .ql-toolbar {
-  background: rgba(255,255,255,.04);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 8px 8px 0 0;
-}
-.quill-editor-wrap .ql-container {
-  background: rgba(255,255,255,.03);
-  border: none;
-  border-radius: 0 0 8px 8px;
-  font-family: 'Lora', serif;
-  font-size: .95rem;
-  min-height: 200px;
+  background: #fff;
+  color: #000;
 }
 .quill-editor-wrap .ql-editor {
   min-height: 200px;
-  color: var(--white);
   line-height: 1.7;
 }
-.quill-editor-wrap .ql-editor.ql-blank::before {
-  color: var(--text-muted);
-  font-style: normal;
-}
-.quill-editor-wrap .ql-toolbar .ql-stroke { stroke: var(--text-muted); }
-.quill-editor-wrap .ql-toolbar .ql-fill   { fill:   var(--text-muted); }
-.quill-editor-wrap .ql-toolbar .ql-picker-label { color: var(--text-muted); }
-.quill-editor-wrap .ql-toolbar button:hover .ql-stroke,
-.quill-editor-wrap .ql-toolbar button.ql-active .ql-stroke { stroke: var(--gold); }
-.quill-editor-wrap .ql-toolbar button:hover .ql-fill,
-.quill-editor-wrap .ql-toolbar button.ql-active .ql-fill { fill: var(--gold); }
-.quill-editor-wrap .ql-toolbar .ql-picker-label:hover,
-.quill-editor-wrap .ql-toolbar .ql-picker-item:hover { color: var(--gold); }
-.quill-editor-wrap .ql-toolbar .ql-picker-options {
-  background: #19122e;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--white);
-}
-.quill-editor-wrap .ql-editor blockquote {
-  border-left: 3px solid var(--gold);
-  padding-left: 16px;
-  color: var(--text-muted);
-}
-.quill-editor-wrap .ql-editor a { color: var(--purple-bright); }
 
 /* ============================================================
    🃏  BLOG CLOW ADMIN STYLES
@@ -1650,70 +1612,28 @@ input:disabled, textarea:disabled {
 
 /* Quill Blog Editor */
 .blog-quill-wrap {
-  background: rgba(19, 13, 40, .7);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  min-height: 260px;
-  overflow: hidden;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
 }
-.blog-quill-wrap .ql-toolbar {
-  background: rgba(30, 22, 54, .9);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
-  flex-wrap: wrap;
-}
-.blog-quill-wrap .ql-toolbar .ql-stroke { stroke: var(--text-muted); }
-.blog-quill-wrap .ql-toolbar .ql-fill { fill: var(--text-muted); }
-.blog-quill-wrap .ql-toolbar button:hover .ql-stroke { stroke: var(--gold); }
-.blog-quill-wrap .ql-toolbar button:hover .ql-fill { fill: var(--gold); }
-.blog-quill-wrap .ql-toolbar .ql-active .ql-stroke { stroke: var(--gold-light); }
-.blog-quill-wrap .ql-toolbar .ql-active .ql-fill { fill: var(--gold-light); }
-.blog-quill-wrap .ql-toolbar .ql-picker-label { color: var(--text-muted); }
-.blog-quill-wrap .ql-toolbar .ql-picker-label:hover { color: var(--gold); }
 .blog-quill-wrap .ql-container {
-  border: none;
   font-family: 'Lora', serif;
   font-size: 1rem;
 }
 .blog-quill-wrap .ql-editor {
   min-height: 220px;
-  color: var(--white);
   padding: 16px;
   line-height: 1.75;
 }
-.blog-quill-wrap .ql-editor.ql-blank::before {
-  color: var(--text-muted);
-  font-style: italic;
-}
 .blog-quill-wrap .ql-editor h1, .blog-quill-wrap .ql-editor h2, .blog-quill-wrap .ql-editor h3 {
-  color: var(--gold-light);
+  color: #1a1025;
 }
 .blog-quill-wrap .ql-editor a { color: var(--purple-bright); }
 .blog-quill-wrap .ql-editor blockquote {
   border-left: 3px solid var(--gold);
   padding-left: 16px;
-  color: var(--text-muted);
-}
-.blog-quill-wrap .ql-tooltip {
-  background: #19122e;
-  border: 1px solid var(--border);
-  color: var(--white);
-  border-radius: 8px;
-  z-index: 1100;
-}
-.blog-quill-wrap .ql-tooltip input {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--white);
-  border-radius: 6px;
-  padding: 4px 8px;
-}
-.blog-quill-wrap .ql-picker-options {
-  background: #19122e;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--white);
+  color: #666;
 }
 
 /* Pagination */
