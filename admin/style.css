@@ -1759,6 +1759,42 @@ input:disabled, textarea:disabled {
   min-height: 260px;
   padding-bottom: 34px;
 }
+.blog-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.blog-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.blog-html-editor {
+  width: 100%;
+  min-height: 340px;
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #0f172a;
+  color: #dbeafe;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: .9rem;
+  line-height: 1.65;
+  resize: vertical;
+}
+.blog-html-editor:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.18);
+}
+.blog-html-editor.is-hidden,
+.blog-quill-wrap.is-hidden {
+  display: none;
+}
 .ql-toolbar.ql-snow .ql-clean {
   margin-left: 10px;
   border-left: 1px solid #d1d5db;

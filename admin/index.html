@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="../hinh/favicon.png" />
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
-  <link rel="stylesheet" href="./style.css?v=20260624-modal-draft-guard" />
+  <link rel="stylesheet" href="./style.css?v=20260624-blog-image-html" />
 </head>
 <body>
   <div class="admin-bg">
@@ -418,8 +418,22 @@
         </div>
         <!-- Nội dung rich text -->
         <div class="modal-label">
-          <span>Nội dung bài viết</span>
+          <div class="blog-editor-heading">
+            <span>Nội dung bài viết</span>
+            <div class="blog-editor-actions">
+              <button type="button" class="secondary-action compact" id="blog-insert-image-btn">
+                <i class="fa-solid fa-image"></i>
+                <span>Chèn ảnh</span>
+              </button>
+              <button type="button" class="secondary-action compact" id="blog-toggle-html-btn">
+                <i class="fa-solid fa-code"></i>
+                <span>Xem HTML</span>
+              </button>
+            </div>
+          </div>
+          <input type="file" id="blog-inline-image-file" accept="image/*" multiple style="display:none" />
           <div id="blog-quill-editor" class="blog-quill-wrap"></div>
+          <textarea id="blog-post-html" class="blog-html-editor is-hidden" spellcheck="false" placeholder="HTML của bài viết..."></textarea>
         </div>
       </div>
       <div class="blog-modal-footer">
@@ -479,6 +493,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-  <script src="./app.js?v=20260624-modal-draft-guard"></script>
+  <script src="./app.js?v=20260624-blog-image-html"></script>
 </body>
 </html>

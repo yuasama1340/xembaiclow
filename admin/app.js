@@ -1033,6 +1033,7 @@ function decorateQuillToolbar(quill) {
     color: 'Chọn màu chữ',
     background: 'Chọn màu nền',
     align: 'Canh lề',
+    image: 'Chèn ảnh từ máy',
     clean: 'Xóa định dạng'
   };
   Object.entries(titles).forEach(([name, title]) => {
@@ -1040,6 +1041,31 @@ function decorateQuillToolbar(quill) {
       el.setAttribute('title', title);
       el.setAttribute('aria-label', title);
     });
+  });
+}
+
+function readImageFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('Không tìm thấy ảnh.'));
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+      return reject(new Error('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.'));
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return reject(new Error('Ảnh quá lớn (tối đa 5MB).'));
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const base64Full = e.target.result;
+      const comma = String(base64Full).indexOf(',');
+      resolve({
+        base64Full,
+        base64: comma !== -1 ? String(base64Full).slice(comma + 1) : String(base64Full),
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name || ('blog-' + Date.now() + '.jpg')
+      });
+    };
+    reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
+    reader.readAsDataURL(file);
   });
 }
 
@@ -1412,6 +1438,7 @@ const blogState = {
   postsPerPage: 10,
   blogQuill: null,
   blogExcerptQuill: null,
+  htmlMode: false,
 };
 
 // ── Nav button ──────────────────────────────────────────────
@@ -1667,6 +1694,65 @@ function renderPostsTable() {
 }
 
 // ── Post Modal ──────────────────────────────────────────────
+async function uploadBlogImageFile(file) {
+  const image = await readImageFileAsBase64(file);
+  const data = await api('uploadBlogImage', {
+    token: state.token,
+    data: image.base64,
+    mimeType: image.mimeType,
+    fileName: image.fileName
+  });
+  return data.url;
+}
+
+async function insertBlogImages(files) {
+  const list = Array.from(files || []).filter(Boolean);
+  if (!list.length || !blogState.blogQuill) return;
+  showToast(list.length > 1 ? `Đang upload ${list.length} ảnh lên Drive...` : 'Đang upload ảnh lên Drive...');
+
+  for (const file of list) {
+    try {
+      const url = await uploadBlogImageFile(file);
+      const range = blogState.blogQuill.getSelection(true) || { index: blogState.blogQuill.getLength() };
+      blogState.blogQuill.insertEmbed(range.index, 'image', url, 'user');
+      blogState.blogQuill.insertText(range.index + 1, '\n', 'user');
+      blogState.blogQuill.setSelection(range.index + 2, 0, 'silent');
+    } catch (err) {
+      showToast(`Lỗi chèn ảnh: ${err.message}`, 'error');
+      return;
+    }
+  }
+  showToast('Đã chèn ảnh vào bài viết');
+}
+
+function openInlineImagePicker() {
+  if (blogState.htmlMode) {
+    showToast('Hãy tắt chế độ HTML trước khi chèn ảnh.', 'error');
+    return;
+  }
+  document.getElementById('blog-inline-image-file')?.click();
+}
+
+function setBlogHtmlMode(enabled) {
+  const quillWrap = document.getElementById('blog-quill-editor');
+  const htmlArea = document.getElementById('blog-post-html');
+  const toggleBtn = document.getElementById('blog-toggle-html-btn');
+  if (!quillWrap || !htmlArea || !blogState.blogQuill) return;
+
+  blogState.htmlMode = Boolean(enabled);
+  if (blogState.htmlMode) {
+    htmlArea.value = blogState.blogQuill.root.innerHTML;
+    quillWrap.classList.add('is-hidden');
+    htmlArea.classList.remove('is-hidden');
+    if (toggleBtn) toggleBtn.querySelector('span').textContent = 'Soạn thảo';
+  } else {
+    setQuillHtml(blogState.blogQuill, htmlArea.value);
+    htmlArea.classList.add('is-hidden');
+    quillWrap.classList.remove('is-hidden');
+    if (toggleBtn) toggleBtn.querySelector('span').textContent = 'Xem HTML';
+  }
+}
+
 function initBlogQuill() {
   if (blogState.blogQuill) return;
   const toolbarOptions = [
@@ -1675,7 +1761,7 @@ function initBlogQuill() {
     [{ 'color': [] }, { 'background': [] }],
     [{ 'align': [] }],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    ['link', 'blockquote'],
+    ['link', 'blockquote', 'image'],
     ['clean']
   ];
   blogState.blogQuill = new Quill('#blog-quill-editor', {
@@ -1685,6 +1771,22 @@ function initBlogQuill() {
   });
   attachStrongCleanHandler(blogState.blogQuill);
   decorateQuillToolbar(blogState.blogQuill);
+  blogState.blogQuill.getModule('toolbar')?.addHandler('image', openInlineImagePicker);
+  blogState.blogQuill.root.addEventListener('paste', e => {
+    const files = Array.from(e.clipboardData?.items || [])
+      .filter(item => item.kind === 'file' && /^image\//i.test(item.type))
+      .map(item => item.getAsFile())
+      .filter(Boolean);
+    if (!files.length) return;
+    e.preventDefault();
+    insertBlogImages(files);
+  });
+  blogState.blogQuill.root.addEventListener('drop', e => {
+    const files = Array.from(e.dataTransfer?.files || []).filter(file => /^image\//i.test(file.type));
+    if (!files.length) return;
+    e.preventDefault();
+    insertBlogImages(files);
+  });
 
   const excerptToolbarOptions = [
     ['bold', 'italic', 'underline', 'strike'],
@@ -1708,6 +1810,17 @@ function openPostModal(postId) {
   const overlay = document.getElementById('blog-post-modal-overlay');
   const title = document.getElementById('blog-post-modal-title');
   const delBtn = document.getElementById('blog-post-modal-delete');
+  const htmlArea = document.getElementById('blog-post-html');
+  const quillWrap = document.getElementById('blog-quill-editor');
+  const htmlToggle = document.getElementById('blog-toggle-html-btn');
+
+  blogState.htmlMode = false;
+  if (htmlArea) {
+    htmlArea.value = '';
+    htmlArea.classList.add('is-hidden');
+  }
+  if (quillWrap) quillWrap.classList.remove('is-hidden');
+  if (htmlToggle) htmlToggle.querySelector('span').textContent = 'Xem HTML';
 
   document.getElementById('blog-post-edit-id').value = '';
   document.getElementById('blog-post-title').value = '';
@@ -1766,7 +1879,8 @@ function hasPostDraftContent() {
   const title = document.getElementById('blog-post-title')?.value.trim();
   const cover = document.getElementById('blog-cover-url')?.value.trim();
   const excerptText = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.getText().trim() : '';
-  const contentText = blogState.blogQuill ? blogState.blogQuill.getText().trim() : '';
+  const htmlText = document.getElementById('blog-post-html')?.value.trim();
+  const contentText = blogState.htmlMode ? htmlText : (blogState.blogQuill ? blogState.blogQuill.getText().trim() : '');
   return Boolean(title || cover || excerptText || contentText);
 }
 
@@ -1782,7 +1896,9 @@ async function savePost() {
   // Lấy nội dung từ Quill editor (nếu trống thì lấy chuỗi rỗng)
   let excerpt = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.root.innerHTML : '';
   if (excerpt === '<p><br></p>') excerpt = '';
-  const content = blogState.blogQuill ? blogState.blogQuill.root.innerHTML : '';
+  const content = blogState.htmlMode
+    ? document.getElementById('blog-post-html')?.value || ''
+    : (blogState.blogQuill ? blogState.blogQuill.root.innerHTML : '');
   const coverImage = document.getElementById('blog-cover-url').value.trim();
   const publishedAt = document.getElementById('blog-post-date').value;
   const enabled = document.getElementById('blog-post-enabled').checked;
@@ -1868,27 +1984,13 @@ async function deleteTopic() {
 // ── Upload ảnh cover ─────────────────────────────────────────
 function handleCoverFileChange(file) {
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Ảnh quá lớn (tối đa 5MB)', 'error'); return; }
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const base64Full = e.target.result;
-    const comma = base64Full.indexOf(',');
-    const base64 = comma !== -1 ? base64Full.slice(comma + 1) : base64Full;
-    const mimeType = file.type || 'image/jpeg';
-
-    // Preview tạm
-    document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(base64Full)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
-
-    try {
-      showToast('Đang upload ảnh lên Drive...');
-      const data = await api('uploadBlogImage', { token: state.token, data: base64, mimeType, fileName: file.name });
-      document.getElementById('blog-cover-url').value = data.url;
-      showToast('Upload ảnh thành công!');
-    } catch (err) {
-      showToast('Lỗi upload: ' + err.message, 'error');
-    }
-  };
-  reader.readAsDataURL(file);
+  readImageFileAsBase64(file).then(async image => {
+    document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(image.base64Full)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+    showToast('Đang upload ảnh lên Drive...');
+    const data = await api('uploadBlogImage', { token: state.token, data: image.base64, mimeType: image.mimeType, fileName: image.fileName });
+    document.getElementById('blog-cover-url').value = data.url;
+    showToast('Upload ảnh thành công!');
+  }).catch(err => showToast('Lỗi upload: ' + err.message, 'error'));
 }
 
 // ── Wire Events ─────────────────────────────────────────────
@@ -1921,6 +2023,14 @@ function wireBlogEvents() {
   document.getElementById('blog-post-modal-close')?.addEventListener('click', requestClosePostModal);
   document.getElementById('blog-post-modal-overlay')?.addEventListener('click', e => {
     if (e.target === e.currentTarget) showToast('Bài đang soạn vẫn được giữ. Bấm Lưu, Hủy hoặc nút X để đóng.');
+  });
+  document.getElementById('blog-insert-image-btn')?.addEventListener('click', openInlineImagePicker);
+  document.getElementById('blog-inline-image-file')?.addEventListener('change', e => {
+    insertBlogImages(e.target.files);
+    e.target.value = '';
+  });
+  document.getElementById('blog-toggle-html-btn')?.addEventListener('click', () => {
+    setBlogHtmlMode(!blogState.htmlMode);
   });
   document.getElementById('blog-post-modal-delete')?.addEventListener('click', async () => {
     const id = document.getElementById('blog-post-edit-id').value;
