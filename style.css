@@ -1757,8 +1757,9 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 .blog-card-thumb {
   width: 100%;
-  height: 220px;
-  object-fit: cover;
+  height: 240px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.4);
   border-bottom: 1px solid rgba(201, 168, 76, 0.1);
   transition: transform 0.5s ease;
 }
@@ -1791,11 +1792,16 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   margin-bottom: 12px;
 }
 .blog-card-excerpt {
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.85) !important;
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 24px;
   flex: 1;
+}
+.blog-card-excerpt * {
+  color: inherit !important;
+  background-color: transparent !important;
+  font-family: inherit !important;
 }
 .blog-card-readmore {
   display: inline-flex;

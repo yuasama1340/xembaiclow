@@ -1463,7 +1463,7 @@ input:disabled, textarea:disabled {
 .blog-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .88rem;
+  font-size: .95rem;
 }
 .blog-table thead tr {
   background: rgba(30, 22, 54, .8);
@@ -1479,14 +1479,18 @@ input:disabled, textarea:disabled {
   letter-spacing: .04em;
   white-space: nowrap;
 }
+.blog-table tbody tr {
+  background: rgba(255, 255, 255, 0.02);
+}
 .blog-table td {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(180, 126, 229, .08);
   vertical-align: middle;
 }
-.blog-table tbody tr:hover { background: rgba(107, 63, 160, .1); }
+}
+.blog-table tbody tr:hover { background: rgba(255, 255, 255, 0.06); }
 .blog-post-title-cell { display: flex; align-items: center; gap: 10px; }
-.blog-post-title-text { flex: 1; font-weight: 500; }
+.blog-post-title-text { flex: 1; font-weight: 500; font-size: 1rem; }
 .blog-post-thumb {
   width: 44px;
   height: 44px;
