@@ -1069,6 +1069,20 @@ function readImageFileAsBase64(file) {
   });
 }
 
+function getDriveFileId(url) {
+  const raw = String(url || '');
+  return raw.match(/[?&]id=([^&]+)/)?.[1]
+    || raw.match(/\/file\/d\/([^/]+)/)?.[1]
+    || raw.match(/\/thumbnail\?id=([^&]+)/)?.[1]
+    || '';
+}
+
+function drivePreviewUrl(urlOrId, size = 1600) {
+  const raw = String(urlOrId || '').trim();
+  const id = getDriveFileId(raw) || (/^[a-zA-Z0-9_-]{20,}$/.test(raw) ? raw : '');
+  return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${size}` : raw;
+}
+
 // --- Khoi tao Quill Editor ---
 function initQuillEditor() {
   if (quillEditor) return;
@@ -1702,7 +1716,7 @@ async function uploadBlogImageFile(file) {
     mimeType: image.mimeType,
     fileName: image.fileName
   });
-  return data.url;
+  return drivePreviewUrl(data.fileId || data.url);
 }
 
 async function insertBlogImages(files) {
@@ -1854,7 +1868,7 @@ function openPostModal(postId) {
       document.getElementById('blog-post-pinned').checked = post.pinned;
       if (post.coverImage) {
         document.getElementById('blog-cover-url').value = post.coverImage;
-        document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(post.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+        document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(drivePreviewUrl(post.coverImage, 1000))}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
       }
       delBtn.style.display = '';
       // Load full content
@@ -1988,7 +2002,7 @@ function handleCoverFileChange(file) {
     document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(image.base64Full)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
     showToast('Đang upload ảnh lên Drive...');
     const data = await api('uploadBlogImage', { token: state.token, data: image.base64, mimeType: image.mimeType, fileName: image.fileName });
-    document.getElementById('blog-cover-url').value = data.url;
+    document.getElementById('blog-cover-url').value = drivePreviewUrl(data.fileId || data.url, 1000);
     showToast('Upload ảnh thành công!');
   }).catch(err => showToast('Lỗi upload: ' + err.message, 'error'));
 }
@@ -2051,7 +2065,7 @@ function wireBlogEvents() {
     const url = e.target.value.trim();
     const preview = document.getElementById('blog-cover-preview');
     if (url) {
-      preview.innerHTML = `<img src="${escAttr(url)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+      preview.innerHTML = `<img src="${escAttr(drivePreviewUrl(url, 1000))}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
     } else {
       preview.innerHTML = '<i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i><span>Chưa chọn ảnh</span>';
     }
