@@ -1319,8 +1319,7 @@ input:disabled, textarea:disabled {
 }
 .toggle-switch {
   position: relative;
-  display: inline-block;
-  vertical-align: middle;
+  display: block;
   width: 48px;
   height: 26px;
   cursor: pointer;
@@ -1375,19 +1374,49 @@ input:disabled, textarea:disabled {
 .section-modal-footer .danger-action:hover { background: rgba(255,124,146,.3); }
 
 /* ============================================================
-   QUILL EDITOR DARK THEME OVERRIDE
+   QUILL EDITOR GLOBAL LIGHT THEME OVERRIDE
    ============================================================ */
-.quill-editor-wrap {
-  border-radius: 0 0 8px 8px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  color: #000;
+.ql-toolbar.ql-snow {
+  background: #f3f4f6 !important;
+  border: 1px solid #d1d5db !important;
+  border-bottom: none !important;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }
-.quill-editor-wrap .ql-editor {
-  min-height: 200px;
+.ql-toolbar.ql-snow .ql-stroke { stroke: #444 !important; }
+.ql-toolbar.ql-snow .ql-fill { fill: #444 !important; }
+.ql-toolbar.ql-snow .ql-picker { color: #444 !important; }
+.ql-toolbar.ql-snow button:hover .ql-stroke,
+.ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: var(--purple-main) !important; }
+.ql-toolbar.ql-snow button:hover .ql-fill,
+.ql-toolbar.ql-snow button.ql-active .ql-fill { fill: var(--purple-main) !important; }
+
+.ql-container.ql-snow {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #d1d5db !important;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  font-family: 'Lora', serif;
+  font-size: 1rem;
+}
+.ql-editor {
+  min-height: 150px;
   line-height: 1.7;
+  padding: 16px;
+}
+.ql-editor.ql-blank::before {
+  color: #9ca3af !important;
+  font-style: italic;
+}
+.ql-editor h1, .ql-editor h2, .ql-editor h3 {
+  color: #1a1025 !important;
+}
+.ql-editor a { color: var(--purple-main) !important; }
+.ql-editor blockquote {
+  border-left: 3px solid var(--purple-main) !important;
+  padding-left: 16px;
+  color: #4b5563 !important;
 }
 
 /* ============================================================
@@ -1488,7 +1517,6 @@ input:disabled, textarea:disabled {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(180, 126, 229, .08);
   vertical-align: middle;
-}
 }
 .blog-table tbody tr:hover { background: rgba(255, 255, 255, 0.06); }
 .blog-post-title-cell { display: flex; align-items: center; gap: 10px; }
@@ -1616,31 +1644,7 @@ input:disabled, textarea:disabled {
 }
 .blog-cover-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
 
-/* Quill Blog Editor */
-.blog-quill-wrap {
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: #fff;
-  color: #000;
-}
-.blog-quill-wrap .ql-container {
-  font-family: 'Lora', serif;
-  font-size: 1rem;
-}
-.blog-quill-wrap .ql-editor {
-  min-height: 220px;
-  padding: 16px;
-  line-height: 1.75;
-}
-.blog-quill-wrap .ql-editor h1, .blog-quill-wrap .ql-editor h2, .blog-quill-wrap .ql-editor h3 {
-  color: #1a1025;
-}
-.blog-quill-wrap .ql-editor a { color: var(--purple-bright); }
-.blog-quill-wrap .ql-editor blockquote {
-  border-left: 3px solid var(--gold);
-  padding-left: 16px;
-  color: #666;
-}
+/* Styles that apply to wrappers if needed, but styling is handled by global ql-* above */
 
 /* Pagination */
 .blog-pagination {
