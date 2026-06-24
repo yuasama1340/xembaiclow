@@ -1320,9 +1320,11 @@ input:disabled, textarea:disabled {
 .toggle-switch {
   position: relative;
   display: inline-block;
+  vertical-align: middle;
   width: 48px;
   height: 26px;
   cursor: pointer;
+  margin: 0;
 }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-track {

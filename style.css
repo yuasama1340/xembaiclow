@@ -1792,11 +1792,12 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   margin-bottom: 12px;
 }
 .blog-card-excerpt {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: #ffffff !important;
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 24px;
   flex: 1;
+  text-align: justify;
 }
 .blog-card-excerpt * {
   color: inherit !important;
