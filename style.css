@@ -1792,7 +1792,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   margin-bottom: 12px;
 }
 .blog-card-excerpt {
-  color: #ffffff !important;
+  color: rgba(255,255,255,0.76) !important;
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 24px;
@@ -1803,7 +1803,13 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   color: inherit !important;
   background-color: transparent !important;
   font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-decoration: none !important;
 }
+.blog-card-excerpt p + p { margin-top: .6em !important; }
 .blog-card-readmore {
   display: inline-flex;
   align-items: center;
@@ -2077,8 +2083,11 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 }
 .post-cover {
   width: 100%;
-  max-height: 400px;
-  object-fit: cover;
+  max-height: min(76vh, 820px);
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.24);
+  border-radius: 16px;
+  border: 1px solid rgba(201,168,76,0.18);
 }
 .post-body {
   font-size: 1.1rem;
@@ -2095,10 +2104,14 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .post-body h3 { font-size: 1.4rem; }
 .post-body p { margin-bottom: 1.5em; }
 .post-body img {
-  max-width: 100%;
+  display: block;
+  max-width: min(100%, 920px);
   height: auto;
-  border-radius: 8px;
-  margin: 20px 0;
+  object-fit: contain;
+  border-radius: 14px;
+  margin: 28px auto;
+  border: 1px solid rgba(201,168,76,0.18);
+  box-shadow: 0 18px 42px rgba(0,0,0,0.28);
 }
 
 /* ============================================================

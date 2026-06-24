@@ -993,6 +993,34 @@ const NATIVE_SECTION_LABELS = {
 
 let quillEditor = null;
 
+function setQuillHtml(quill, html) {
+  if (!quill) return;
+  quill.setText('');
+  if (html) quill.clipboard.dangerouslyPasteHTML(0, html, 'silent');
+}
+
+function applyStrongClean(quill) {
+  if (!quill) return;
+  const range = quill.getSelection(true);
+  if (range && range.length) {
+    quill.removeFormat(range.index, range.length, 'user');
+  } else {
+    quill.removeFormat(0, quill.getLength(), 'user');
+  }
+
+  quill.root.querySelectorAll('[style], [class]').forEach(node => {
+    node.removeAttribute('style');
+    node.removeAttribute('class');
+  });
+  quill.update('user');
+}
+
+function attachStrongCleanHandler(quill) {
+  const toolbar = quill && quill.getModule('toolbar');
+  if (!toolbar) return;
+  toolbar.addHandler('clean', () => applyStrongClean(quill));
+}
+
 // --- Khoi tao Quill Editor ---
 function initQuillEditor() {
   if (quillEditor) return;
@@ -1013,6 +1041,7 @@ function initQuillEditor() {
       ]
     }
   });
+  attachStrongCleanHandler(quillEditor);
 }
 
 // --- Nav button cho tab Sections ---
@@ -1530,7 +1559,7 @@ function renderPostsTable() {
     const date = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '--';
     return `
     <tr>
-      <td>
+      <td class="blog-post-toggle-cell">
         <label class="toggle-switch">
           <input type="checkbox" class="js-toggle-post" data-id="${escAttr(p.id)}" data-field="enabled" ${p.enabled ? 'checked' : ''} />
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
@@ -1543,13 +1572,13 @@ function renderPostsTable() {
       <td>
         <span class="blog-topic-badge">${escHtml(topic ? (topic.icon + ' ' + topic.name) : p.topicId || '--')}</span>
       </td>
-      <td style="font-size:.82rem">${date}</td>
-      <td>
+      <td class="blog-post-date-cell">${date}</td>
+      <td class="blog-post-pin-cell">
         <button type="button" class="icon-button js-pin-post ${p.pinned ? 'is-pinned' : ''}" data-id="${escAttr(p.id)}" title="${p.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}">
           <i class="fa-solid fa-thumbtack"></i>
         </button>
       </td>
-      <td>
+      <td class="blog-post-actions-cell">
         <button type="button" class="icon-button js-edit-post" data-id="${escAttr(p.id)}" title="Sửa">
           <i class="fa-solid fa-pencil"></i>
         </button>
@@ -1629,6 +1658,7 @@ function initBlogQuill() {
     modules: { toolbar: toolbarOptions },
     placeholder: 'Viết nội dung bài tại đây...',
   });
+  attachStrongCleanHandler(blogState.blogQuill);
 
   const excerptToolbarOptions = [
     ['bold', 'italic', 'underline', 'strike'],
@@ -1641,6 +1671,7 @@ function initBlogQuill() {
     modules: { toolbar: excerptToolbarOptions },
     placeholder: 'Tóm tắt ngắn nội dung bài...',
   });
+  attachStrongCleanHandler(blogState.blogExcerptQuill);
 }
 
 function openPostModal(postId) {
@@ -1661,7 +1692,7 @@ function openPostModal(postId) {
   document.getElementById('blog-post-pinned').checked = false;
   document.getElementById('blog-cover-url').value = '';
   document.getElementById('blog-cover-preview').innerHTML = '<i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i><span>Chưa chọn ảnh</span>';
-  blogState.blogQuill.setText('');
+  setQuillHtml(blogState.blogQuill, '');
 
   if (postId) {
     const post = blogState.posts.find(p => p.id === postId);
@@ -1673,9 +1704,9 @@ function openPostModal(postId) {
       document.getElementById('blog-post-excerpt').value = post.excerpt;
       if (blogState.blogExcerptQuill) {
         if (post.excerpt) {
-          blogState.blogExcerptQuill.root.innerHTML = post.excerpt;
+          setQuillHtml(blogState.blogExcerptQuill, post.excerpt);
         } else {
-          blogState.blogExcerptQuill.setText('');
+          setQuillHtml(blogState.blogExcerptQuill, '');
         }
       }
       if (post.publishedAt) document.getElementById('blog-post-date').value = new Date(post.publishedAt).toISOString().slice(0, 16);
@@ -1689,7 +1720,7 @@ function openPostModal(postId) {
       // Load full content
       api('listClowPosts', { token: state.token, withContent: 'true' }).then(data => {
         const full = (data.posts || []).find(p => p.id === postId);
-        if (full && full.content) blogState.blogQuill.root.innerHTML = full.content;
+        if (full && full.content) setQuillHtml(blogState.blogQuill, full.content);
       }).catch(() => {});
     }
   } else {
@@ -1886,4 +1917,3 @@ function wireBlogEvents() {
     if (e.target === e.currentTarget) closeTopicModal();
   });
 }
-

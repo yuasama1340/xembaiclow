@@ -1161,6 +1161,12 @@ function getGoogleDriveImageUrl(url) {
   return url;
 }
 
+function stripBlogHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html || '';
+  return div.textContent || div.innerText || '';
+}
+
 // ── Tải danh sách Topics ──
 async function loadBlogTopics() {
   try {
@@ -1229,7 +1235,7 @@ function renderPostsGrid(posts, containerId) {
             <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
           </div>
           <h3 class="blog-card-title">${p.title}</h3>
-          <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+          <div class="blog-card-excerpt">${p.excerpt || ''}</div>
           <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
         </div>
       </a>
@@ -1335,7 +1341,7 @@ async function loadSinglePost() {
     // Đổi Title page & meta
     document.title = `${p.title} | ClowCat Patronus`;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc && p.excerpt) metaDesc.setAttribute('content', p.excerpt);
+    if (metaDesc && p.excerpt) metaDesc.setAttribute('content', stripBlogHtml(p.excerpt));
 
     // Xử lý content share link
     const currentUrl = encodeURIComponent(window.location.href);
@@ -1514,7 +1520,7 @@ async function initBlogPage() {
                       <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
                     </div>
                     <h3 class="blog-card-title">${p.title}</h3>
-                    <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+                    <div class="blog-card-excerpt">${p.excerpt || ''}</div>
                     <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
                   </div>
                 </a>

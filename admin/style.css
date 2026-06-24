@@ -1386,6 +1386,22 @@ input:disabled, textarea:disabled {
 .ql-toolbar.ql-snow .ql-stroke { stroke: #444 !important; }
 .ql-toolbar.ql-snow .ql-fill { fill: #444 !important; }
 .ql-toolbar.ql-snow .ql-picker { color: #444 !important; }
+.ql-toolbar.ql-snow .ql-picker-options {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, .16);
+  z-index: 20;
+}
+.ql-toolbar.ql-snow .ql-picker-item {
+  color: #1f2937 !important;
+}
+.ql-toolbar.ql-snow .ql-color-picker .ql-picker-item,
+.ql-toolbar.ql-snow .ql-background .ql-picker-item {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(17, 24, 39, .14);
+}
 .ql-toolbar.ql-snow button:hover .ql-stroke,
 .ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: var(--purple-main) !important; }
 .ql-toolbar.ql-snow button:hover .ql-fill,
@@ -1409,10 +1425,10 @@ input:disabled, textarea:disabled {
   color: #9ca3af !important;
   font-style: italic;
 }
-.ql-editor h1, .ql-editor h2, .ql-editor h3 {
-  color: #1a1025 !important;
+.ql-editor h1:not([style]), .ql-editor h2:not([style]), .ql-editor h3:not([style]) {
+  color: #1a1025;
 }
-.ql-editor a { color: var(--purple-main) !important; }
+.ql-editor a:not([style]) { color: var(--purple-main); }
 .ql-editor blockquote {
   border-left: 3px solid var(--purple-main) !important;
   padding-left: 16px;
@@ -1495,6 +1511,7 @@ input:disabled, textarea:disabled {
   width: 100%;
   border-collapse: collapse;
   font-size: .95rem;
+  table-layout: fixed;
 }
 .blog-table thead tr {
   background: rgba(30, 22, 54, .8);
@@ -1519,7 +1536,27 @@ input:disabled, textarea:disabled {
   vertical-align: middle;
 }
 .blog-table tbody tr:hover { background: rgba(255, 255, 255, 0.06); }
-.blog-post-title-cell { display: flex; align-items: center; gap: 10px; }
+.blog-post-toggle-cell,
+.blog-post-pin-cell,
+.blog-post-actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+.blog-post-toggle-cell .toggle-switch {
+  margin: 0 auto;
+}
+.blog-post-date-cell {
+  font-size: .82rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.blog-post-actions-cell {
+  text-align: center;
+}
+.blog-post-actions-cell .icon-button + .icon-button {
+  margin-left: 6px;
+}
+.blog-post-title-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .blog-post-title-text { flex: 1; font-weight: 500; font-size: 1rem; }
 .blog-post-thumb {
   width: 44px;
