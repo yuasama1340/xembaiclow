@@ -1903,11 +1903,15 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   font-weight: 700;
 }
 
+.blog-scroll-wrap {
+  position: relative;
+}
+
 .blog-scroll-row {
   display: flex;
   overflow-x: auto;
   gap: 30px;
-  padding-bottom: 20px;
+  padding: 4px 62px 20px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   /* Hide scrollbar but allow scrolling */
@@ -1921,6 +1925,61 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   scroll-snap-type: none; /* disable snap while dragging */
 }
 
+.blog-scroll-wrap::before,
+.blog-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 20px;
+  width: 82px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.blog-scroll-wrap::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(8,5,18,.92), rgba(8,5,18,0));
+}
+.blog-scroll-wrap::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(8,5,18,.92), rgba(8,5,18,0));
+}
+.blog-scroll-wrap.has-scroll::before,
+.blog-scroll-wrap.has-scroll::after {
+  opacity: 1;
+}
+
+.blog-scroll-btn {
+  position: absolute;
+  top: 44%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(201,168,76,.55);
+  background: linear-gradient(135deg, rgba(28,18,54,.92), rgba(12,8,24,.96));
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(0,0,0,.38), 0 0 0 6px rgba(201,168,76,.08);
+  transition: opacity .22s ease, transform .22s ease, border-color .22s ease, background .22s ease;
+}
+.blog-scroll-btn:hover {
+  transform: translateY(-50%) scale(1.06);
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(201,168,76,.2), rgba(28,18,54,.96));
+}
+.blog-scroll-btn.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.blog-scroll-prev { left: 10px; }
+.blog-scroll-next { right: 10px; }
+
 .blog-scroll-row .blog-card {
   min-width: 350px;
   max-width: 350px;
@@ -1928,6 +1987,21 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   scroll-snap-align: start;
 }
 @media (max-width: 768px) {
+  .blog-scroll-row {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .blog-scroll-wrap::before,
+  .blog-scroll-wrap::after {
+    width: 54px;
+  }
+  .blog-scroll-btn {
+    width: 38px;
+    height: 38px;
+    top: 42%;
+  }
+  .blog-scroll-prev { left: 2px; }
+  .blog-scroll-next { right: 2px; }
   .blog-scroll-row .blog-card {
     min-width: 300px;
     max-width: 300px;

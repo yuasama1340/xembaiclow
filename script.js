@@ -1507,25 +1507,33 @@ async function initBlogPage() {
           </div>
           
           <!-- Hàng bài viết cuộn ngang -->
-          <div class="blog-scroll-row">
-            ${topicPosts.map(p => {
-              const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
-              const coverUrl = getGoogleDriveImageUrl(p.coverImage);
-              return `
-                <a href="clow-post.html?id=${p.id}" class="blog-card">
-                  ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
-                  <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
-                  <div class="blog-card-content">
-                    <div class="blog-card-meta">
-                      <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
+          <div class="blog-scroll-wrap">
+            <button type="button" class="blog-scroll-btn blog-scroll-prev" aria-label="Xem bài viết trước">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="blog-scroll-row">
+              ${topicPosts.map(p => {
+                const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
+                const coverUrl = getGoogleDriveImageUrl(p.coverImage);
+                return `
+                  <a href="clow-post.html?id=${p.id}" class="blog-card">
+                    ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
+                    <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
+                    <div class="blog-card-content">
+                      <div class="blog-card-meta">
+                        <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
+                      </div>
+                      <h3 class="blog-card-title">${p.title}</h3>
+                      <div class="blog-card-excerpt">${p.excerpt || ''}</div>
+                      <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
                     </div>
-                    <h3 class="blog-card-title">${p.title}</h3>
-                    <div class="blog-card-excerpt">${p.excerpt || ''}</div>
-                    <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
-                  </div>
-                </a>
-              `;
-            }).join('')}
+                  </a>
+                `;
+              }).join('')}
+            </div>
+            <button type="button" class="blog-scroll-btn blog-scroll-next" aria-label="Xem thêm bài viết">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
           </div>
         </div>
       `;
@@ -1534,8 +1542,37 @@ async function initBlogPage() {
     container.innerHTML = html || '<div style="text-align:center; padding: 60px; opacity:0.6;">Chưa có bài viết nào.</div>';
     
     // Gắn sự kiện drag scroll ngang bằng chuột
-    const scrollRows = document.querySelectorAll('.blog-scroll-row');
-    scrollRows.forEach(row => {
+    setupBlogScrollRows();
+
+  } catch (err) {
+    container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu: ${err.message}</div>`;
+  }
+}
+
+function setupBlogScrollRows() {
+  const scrollRows = document.querySelectorAll('.blog-scroll-row');
+  scrollRows.forEach(row => {
+      const wrap = row.closest('.blog-scroll-wrap');
+      const prevBtn = wrap?.querySelector('.blog-scroll-prev');
+      const nextBtn = wrap?.querySelector('.blog-scroll-next');
+
+      const updateButtons = () => {
+        const maxScroll = row.scrollWidth - row.clientWidth;
+        const canScroll = maxScroll > 8;
+        if (wrap) wrap.classList.toggle('has-scroll', canScroll);
+        if (prevBtn) prevBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft <= 8);
+        if (nextBtn) nextBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft >= maxScroll - 8);
+      };
+
+      const scrollByPage = direction => {
+        row.scrollBy({ left: direction * Math.max(row.clientWidth * 0.8, 320), behavior: 'smooth' });
+      };
+
+      prevBtn?.addEventListener('click', () => scrollByPage(-1));
+      nextBtn?.addEventListener('click', () => scrollByPage(1));
+      row.addEventListener('scroll', updateButtons, { passive: true });
+      window.addEventListener('resize', updateButtons);
+
       let isDown = false;
       let startX;
       let scrollLeft;
@@ -1561,11 +1598,8 @@ async function initBlogPage() {
         const walk = (x - startX) * 2; // Tốc độ cuộn
         row.scrollLeft = scrollLeft - walk;
       });
+      updateButtons();
     });
-
-  } catch (err) {
-    container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu: ${err.message}</div>`;
-  }
 }
 
 // ── Khởi tạo cho trang Chi tiết (clow-post.html) ──
