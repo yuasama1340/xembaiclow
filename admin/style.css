@@ -1636,6 +1636,34 @@ input:disabled, textarea:disabled {
   text-overflow: ellipsis;
   max-width: 150px;
 }
+.blog-special-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.blog-special-sort i {
+  color: var(--gold);
+}
+.blog-special-sort span {
+  font-size: .85rem;
+  white-space: nowrap;
+}
+.blog-card-code-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(201,168,76,.42);
+  background: rgba(201,168,76,.12);
+  color: var(--gold-light);
+  font-size: .76rem;
+  font-weight: 700;
+  line-height: 1;
+}
 .icon-button.is-pinned i { color: var(--gold); }
 .icon-button.danger:hover { color: var(--danger); }
 

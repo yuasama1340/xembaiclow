@@ -1450,10 +1450,79 @@ const blogState = {
   filterTopicId: '',
   postsCurrentPage: 1,
   postsPerPage: 10,
+  specialSortMode: 'date',
   blogQuill: null,
   blogExcerptQuill: null,
   htmlMode: false,
 };
+
+function normalizeViText(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+function isClow52Topic(topicOrId) {
+  const topic = typeof topicOrId === 'string'
+    ? blogState.topics.find(t => t.id === topicOrId)
+    : topicOrId;
+  if (!topic) return false;
+  const text = normalizeViText(`${topic.id || ''} ${topic.name || ''} ${topic.description || ''}`);
+  return text.includes('y-nghia-52-la-bai') || (text.includes('52') && text.includes('la bai'));
+}
+
+function inferClowCardCode(post) {
+  const explicit = String(post?.cardCode || '').trim();
+  if (explicit) return explicit;
+  const source = `${post?.title || ''} ${post?.id || ''}`;
+  const match = source.match(/\b(\d{1,3})\b/);
+  return match ? match[1].padStart(2, '0') : '';
+}
+
+function compareClowCardCode(a, b) {
+  const codeA = inferClowCardCode(a);
+  const codeB = inferClowCardCode(b);
+  const numA = parseInt(codeA, 10);
+  const numB = parseInt(codeB, 10);
+  if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) return numA - numB;
+  if (codeA || codeB) return codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' });
+  return String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' });
+}
+
+function sortClow52Posts(posts, mode) {
+  const sorted = [...posts];
+  if (mode === 'title') {
+    sorted.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' }));
+  } else if (mode === 'code') {
+    sorted.sort(compareClowCardCode);
+  } else {
+    sorted.sort((a, b) => new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0));
+  }
+  return sorted;
+}
+
+function getTopicPostSortMode(topicId) {
+  const topic = blogState.topics.find(t => t.id === topicId);
+  return topic?.postSortMode || 'date';
+}
+
+async function saveTopicPostSortMode(topicId, mode) {
+  const topic = blogState.topics.find(t => t.id === topicId);
+  if (!topic) return;
+  topic.postSortMode = mode;
+  await api('saveClowTopic', {
+    token: state.token,
+    id: topic.id,
+    name: topic.name,
+    description: topic.description || '',
+    icon: topic.icon || '📖',
+    enabled: topic.enabled,
+    postSortMode: mode
+  });
+}
 
 // ── Nav button ──────────────────────────────────────────────
 function renderBlogNavButton() {
@@ -1593,6 +1662,8 @@ async function loadBlogPosts() {
 function renderPostsTable() {
   const tbody = document.getElementById('blog-posts-body');
   const pag = document.getElementById('blog-pagination');
+  const specialSortWrap = document.getElementById('blog-special-sort-wrap');
+  const specialSortSelect = document.getElementById('blog-special-sort');
   if (!tbody) return;
 
   // Lọc bài viết (nếu có filterTopicId)
@@ -1600,6 +1671,15 @@ function renderPostsTable() {
   if (blogState.filterTopicId) {
     filtered = filtered.filter(p => p.topicId === blogState.filterTopicId);
   }
+  const useSpecialSort = Boolean(blogState.filterTopicId && isClow52Topic(blogState.filterTopicId));
+  if (useSpecialSort && !blogState.specialSortMode) {
+    blogState.specialSortMode = getTopicPostSortMode(blogState.filterTopicId);
+  }
+  specialSortWrap?.classList.toggle('is-hidden', !useSpecialSort);
+  if (specialSortSelect && specialSortSelect.value !== blogState.specialSortMode) {
+    specialSortSelect.value = blogState.specialSortMode;
+  }
+  if (useSpecialSort) filtered = sortClow52Posts(filtered, blogState.specialSortMode);
 
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;opacity:.5">Chưa có bài viết nào.</td></tr>';
@@ -1632,6 +1712,7 @@ function renderPostsTable() {
       <td class="blog-post-title-cell">
         <div class="blog-post-title-wrap">
           <span class="blog-post-title-text">${escHtml(p.title)}</span>
+          ${inferClowCardCode(p) ? `<span class="blog-card-code-pill">Mã ${escHtml(inferClowCardCode(p))}</span>` : ''}
           ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb" onerror="this.style.display='none'"/>` : ''}
         </div>
       </td>
@@ -1838,6 +1919,7 @@ function openPostModal(postId) {
 
   document.getElementById('blog-post-edit-id').value = '';
   document.getElementById('blog-post-title').value = '';
+  document.getElementById('blog-post-card-code').value = '';
   document.getElementById('blog-post-topic').value = '';
   if (blogState.blogExcerptQuill) blogState.blogExcerptQuill.setText('');
   document.getElementById('blog-post-excerpt').value = '';
@@ -1854,6 +1936,7 @@ function openPostModal(postId) {
       title.textContent = 'Sửa Bài Viết';
       document.getElementById('blog-post-edit-id').value = post.id;
       document.getElementById('blog-post-title').value = post.title;
+      document.getElementById('blog-post-card-code').value = post.cardCode || inferClowCardCode(post);
       document.getElementById('blog-post-topic').value = post.topicId;
       document.getElementById('blog-post-excerpt').value = post.excerpt;
       if (blogState.blogExcerptQuill) {
@@ -1906,6 +1989,7 @@ function requestClosePostModal() {
 async function savePost() {
   const id = document.getElementById('blog-post-edit-id').value.trim();
   const title = document.getElementById('blog-post-title').value.trim();
+  const cardCode = document.getElementById('blog-post-card-code')?.value.trim() || '';
   const topicId = document.getElementById('blog-post-topic').value;
   // Lấy nội dung từ Quill editor (nếu trống thì lấy chuỗi rỗng)
   let excerpt = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.root.innerHTML : '';
@@ -1923,7 +2007,7 @@ async function savePost() {
 
   const saveBtn = document.getElementById('blog-post-modal-save');
   await withButtonPending(saveBtn, async () => {
-    await api('saveClowPost', { token: state.token, id, title, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
+    await api('saveClowPost', { token: state.token, id, title, cardCode, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
     showToast(id ? 'Đã lưu bài viết' : 'Đã tạo bài viết mới');
     closePostModal();
     loadBlogPosts();
@@ -2028,7 +2112,24 @@ function wireBlogEvents() {
   // Filter topic
   document.getElementById('blog-filter-topic')?.addEventListener('change', e => {
     blogState.filterTopicId = e.target.value;
+    blogState.specialSortMode = isClow52Topic(blogState.filterTopicId)
+      ? getTopicPostSortMode(blogState.filterTopicId)
+      : 'date';
+    blogState.postsCurrentPage = 1;
     loadBlogPosts();
+  });
+  document.getElementById('blog-special-sort')?.addEventListener('change', async e => {
+    blogState.specialSortMode = e.target.value;
+    blogState.postsCurrentPage = 1;
+    renderPostsTable();
+    if (blogState.filterTopicId && isClow52Topic(blogState.filterTopicId)) {
+      try {
+        await saveTopicPostSortMode(blogState.filterTopicId, blogState.specialSortMode);
+        showToast('Đã lưu thứ tự hiển thị cho trang blog');
+      } catch (err) {
+        showToast('Lỗi lưu thứ tự hiển thị: ' + err.message, 'error');
+      }
+    }
   });
 
   // Post modal

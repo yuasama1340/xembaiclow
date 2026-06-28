@@ -1122,6 +1122,60 @@ const blogState = {
   totalPages: 1
 };
 
+function escapeBlogHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[ch]));
+}
+
+function normalizeBlogText(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+function isClow52BlogTopic(topic) {
+  if (!topic) return false;
+  const text = normalizeBlogText(`${topic.id || ''} ${topic.name || ''} ${topic.description || ''}`);
+  return text.includes('y-nghia-52-la-bai') || (text.includes('52') && text.includes('la bai'));
+}
+
+function getClowCardCode(post) {
+  const explicit = String(post?.cardCode || '').trim();
+  if (explicit) return explicit;
+  const match = `${post?.title || ''} ${post?.id || ''}`.match(/\b(\d{1,3})\b/);
+  return match ? match[1].padStart(2, '0') : '';
+}
+
+function compareClowPostCode(a, b) {
+  const codeA = getClowCardCode(a);
+  const codeB = getClowCardCode(b);
+  const numA = parseInt(codeA, 10);
+  const numB = parseInt(codeB, 10);
+  if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) return numA - numB;
+  if (codeA || codeB) return codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' });
+  return String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' });
+}
+
+function sortClow52BlogPosts(posts, mode) {
+  const sorted = [...posts];
+  if (mode === 'title') {
+    sorted.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' }));
+  } else if (mode === 'code') {
+    sorted.sort(compareClowPostCode);
+  } else {
+    sorted.sort((a, b) => new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0));
+  }
+  return sorted;
+}
+
 // ── Gọi API chung ──
 async function fetchBlogApi(action, params = {}) {
   const urlParams = new URLSearchParams({ action, ...params });
@@ -1159,6 +1213,27 @@ function getGoogleDriveImageUrl(url) {
     }
   }
   return url;
+}
+
+function renderBlogTopicCard(p) {
+  const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
+  const coverUrl = getGoogleDriveImageUrl(p.coverImage);
+  const code = getClowCardCode(p);
+  return `
+    <a href="clow-post.html?id=${escapeBlogHtml(p.id)}" class="blog-card">
+      ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
+      ${code ? `<div class="blog-card-code">Mã ${escapeBlogHtml(code)}</div>` : ''}
+      <img src="${escapeBlogHtml(coverUrl)}" alt="${escapeBlogHtml(p.title)}" class="blog-card-thumb" loading="lazy" />
+      <div class="blog-card-content">
+        <div class="blog-card-meta">
+          <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
+        </div>
+        <h3 class="blog-card-title">${escapeBlogHtml(p.title)}</h3>
+        <div class="blog-card-excerpt">${p.excerpt || ''}</div>
+        <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
+      </div>
+    </a>
+  `;
 }
 
 function stripBlogHtml(html) {
@@ -1492,44 +1567,47 @@ async function initBlogPage() {
 
     topics.forEach(t => {
       // Lấy bài viết thuộc chủ đề này
-      const topicPosts = allPosts.filter(p => p.topicId === t.id);
+      const isClow52 = isClow52BlogTopic(t);
+      const clow52SortMode = t.postSortMode || 'date';
+      const topicPosts = isClow52
+        ? sortClow52BlogPosts(allPosts.filter(p => p.topicId === t.id), clow52SortMode)
+        : allPosts.filter(p => p.topicId === t.id);
       if (topicPosts.length === 0) return; // Ẩn chủ đề nếu không có bài
 
       // Build section HTML
       html += `
-        <div class="blog-topic-section">
+        <div class="blog-topic-section" data-topic-id="${escapeBlogHtml(t.id)}" data-clow52="${isClow52 ? 'true' : 'false'}">
           <!-- Ribbon chủ đề -->
           <div class="blog-section-header">
             <div class="blog-section-label">✦ GIẢI MÃ BÀI CLOW ✦</div>
             <div class="blog-section-ribbon">
-              <span>${t.name}</span>
+              <span>${escapeBlogHtml(t.name)}</span>
             </div>
           </div>
+          ${isClow52 ? `
+            <div class="blog-clow52-tools" data-topic-id="${escapeBlogHtml(t.id)}">
+              <label class="blog-clow52-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" class="blog-clow52-search-input" data-topic-id="${escapeBlogHtml(t.id)}" placeholder="Tìm theo tên bài viết..." autocomplete="off" />
+              </label>
+              <label class="blog-clow52-sort-wrap">
+                <i class="fa-solid fa-arrow-down-a-z"></i>
+                <select class="blog-clow52-sort" data-topic-id="${escapeBlogHtml(t.id)}" aria-label="Sắp xếp bài viết 52 lá">
+                  <option value="date" ${clow52SortMode === 'date' ? 'selected' : ''}>Mới nhất</option>
+                  <option value="title" ${clow52SortMode === 'title' ? 'selected' : ''}>Tên A-Z</option>
+                  <option value="code" ${clow52SortMode === 'code' ? 'selected' : ''}>Mã lá bài</option>
+                </select>
+              </label>
+            </div>
+          ` : ''}
           
           <!-- Hàng bài viết cuộn ngang -->
           <div class="blog-scroll-wrap">
             <button type="button" class="blog-scroll-btn blog-scroll-prev" aria-label="Xem bài viết trước">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="blog-scroll-row">
-              ${topicPosts.map(p => {
-                const dateStr = p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : '';
-                const coverUrl = getGoogleDriveImageUrl(p.coverImage);
-                return `
-                  <a href="clow-post.html?id=${p.id}" class="blog-card">
-                    ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
-                    <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
-                    <div class="blog-card-content">
-                      <div class="blog-card-meta">
-                        <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
-                      </div>
-                      <h3 class="blog-card-title">${p.title}</h3>
-                      <div class="blog-card-excerpt">${p.excerpt || ''}</div>
-                      <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
-                    </div>
-                  </a>
-                `;
-              }).join('')}
+            <div class="blog-scroll-row" data-topic-id="${escapeBlogHtml(t.id)}">
+              ${topicPosts.map(renderBlogTopicCard).join('')}
             </div>
             <button type="button" class="blog-scroll-btn blog-scroll-next" aria-label="Xem thêm bài viết">
               <i class="fa-solid fa-chevron-right"></i>
@@ -1543,33 +1621,73 @@ async function initBlogPage() {
     
     // Gắn sự kiện drag scroll ngang bằng chuột
     setupBlogScrollRows();
+    setupClow52BlogTools(topics, allPosts);
 
   } catch (err) {
     container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu: ${err.message}</div>`;
   }
 }
 
+function setupClow52BlogTools(topics, allPosts) {
+  const topicById = new Map(topics.map(t => [t.id, t]));
+  const rerender = topicId => {
+    const section = Array.from(document.querySelectorAll('.blog-topic-section[data-topic-id]'))
+      .find(el => el.dataset.topicId === topicId);
+    const row = section?.querySelector('.blog-scroll-row');
+    if (!section || !row) return;
+    const query = normalizeBlogText(section.querySelector('.blog-clow52-search-input')?.value || '');
+    const mode = section.querySelector('.blog-clow52-sort')?.value || 'date';
+    const topic = topicById.get(topicId);
+    if (!isClow52BlogTopic(topic)) return;
+
+    let posts = allPosts.filter(p => p.topicId === topicId);
+    if (query) posts = posts.filter(p => normalizeBlogText(p.title).includes(query));
+    posts = sortClow52BlogPosts(posts, mode);
+    row.innerHTML = posts.length
+      ? posts.map(renderBlogTopicCard).join('')
+      : '<div class="blog-empty-state">Không tìm thấy bài viết phù hợp.</div>';
+    row.scrollLeft = 0;
+    updateBlogScrollButtons(row);
+  };
+
+  document.querySelectorAll('.blog-clow52-search-input').forEach(input => {
+    input.addEventListener('input', () => rerender(input.dataset.topicId));
+  });
+  document.querySelectorAll('.blog-clow52-sort').forEach(select => {
+    select.addEventListener('change', () => rerender(select.dataset.topicId));
+  });
+}
+
+function updateBlogScrollButtons(row) {
+  const wrap = row?.closest('.blog-scroll-wrap');
+  const prevBtn = wrap?.querySelector('.blog-scroll-prev');
+  const nextBtn = wrap?.querySelector('.blog-scroll-next');
+  if (!row || !wrap) return;
+  const maxScroll = row.scrollWidth - row.clientWidth;
+  const canScroll = maxScroll > 8;
+  wrap.classList.toggle('has-scroll', canScroll);
+  if (prevBtn) prevBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft <= 8);
+  if (nextBtn) nextBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft >= maxScroll - 8);
+}
+
 function setupBlogScrollRows() {
   const scrollRows = document.querySelectorAll('.blog-scroll-row');
   scrollRows.forEach(row => {
+      if (row.dataset.scrollReady === 'true') {
+        updateBlogScrollButtons(row);
+        return;
+      }
+      row.dataset.scrollReady = 'true';
       const wrap = row.closest('.blog-scroll-wrap');
-      const prevBtn = wrap?.querySelector('.blog-scroll-prev');
-      const nextBtn = wrap?.querySelector('.blog-scroll-next');
 
-      const updateButtons = () => {
-        const maxScroll = row.scrollWidth - row.clientWidth;
-        const canScroll = maxScroll > 8;
-        if (wrap) wrap.classList.toggle('has-scroll', canScroll);
-        if (prevBtn) prevBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft <= 8);
-        if (nextBtn) nextBtn.classList.toggle('is-hidden', !canScroll || row.scrollLeft >= maxScroll - 8);
-      };
+      const updateButtons = () => updateBlogScrollButtons(row);
 
       const scrollByPage = direction => {
         row.scrollBy({ left: direction * Math.max(row.clientWidth * 0.8, 320), behavior: 'smooth' });
       };
 
-      prevBtn?.addEventListener('click', () => scrollByPage(-1));
-      nextBtn?.addEventListener('click', () => scrollByPage(1));
+      wrap?.querySelector('.blog-scroll-prev')?.addEventListener('click', () => scrollByPage(-1));
+      wrap?.querySelector('.blog-scroll-next')?.addEventListener('click', () => scrollByPage(1));
       row.addEventListener('scroll', updateButtons, { passive: true });
       window.addEventListener('resize', updateButtons);
 

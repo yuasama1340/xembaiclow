@@ -1848,6 +1848,29 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   z-index: 3;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
+.blog-card-code {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(201,168,76,.48);
+  background: rgba(10,7,18,.78);
+  color: var(--gold-light);
+  font-size: .78rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0,0,0,.28);
+}
+.blog-empty-state {
+  min-width: 100%;
+  padding: 32px;
+  border: 1px dashed rgba(201,168,76,.34);
+  border-radius: 18px;
+  color: var(--text-muted);
+  text-align: center;
+  background: rgba(18,12,35,.5);
+}
 
 /* ============================================================
    🃏  NEW LAYOUT: HORIZONTAL SCROLL & TOPIC SECTIONS
@@ -1901,6 +1924,51 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   font-family: 'Playfair Display', serif;
   font-size: 2rem;
   font-weight: 700;
+}
+
+.blog-clow52-tools {
+  max-width: 980px;
+  margin: -16px auto 32px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+.blog-clow52-search,
+.blog-clow52-sort-wrap {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(201,168,76,.36);
+  background: rgba(18, 12, 35, .78);
+  border-radius: 999px;
+  padding: 0 18px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.24);
+}
+.blog-clow52-search i,
+.blog-clow52-sort-wrap i {
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.blog-clow52-search input,
+.blog-clow52-sort {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+}
+.blog-clow52-search input::placeholder {
+  color: rgba(238,230,255,.52);
+}
+.blog-clow52-sort {
+  min-width: 150px;
+  cursor: pointer;
+}
+.blog-clow52-sort option {
+  color: #160f22;
 }
 
 .blog-scroll-wrap {
@@ -2014,6 +2082,16 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .blog-section-ribbon span {
     font-size: clamp(1.45rem, 8vw, 2rem);
     line-height: 1.15;
+  }
+  .blog-clow52-tools {
+    grid-template-columns: 1fr;
+    margin: -10px auto 24px;
+    padding: 0 18px;
+  }
+  .blog-clow52-search,
+  .blog-clow52-sort-wrap {
+    min-height: 48px;
+    border-radius: 14px;
   }
   .blog-scroll-wrap {
     justify-content: center;

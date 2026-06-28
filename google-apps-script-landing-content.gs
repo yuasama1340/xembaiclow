@@ -35,8 +35,8 @@ const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pr
 // Blog Bài Clow
 const CLOW_TOPICS_SHEET_NAME = 'Clow Topics';
 const CLOW_POSTS_SHEET_NAME = 'Clow Posts';
-const CLOW_TOPICS_HEADERS = ['ID', 'Ten chu de', 'Mo ta', 'Bieu tuong', 'Thu tu', 'Bat', 'Ngay tao'];
-const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Anh dai dien', 'Ngay dang', 'Bat', 'Ghim', 'Luot xem', 'Tac gia', 'Cap nhat luc'];
+const CLOW_TOPICS_HEADERS = ['ID', 'Ten chu de', 'Mo ta', 'Bieu tuong', 'Thu tu', 'Bat', 'Ngay tao', 'Sap xep bai viet'];
+const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Ma la bai', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Anh dai dien', 'Ngay dang', 'Bat', 'Ghim', 'Luot xem', 'Tac gia', 'Cap nhat luc'];
 const CLOW_BLOG_FOLDER = 'ClowCat Patronus/Blog';
 const PUBLIC_CLOW_TOPICS_CACHE_KEY = 'clowcat_public_clow_topics_v1';
 const PUBLIC_CLOW_POSTS_CACHE_KEY = 'clowcat_public_clow_posts_v1';
@@ -420,6 +420,13 @@ function getOrCreateSheet(name, headers) {
   if (!sheet) sheet = ss.insertSheet(name);
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else if (headers && headers.length) {
+    const lastCol = Math.max(sheet.getLastColumn(), 1);
+    const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
+    const missing = headers.filter(h => existing.indexOf(h) === -1);
+    if (missing.length) {
+      sheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+    }
   }
   return sheet;
 }
@@ -1514,7 +1521,35 @@ function ensureClowTopicsSheet() {
 }
 
 function ensureClowPostsSheet() {
-  return getOrCreateSheet(CLOW_POSTS_SHEET_NAME, CLOW_POSTS_HEADERS);
+  const sheet = getOrCreateSheet(CLOW_POSTS_SHEET_NAME, CLOW_POSTS_HEADERS);
+  backfillClowPostCardCodes(sheet);
+  return sheet;
+}
+
+function inferClowCardCodeFromPostText(title, id) {
+  const source = String(title || '') + ' ' + String(id || '');
+  const match = source.match(/\b(\d{1,3})\b/);
+  if (!match) return '';
+  return match[1].padStart(2, '0');
+}
+
+function backfillClowPostCardCodes(sheet) {
+  const map = getColumnMap(sheet);
+  if (!map['Ma la bai'] || !map['Tieu de'] || !map['ID']) return;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const values = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  let changed = false;
+  values.forEach(row => {
+    if (String(row[map['Ma la bai'] - 1] || '').trim()) return;
+    const guessed = inferClowCardCodeFromPostText(row[map['Tieu de'] - 1], row[map['ID'] - 1]);
+    if (!guessed) return;
+    row[map['Ma la bai'] - 1] = guessed;
+    changed = true;
+  });
+  if (changed) {
+    sheet.getRange(2, 1, values.length, sheet.getLastColumn()).setValues(values);
+  }
 }
 
 // --- Seed 4 chủ đề mặc định nếu sheet trống ---
@@ -1540,6 +1575,7 @@ function clowTopicToObj(row, map) {
     order:       Number(row[map['Thu tu'] - 1] || 0),
     enabled:     row[map['Bat'] - 1] === true || String(row[map['Bat'] - 1]).toLowerCase() === 'true',
     createdAt:   row[map['Ngay tao'] - 1] ? new Date(row[map['Ngay tao'] - 1]).toISOString() : '',
+    postSortMode: map['Sap xep bai viet'] ? String(row[map['Sap xep bai viet'] - 1] || 'date').trim() || 'date' : 'date',
   };
 }
 
@@ -1547,6 +1583,7 @@ function clowPostToObj(row, map) {
   return {
     id:          String(row[map['ID'] - 1] || '').trim(),
     topicId:     String(row[map['Chu de ID'] - 1] || '').trim(),
+    cardCode:    map['Ma la bai'] ? String(row[map['Ma la bai'] - 1] || '').trim() : '',
     title:       String(row[map['Tieu de'] - 1] || ''),
     excerpt:     String(row[map['Mo ta ngan'] - 1] || ''),
     content:     String(row[map['Noi dung HTML'] - 1] || ''),
@@ -1704,7 +1741,16 @@ function handleSaveClowTopic(params) {
     // Tạo mới
     const lastRow = sheet.getLastRow();
     const nextOrder = lastRow >= 2 ? lastRow : 1;
-    sheet.appendRow([topicId, name, params.description || '', params.icon || '📖', nextOrder, true, now]);
+    const row = new Array(sheet.getLastColumn()).fill('');
+    row[map['ID'] - 1] = topicId;
+    row[map['Ten chu de'] - 1] = name;
+    row[map['Mo ta'] - 1] = params.description || '';
+    row[map['Bieu tuong'] - 1] = params.icon || '📖';
+    row[map['Thu tu'] - 1] = nextOrder;
+    row[map['Bat'] - 1] = true;
+    row[map['Ngay tao'] - 1] = now;
+    if (map['Sap xep bai viet']) row[map['Sap xep bai viet'] - 1] = params.postSortMode || 'date';
+    sheet.appendRow(row);
   } else {
     // Sửa — tìm dòng
     const lastRow = sheet.getLastRow();
@@ -1717,6 +1763,9 @@ function handleSaveClowTopic(params) {
         sheet.getRange(i + 2, map['Mo ta']).setValue(params.description || '');
         sheet.getRange(i + 2, map['Bieu tuong']).setValue(params.icon || '📖');
         if (params.enabled !== undefined) sheet.getRange(i + 2, map['Bat']).setValue(params.enabled === true || params.enabled === 'true');
+        if (params.postSortMode !== undefined && map['Sap xep bai viet']) {
+          sheet.getRange(i + 2, map['Sap xep bai viet']).setValue(String(params.postSortMode || 'date').trim() || 'date');
+        }
         found = true;
         break;
       }
@@ -1803,24 +1852,26 @@ function handleSaveClowPost(params) {
   if (!title) throw new Error('Tiêu đề không được để trống.');
 
   const postId = id || (generateSlug(title) + '-' + Date.now().toString(36));
+  const cardCode = String(params.cardCode || '').trim() || inferClowCardCodeFromPostText(title, postId);
   const now = new Date();
   const publishedAt = params.publishedAt ? new Date(params.publishedAt) : now;
 
   if (!id) {
-    sheet.appendRow([
-      postId,
-      String(params.topicId || '').trim(),
-      title,
-      String(params.excerpt || '').trim(),
-      String(params.content || ''),
-      String(params.coverImage || '').trim(),
-      publishedAt,
-      params.enabled !== false && params.enabled !== 'false',
-      params.pinned === true || params.pinned === 'true',
-      0,
-      session.username,
-      now
-    ]);
+    const row = new Array(sheet.getLastColumn()).fill('');
+    row[map['ID'] - 1] = postId;
+    row[map['Chu de ID'] - 1] = String(params.topicId || '').trim();
+    if (map['Ma la bai']) row[map['Ma la bai'] - 1] = cardCode;
+    row[map['Tieu de'] - 1] = title;
+    row[map['Mo ta ngan'] - 1] = String(params.excerpt || '').trim();
+    row[map['Noi dung HTML'] - 1] = String(params.content || '');
+    row[map['Anh dai dien'] - 1] = String(params.coverImage || '').trim();
+    row[map['Ngay dang'] - 1] = publishedAt;
+    row[map['Bat'] - 1] = params.enabled !== false && params.enabled !== 'false';
+    row[map['Ghim'] - 1] = params.pinned === true || params.pinned === 'true';
+    row[map['Luot xem'] - 1] = 0;
+    row[map['Tac gia'] - 1] = session.username;
+    row[map['Cap nhat luc'] - 1] = now;
+    sheet.appendRow(row);
   } else {
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) throw new Error('Không tìm thấy bài viết.');
@@ -1830,6 +1881,7 @@ function handleSaveClowPost(params) {
       if (String(rows[i][map['ID'] - 1]).trim() === id) {
         const rowNum = i + 2;
         sheet.getRange(rowNum, map['Chu de ID']).setValue(String(params.topicId || '').trim());
+        if (map['Ma la bai']) sheet.getRange(rowNum, map['Ma la bai']).setValue(cardCode);
         sheet.getRange(rowNum, map['Tieu de']).setValue(title);
         sheet.getRange(rowNum, map['Mo ta ngan']).setValue(String(params.excerpt || '').trim());
         if (params.content !== undefined) sheet.getRange(rowNum, map['Noi dung HTML']).setValue(String(params.content || ''));
