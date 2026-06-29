@@ -667,6 +667,8 @@ function pickImages(count) {
 }
 
 function spawnWave() {
+  if (document.body?.classList.contains('post-page')) return;
+
   if (document.hidden) {
     setTimeout(spawnWave, 2500);
     return;
@@ -745,7 +747,7 @@ function spawnWave() {
   setTimeout(spawnWave, nextDelay);
 }
 
-if (!prefersReducedMotion) {
+if (!prefersReducedMotion && !document.body?.classList.contains('post-page')) {
   setTimeout(spawnWave, isMobileViewport() ? 400 : 1500);
 }
 

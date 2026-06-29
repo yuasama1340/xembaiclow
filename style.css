@@ -2228,6 +2228,10 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   max-width: 800px;
   margin: 0 auto;
 }
+.post-page #global-cards-container,
+.post-page .card-fall {
+  display: none !important;
+}
 .post-article {
   background: var(--bg-mid);
   border: 1px solid var(--glass-border);
