@@ -238,8 +238,10 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   line-height: 1.5;
 }
 .feat-text b {
+  display: inline;
   color: var(--gold-light);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* BENEFITS */
