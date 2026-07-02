@@ -30,7 +30,7 @@ const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
 const SECTION_ORDER_SHEET_NAME = 'Section Order';
 const CUSTOM_SECTIONS_HEADERS = ['Bat', 'ID', 'Nhan section', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Nav label', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
 const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu', 'Hien thi'];
-const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'flexible-3in1', 'offer', 'process', 'contact'];
+const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'faq', 'flexible-3in1', 'offer', 'process', 'contact'];
 
 // Blog Bài Clow
 const CLOW_TOPICS_SHEET_NAME = 'Clow Topics';
@@ -94,18 +94,18 @@ function buildDefaultLandingContentRows() {
 
     lc(true, 'benefits.label', 'Lợi ích', 'Nhãn section', '#benefits .section-label', 'text', '', 'Tại sao chọn chúng tôi?'),
     lc(true, 'benefits.title', 'Lợi ích', 'Tiêu đề section', '#benefits .section-title', 'html', '', 'Những Gì Bạn <em>Nhận Được</em>'),
-    lc(true, 'benefits.1.title', 'Lợi ích', 'Lợi ích 1 - tiêu đề', '#benefit-1 h3', 'text', '', 'Thông Điệp Chữa Lành'),
-    lc(true, 'benefits.1.desc', 'Lợi ích', 'Lợi ích 1 - nội dung', '#benefit-1 p', 'text', '', 'Mỗi bài đọc mang đến sự bình yên, giúp bạn nhìn nhận vấn đề từ góc độ tích cực và nhẹ nhàng hơn.'),
-    lc(true, 'benefits.2.title', 'Lợi ích', 'Lợi ích 2 - tiêu đề', '#benefit-2 h3', 'text', '', 'Lộ Trình Cá Nhân Hoá'),
-    lc(true, 'benefits.2.desc', 'Lợi ích', 'Lợi ích 2 - nội dung', '#benefit-2 p', 'text', '', 'Không copy-paste, mọi buổi tư vấn đều được thiết kế riêng cho câu chuyện và mục tiêu của bạn.'),
-    lc(true, 'benefits.3.title', 'Lợi ích', 'Lợi ích 3 - tiêu đề', '#benefit-3 h3', 'text', '', 'Lời Khuyên Thực Tế'),
-    lc(true, 'benefits.3.desc', 'Lợi ích', 'Lợi ích 3 - nội dung', '#benefit-3 p', 'text', '', 'Không chỉ tinh thần – bạn còn nhận được những bước hành động cụ thể, có thể áp dụng ngay.'),
+    lc(true, 'benefits.1.title', 'Lợi ích', 'Lợi ích 1 - tiêu đề', '#benefit-1 h3', 'text', '', 'Nhìn Rõ Vấn Đề'),
+    lc(true, 'benefits.1.desc', 'Lợi ích', 'Lợi ích 1 - nội dung', '#benefit-1 p', 'text', '', 'Gọi tên điều đang mắc kẹt, thấy bức tranh tổng thể và lý do khiến bạn khó tự đưa ra quyết định.'),
+    lc(true, 'benefits.2.title', 'Lợi ích', 'Lợi ích 2 - tiêu đề', '#benefit-2 h3', 'text', '', '3 Hướng Hành Động'),
+    lc(true, 'benefits.2.desc', 'Lợi ích', 'Lợi ích 2 - nội dung', '#benefit-2 p', 'text', '', 'Rời buổi tư vấn với các bước cụ thể để xoay chuyển tình thế, thay vì chỉ nhận một thông điệp chung chung.'),
+    lc(true, 'benefits.3.title', 'Lợi ích', 'Lợi ích 3 - tiêu đề', '#benefit-3 h3', 'text', '', 'Góc Nhìn Cá Nhân Hoá'),
+    lc(true, 'benefits.3.desc', 'Lợi ích', 'Lợi ích 3 - nội dung', '#benefit-3 p', 'text', '', 'Mỗi trải bài được đọc theo câu chuyện, bối cảnh và mục tiêu riêng của bạn; không dùng một công thức cho tất cả.'),
     lc(true, 'benefits.4.title', 'Lợi ích', 'Lợi ích 4 - tiêu đề', '#benefit-4 h3', 'text', '', 'Được Lắng Nghe Trọn Vẹn'),
     lc(true, 'benefits.4.desc', 'Lợi ích', 'Lợi ích 4 - nội dung', '#benefit-4 p', 'text', '', 'Không phán xét, không vội vàng – chúng tôi đồng hành cùng bạn trong từng khoảnh khắc.'),
     lc(true, 'benefits.5.title', 'Lợi ích', 'Lợi ích 5 - tiêu đề', '#benefit-5 h3', 'text', '', 'Linh Hoạt Online & Offline'),
     lc(true, 'benefits.5.desc', 'Lợi ích', 'Lợi ích 5 - nội dung', '#benefit-5 p', 'text', '', 'Gặp qua Google Meet tiện lợi hoặc trực tiếp tại TP.HCM để kết nối năng lượng thực sự.'),
     lc(true, 'benefits.6.title', 'Lợi ích', 'Lợi ích 6 - tiêu đề', '#benefit-6 h3', 'text', '', 'File PDF Tóm Tắt'),
-    lc(true, 'benefits.6.desc', 'Lợi ích', 'Lợi ích 6 - nội dung', '#benefit-6 p', 'text', '', 'Nhận file tóm tắt nội dung buổi tư vấn kèm hình ảnh trải bài để xem lại bất cứ lúc nào.'),
+    lc(true, 'benefits.6.desc', 'Lợi ích', 'Lợi ích 6 - nội dung', '#benefit-6 p', 'text', '', 'Lưu lại thông điệp chính, hình ảnh trải bài và hướng hành động sau buổi tư vấn để bạn xem lại bất cứ lúc nào.'),
 
     lc(true, 'guide.label', 'Người hướng dẫn', 'Nhãn phụ', '#guide .guide-label', 'text', '', 'NGƯỜI HƯỚNG DẪN'),
     lc(true, 'guide.video', 'Người hướng dẫn', 'Video YouTube', '#guide .guide-video-iframe', 'youtube', '', 'https://www.youtube.com/watch?v=7KYlOuSyGPQ'),
@@ -193,6 +193,9 @@ function buildDefaultLandingContentRows() {
     lc(true, 'offer.title', 'Ưu đãi', 'Tiêu đề ưu đãi', '.offer-title', 'html', '', 'Tặng Miễn Phí<br /> <em>File PDF Tóm Tắt Buổi Tư Vấn</em><div style="font-size: 0.65em; color: var(--gold-light); margin-top: 18px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; font-family: \'Playfair Display\', serif; text-shadow: 0 2px 10px rgba(201,168,76,0.3);">✦ Dành Riêng Cho Gói Toàn Diện 500k ✦</div>'),
     lc(true, 'offer.desc', 'Ưu đãi', 'Mô tả ưu đãi', '.offer-desc', 'text', '', 'Đăng ký qua trang giới thiệu trong tháng 6 và nhận ngay file PDF đẹp tóm tắt toàn bộ nội dung tư vấn, kèm hình ảnh trải bài của bạn – kỷ niệm chương hành trình khám phá bản thân.'),
     lc(true, 'offer.cta', 'Ưu đãi', 'Nút ưu đãi', '#offer-cta', 'text', '', 'Đăng Ký Nhận Ưu Đãi'),
+
+    lc(true, 'faq.label', 'FAQ', 'Nhãn section', '#faq .section-label', 'text', '', 'Giải đáp trước khi đặt lịch'),
+    lc(true, 'faq.title', 'FAQ', 'Tiêu đề section', '#faq .section-title', 'html', '', 'Những Điều Bạn Có Thể <em>Đang Băn Khoăn</em>'),
 
     lc(true, 'process.label', 'Quy trình', 'Nhãn section', '#process .section-label', 'text', '', 'Quy trình đơn giản'),
     lc(true, 'process.title', 'Quy trình', 'Tiêu đề section', '#process .section-title', 'html', '', 'Bắt Đầu Hành Trình <em>Chỉ 3 Bước</em>'),

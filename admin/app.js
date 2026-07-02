@@ -984,6 +984,7 @@ const NATIVE_SECTION_LABELS = {
   benefits:     'Lợi ích',
   testimonials: 'Khách hàng',
   pricing:      'Bảng giá',
+  faq:          'FAQ',
   'flexible-3in1': '3 trong 1',
   offer:        'Ưu đãi',
   process:      'Quy trình',
@@ -1167,7 +1168,7 @@ function renderSectionsOrderList() {
 
   // Neu chua co order, dung default
   let order = state.sectionOrder.length ? state.sectionOrder
-    : ['about','guide','benefits','testimonials','pricing','flexible-3in1','offer','process','blog','contact'].map(k => ({key: k, enabled: true}));
+    : ['about','guide','benefits','testimonials','pricing','faq','flexible-3in1','offer','process','blog','contact'].map(k => ({key: k, enabled: true}));
 
   // Đảm bảo tương thích ngược với order cũ là mảng string
   order = order.map(o => typeof o === 'string' ? {key: o, enabled: true} : o);
@@ -1176,6 +1177,10 @@ function renderSectionsOrderList() {
   if (!order.find(o => o.key === 'blog')) {
     const processIndex = order.findIndex(o => o.key === 'process');
     order.splice(processIndex !== -1 ? processIndex + 1 : order.length - 1, 0, {key: 'blog', enabled: true});
+  }
+  if (!order.find(o => o.key === 'faq')) {
+    const pricingIndex = order.findIndex(o => o.key === 'pricing');
+    order.splice(pricingIndex !== -1 ? pricingIndex + 1 : order.length, 0, {key: 'faq', enabled: true});
   }
 
   list.innerHTML = '';
