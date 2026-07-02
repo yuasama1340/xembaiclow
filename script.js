@@ -116,8 +116,25 @@ function applyFeedbackImageItem(item) {
   }
 }
 
+function updateFaqVisibility() {
+  const items = document.querySelectorAll('.faq-item');
+  let visibleCount = 0;
+  items.forEach(item => {
+    const question = item.querySelector('summary')?.textContent.trim();
+    const answer = item.querySelector('p')?.textContent.trim();
+    const visible = Boolean(question && answer);
+    item.hidden = !visible;
+    if (visible) visibleCount += 1;
+  });
+  const faqSection = document.getElementById('faq');
+  if (faqSection) faqSection.hidden = visibleCount === 0;
+}
+
 async function loadLandingContent() {
-  if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
+  if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) {
+    updateFaqVisibility();
+    return;
+  }
 
   try {
     const params = new URLSearchParams({ action: 'getLandingContent', t: Date.now().toString() });
@@ -142,6 +159,7 @@ async function loadLandingContent() {
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   } finally {
+    updateFaqVisibility();
     document.body.classList.remove('js-loading');
   }
 }
