@@ -12,9 +12,9 @@ const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const PACKAGES_SHEET_NAME = 'Packages';
 const FEEDBACK_DRIVE_FOLDER = 'ClowCat Patronus/Testimonials';
 const ADMIN_DEFAULT_USERNAME = 'admin';
-const ADMIN_DEFAULT_PASSWORD = 'admin123';
+const ADMIN_DEFAULT_PASSWORD = 'ClowCat@1340_X29!aM';
 const PASSWORD_SALT_PROPERTY = 'ADMIN_PASSWORD_SALT';
-const LEGACY_PASSWORD_SALT = 'CLOW_CAT_PATRONUS_ADMIN_2026_CHANGE_ME';
+const LEGACY_PASSWORD_SALT = 'CC_PATRONUS_V8_98A2B5F1_3C7D_4E9F_8123_456789ABCDEF';
 const SESSION_TTL_SECONDS = 21600;
 
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];

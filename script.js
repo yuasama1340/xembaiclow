@@ -1322,15 +1322,15 @@ function renderPostsGrid(posts, containerId) {
     const coverUrl = getGoogleDriveImageUrl(p.coverImage);
 
     return `
-      <a href="clow-post.html?id=${p.id}" class="blog-card">
+      <a href="clow-post.html?id=${escapeBlogHtml(p.id)}" class="blog-card">
         ${p.pinned ? '<div class="blog-card-pinned"><i class="fa-solid fa-thumbtack"></i> Đã ghim</div>' : ''}
-        <img src="${coverUrl}" alt="${p.title}" class="blog-card-thumb" loading="lazy" />
+        <img src="${escapeBlogHtml(coverUrl)}" alt="${escapeBlogHtml(p.title)}" class="blog-card-thumb" loading="lazy" />
         <div class="blog-card-content">
           <div class="blog-card-meta">
             <i class="fa-regular fa-clock"></i> <span>${dateStr}</span>
           </div>
-          <h3 class="blog-card-title">${p.title}</h3>
-          <div class="blog-card-excerpt">${p.excerpt || ''}</div>
+          <h3 class="blog-card-title">${escapeBlogHtml(p.title)}</h3>
+          <div class="blog-card-excerpt">${escapeBlogHtml(p.excerpt || '')}</div>
           <div class="blog-card-readmore">Khám phá ngay <i class="fa-solid fa-arrow-right"></i></div>
         </div>
       </a>
@@ -1444,22 +1444,22 @@ async function loadSinglePost() {
     const html = `
       <div class="post-breadcrumb" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <a href="clow-blog.html" class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem;"><i class="fa-solid fa-house"></i> Blog</a>
-        ${topicName ? `<span style="color:rgba(201,168,76,0.5)">/</span> <a href="clow-blog.html?topic=${p.topicId}" class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem;">${topicName}</a>` : ''}
+        ${topicName ? `<span style="color:rgba(201,168,76,0.5)">/</span> <a href="clow-blog.html?topic=${p.topicId}" class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem;">${escapeBlogHtml(topicName)}</a>` : ''}
         <span style="color:rgba(201,168,76,0.5)">/</span>
         <span class="blog-card-readmore" style="margin:0; padding:6px 18px; font-size:0.9rem; border-color:rgba(201,168,76,0.8); background:rgba(201,168,76,0.15); cursor:default;">Chi tiết</span>
       </div>
       
-      <h1 class="post-title">${p.title}</h1>
+      <h1 class="post-title">${escapeBlogHtml(p.title)}</h1>
       
       <div class="post-meta">
         <div><i class="fa-solid fa-calendar-days" style="margin-right:6px"></i> ${dateStr}</div>
         <div><i class="fa-solid fa-eye" style="margin-right:6px"></i> ${p.views || 0} lượt xem</div>
-        ${topicName ? `<div><i class="fa-solid fa-tag" style="margin-right:6px"></i> ${topicName}</div>` : ''}
+        ${topicName ? `<div><i class="fa-solid fa-tag" style="margin-right:6px"></i> ${escapeBlogHtml(topicName)}</div>` : ''}
       </div>
 
       ${p.coverImage ? `
         <div style="text-align:center; margin-bottom: 40px;">
-        <img src="${getGoogleDriveImageUrl(p.coverImage)}" alt="${p.title}" class="post-cover" />
+        <img src="${getGoogleDriveImageUrl(p.coverImage)}" alt="${escapeBlogHtml(p.title)}" class="post-cover" />
       </div>` : ''}
 
       <div class="post-body">
@@ -1514,10 +1514,10 @@ async function loadSinglePost() {
           const rDateStr = rp.publishedAt ? new Date(rp.publishedAt).toLocaleDateString('vi-VN') : '';
           const rCover = getGoogleDriveImageUrl(rp.coverImage);
           relatedHtml += `
-            <a href="clow-post.html?id=${rp.id}" class="related-post-card">
-              <img src="${rCover}" alt="${rp.title}" class="related-post-thumb" loading="lazy" />
+            <a href="clow-post.html?id=${escapeBlogHtml(rp.id)}" class="related-post-card">
+              <img src="${escapeBlogHtml(rCover)}" alt="${escapeBlogHtml(rp.title)}" class="related-post-thumb" loading="lazy" />
               <div class="related-post-info">
-                <h4 class="related-post-title">${rp.title}</h4>
+                <h4 class="related-post-title">${escapeBlogHtml(rp.title)}</h4>
                 <div class="related-post-meta">
                   <i class="fa-regular fa-clock"></i> <span>${rDateStr}</span>
                 </div>
