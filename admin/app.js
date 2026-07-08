@@ -1474,6 +1474,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 const blogState = {
   topics: [],
+  allPosts: [],
   posts: [],
   currentPage: 1,
   filterTopicId: '',
@@ -1717,12 +1718,11 @@ function updateTopicDropdowns() {
 async function loadBlogPosts() {
   try {
     const params = { token: state.token };
-    if (blogState.filterTopicId) params.topicId = blogState.filterTopicId;
     const data = await api('listClowPosts', params);
-    blogState.posts = data.posts || [];
+    blogState.allPosts = data.posts || [];
     renderPostsTable();
     const countEl = document.getElementById('blog-nav-count');
-    if (countEl) countEl.textContent = blogState.posts.length;
+    if (countEl) countEl.textContent = blogState.allPosts.length;
   } catch (e) {
     showToast('Lỗi tải bài viết: ' + e.message, 'error');
   }
@@ -1736,10 +1736,11 @@ function renderPostsTable() {
   if (!tbody) return;
 
   // Lọc bài viết (nếu có filterTopicId)
+  blogState.posts = blogState.filterTopicId 
+    ? blogState.allPosts.filter(p => p.topicId === blogState.filterTopicId)
+    : [...blogState.allPosts];
+    
   let filtered = blogState.posts;
-  if (blogState.filterTopicId) {
-    filtered = filtered.filter(p => p.topicId === blogState.filterTopicId);
-  }
   const useSpecialSort = Boolean(blogState.filterTopicId && isClow52Topic(blogState.filterTopicId));
   if (useSpecialSort && !blogState.specialSortMode) {
     blogState.specialSortMode = getTopicPostSortMode(blogState.filterTopicId);
@@ -2185,7 +2186,7 @@ function wireBlogEvents() {
       ? getTopicPostSortMode(blogState.filterTopicId)
       : 'date';
     blogState.postsCurrentPage = 1;
-    loadBlogPosts();
+    renderPostsTable();
   });
   document.getElementById('blog-special-sort')?.addEventListener('change', async e => {
     blogState.specialSortMode = e.target.value;
