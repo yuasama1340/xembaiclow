@@ -1571,11 +1571,12 @@ async function initBlogPage() {
   if (!container) return;
   
   try {
-    // Tải tuần tự để tránh lỗi kẹt kết nối của Google Apps Script
-    const topicsData = await fetchBlogApi('getclowtopics');
+    // Tải song song để giảm thời gian chờ
+    const [topicsData, postsData] = await Promise.all([
+      fetchBlogApi('getclowtopics'),
+      fetchBlogApi('getclowposts', { limit: 200 }),
+    ]);
     const topics = topicsData.topics || [];
-    
-    const postsData = await fetchBlogApi('getclowposts', { limit: 500 });
     const allPosts = postsData.posts || [];
     
     if (topics.length === 0) {

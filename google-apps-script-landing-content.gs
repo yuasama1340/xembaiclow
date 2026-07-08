@@ -23,7 +23,7 @@ const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline'
 const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
 const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
 const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
-const PUBLIC_CACHE_SECONDS = 60;
+const PUBLIC_CACHE_SECONDS = 600;
 
 // Custom Sections
 const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
