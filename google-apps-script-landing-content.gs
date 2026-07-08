@@ -1719,6 +1719,16 @@ function handleGetPublicClowPost(params) {
   const id = String(params.id || '').trim();
   if (!id) return json({ success: false, error: 'Thiếu id bài viết.' });
 
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'clowcat_post_' + id;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    try {
+      const post = JSON.parse(cached);
+      return json({ success: true, post });
+    } catch(e) {}
+  }
+
   const sheet = ensureClowPostsSheet();
   const map = getColumnMap(sheet);
   const lastRow = sheet.getLastRow();
@@ -1734,6 +1744,7 @@ function handleGetPublicClowPost(params) {
         const currentViews = Number(rows[i][viewsCol - 1] || 0);
         sheet.getRange(i + 2, viewsCol).setValue(currentViews + 1);
       }
+      try { cache.put(cacheKey, JSON.stringify(post), 300); } catch(e) {}
       return json({ success: true, post });
     }
   }

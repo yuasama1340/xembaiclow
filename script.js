@@ -1206,7 +1206,7 @@ async function fetchBlogApi(action, params = {}) {
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.timestamp < 120000) return parsed.data;
+      if (Date.now() - parsed.timestamp < 300000) return parsed.data;
     } catch(e) {}
   }
 
@@ -1569,14 +1569,17 @@ async function initBlogHome() {
 async function initBlogPage() {
   const container = document.getElementById('blog-topics-container');
   if (!container) return;
+
+  // Hiển thị skeleton thay vì spinner trống
+  const skeletonCard = '<div class="blog-skeleton-card"><div class="blog-skeleton-thumb"></div><div class="blog-skeleton-body"><div class="blog-skeleton-line short"></div><div class="blog-skeleton-line title"></div><div class="blog-skeleton-line"></div><div class="blog-skeleton-line short"></div></div></div>';
+  container.innerHTML = '<div class="blog-skeleton-row">' + skeletonCard.repeat(3) + '</div>';
   
   try {
-    // Tải song song để giảm thời gian chờ
-    const [topicsData, postsData] = await Promise.all([
-      fetchBlogApi('getclowtopics'),
-      fetchBlogApi('getclowposts', { limit: 200 }),
-    ]);
+    // GAS không xử lý được đồng thời nhiều request — tải tuần tự
+    const topicsData = await fetchBlogApi('getclowtopics');
     const topics = topicsData.topics || [];
+
+    const postsData = await fetchBlogApi('getclowposts', { limit: 200 });
     const allPosts = postsData.posts || [];
     
     if (topics.length === 0) {

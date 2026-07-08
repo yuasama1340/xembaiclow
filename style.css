@@ -2527,3 +2527,46 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .post-title { font-size: 2rem; }
   .post-body { font-size: 1.05rem; }
 }
+
+/* ============================================================
+   SKELETON LOADING — Blog cards placeholder
+   ============================================================ */
+.blog-skeleton-row {
+  display: flex;
+  gap: 20px;
+  padding: 0 24px 24px;
+  overflow: hidden;
+}
+.blog-skeleton-card {
+  flex-shrink: 0;
+  width: min(86vw, 340px);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+.blog-skeleton-thumb {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+}
+.blog-skeleton-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.blog-skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+}
+.blog-skeleton-line.short { width: 60%; }
+.blog-skeleton-line.title { height: 20px; width: 85%; }
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
