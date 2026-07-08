@@ -164,7 +164,13 @@ async function loadLandingContent() {
   }
 }
 
-window.landingContentPromise = loadLandingContent();
+// Chỉ nạp nội dung landing trên trang chủ (nơi có package-list hoặc pricing)
+if (document.getElementById('package-list') || document.getElementById('pricing')) {
+  loadLandingContent();
+} else {
+  // Với các trang Blog, chỉ cần bỏ loading để trang hiện ra
+  document.body.classList.remove('js-loading');
+}
 
 function formatPackageMoney(amount, compact = false) {
   const value = Number(amount || 0);
@@ -1770,35 +1776,5 @@ async function initPostPage() {
 }
 
 // =========================================================================
-// HỆ THỐNG ĐIỀU PHỐI API (Tránh lỗi sập GAS khi gọi song song)
+// KHÔNG CẦN ĐIỀU PHỐI API NỮA VÌ LOADLANDINGCONTENT KHÔNG CHẠY TRÊN TRANG BLOG
 // =========================================================================
-
-// 1. Lưu lại hàm gốc
-const _origInitBlogPage = typeof initBlogPage === 'function' ? initBlogPage : null;
-const _origInitPostPage = typeof initPostPage === 'function' ? initPostPage : null;
-
-// 2. Chặn các trang HTML gọi trực tiếp (gây song song với loadLandingContent)
-initBlogPage = function() { console.log('Đã chặn gọi song song initBlogPage'); };
-initPostPage = function() { console.log('Đã chặn gọi song song initPostPage'); };
-
-// 3. Chờ loadLandingContent chạy xong mới gọi các hàm khởi tạo trang
-if (window.landingContentPromise) {
-  window.landingContentPromise.then(async () => {
-    await initBlogHome(); // Xong trang chủ (nếu có)
-    
-    // Gọi tiếp tuần tự nếu đang ở trang blog hoặc chi tiết
-    if (_origInitBlogPage && document.getElementById('blog-topics-container')) {
-      await _origInitBlogPage();
-    }
-    if (_origInitPostPage && document.getElementById('post-container')) {
-      await _origInitPostPage();
-    }
-  });
-} else {
-  // Dự phòng
-  document.addEventListener('DOMContentLoaded', async () => {
-    await initBlogHome();
-    if (_origInitBlogPage && document.getElementById('blog-topics-container')) await _origInitBlogPage();
-    if (_origInitPostPage && document.getElementById('post-container')) await _origInitPostPage();
-  });
-}
