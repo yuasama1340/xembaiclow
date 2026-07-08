@@ -1214,7 +1214,7 @@ input:disabled, textarea:disabled {
 .order-badge--native { background: rgba(255,255,255,.1); color: var(--text-muted); }
 .order-badge--custom { background: rgba(107,63,160,.3); color: var(--purple-bright); border: 1px solid var(--purple-bright); }
 
-.order-edit-btn {
+.order-edit-btn, .native-edit-btn, .order-move-btn {
   background: none;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -1224,7 +1224,9 @@ input:disabled, textarea:disabled {
   transition: all .2s;
   flex-shrink: 0;
 }
-.order-edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+.order-edit-btn:hover, .native-edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+.order-move-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.order-move-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* ============================================================
    SECTION MODAL

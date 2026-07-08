@@ -1210,6 +1210,8 @@ function renderSectionsOrderList() {
         <span class="order-badge order-badge--native">Gốc</span>
       ` : ''}
       ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'Ẩn'}</span>` : ''}
+      <button type="button" class="order-move-btn js-order-up" title="Đưa lên" data-key="${escAttr(key)}" ${index === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+      <button type="button" class="order-move-btn js-order-down" title="Đưa xuống" data-key="${escAttr(key)}" ${index === state.sectionOrder.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
       ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
       ${isNative  ? `<button type="button" class="native-edit-btn" data-key="${escAttr(key)}" data-label="${escAttr(item.navLabel || label)}" title="Đổi tên Menu"><i class="fa-solid fa-pen"></i></button>` : ''}
     `;
@@ -1259,6 +1261,14 @@ function renderSectionsOrderList() {
     btn.addEventListener('click', () => openSectionModal(btn.dataset.id));
   });
 
+  // Nut move cho sections
+  list.querySelectorAll('.js-order-up').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); moveSectionOrder(btn.dataset.key, -1); });
+  });
+  list.querySelectorAll('.js-order-down').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); moveSectionOrder(btn.dataset.key, 1); });
+  });
+
   // Nut edit cho cac native section (để đổi tên menu)
   list.querySelectorAll('.native-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1280,6 +1290,20 @@ function renderSectionsOrderList() {
       }
     });
   });
+}
+
+function moveSectionOrder(key, direction) {
+  const index = state.sectionOrder.findIndex(o => (o.key || o) === key);
+  if (index < 0) return;
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= state.sectionOrder.length) return;
+  
+  const temp = state.sectionOrder[index];
+  state.sectionOrder[index] = state.sectionOrder[newIndex];
+  state.sectionOrder[newIndex] = temp;
+  
+  renderSectionsOrderList();
+  saveSectionOrder(); // Tự động lưu
 }
 
 // --- Luu thu tu ---
@@ -1596,7 +1620,7 @@ function renderTopicsList() {
     container.innerHTML = '<div style="text-align:center;padding:32px;opacity:.5">Chưa có chủ đề nào. Nhấn "+ Thêm chủ đề" để tạo.</div>';
     return;
   }
-  container.innerHTML = blogState.topics.map(t => `
+  container.innerHTML = blogState.topics.map((t, index) => `
     <div class="blog-topic-card">
       <span class="blog-topic-icon">${escHtml(t.icon || '📖')}</span>
       <div class="blog-topic-info">
@@ -1604,6 +1628,12 @@ function renderTopicsList() {
         <span>${escHtml(t.description || '')}</span>
       </div>
       <div class="blog-topic-actions">
+        <button type="button" class="order-move-btn js-move-topic-up" title="Đưa lên" data-id="${escAttr(t.id)}" ${index === 0 ? 'disabled' : ''}>
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+        <button type="button" class="order-move-btn js-move-topic-down" title="Đưa xuống" data-id="${escAttr(t.id)}" ${index === blogState.topics.length - 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-arrow-down"></i>
+        </button>
         <label class="toggle-switch" title="${t.enabled ? 'Đang hiện' : 'Đang ẩn'}">
           <input type="checkbox" class="js-toggle-topic" data-id="${escAttr(t.id)}" ${t.enabled ? 'checked' : ''} />
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
@@ -1629,6 +1659,38 @@ function renderTopicsList() {
       } catch (e) { showToast(e.message, 'error'); }
     });
   });
+
+  // Gắn sự kiện cho các nút di chuyển
+  container.querySelectorAll('.js-move-topic-up').forEach(btn => {
+    btn.addEventListener('click', () => moveTopic(btn.dataset.id, -1));
+  });
+  container.querySelectorAll('.js-move-topic-down').forEach(btn => {
+    btn.addEventListener('click', () => moveTopic(btn.dataset.id, 1));
+  });
+}
+
+async function moveTopic(topicId, direction) {
+  const index = blogState.topics.findIndex(t => t.id === topicId);
+  if (index < 0) return;
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= blogState.topics.length) return;
+  
+  // Hoán đổi vị trí trong mảng
+  const temp = blogState.topics[index];
+  blogState.topics[index] = blogState.topics[newIndex];
+  blogState.topics[newIndex] = temp;
+  
+  // Render lại danh sách ngay lập tức
+  renderTopicsList();
+  updateTopicDropdowns();
+  
+  // Gọi API lưu thứ tự ngầm
+  try {
+    const order = blogState.topics.map(t => t.id);
+    await api('reorderClowTopics', { token: state.token, order: JSON.stringify(order) });
+  } catch (e) {
+    showToast('Lỗi lưu thứ tự: ' + e.message, 'error');
+  }
 }
 
 function updateTopicDropdowns() {
