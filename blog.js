@@ -53,6 +53,75 @@ function initBlogAudio() {
   syncAudioButton();
 }
 
+function initBlogCursor() {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasTouchPointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+  if (hasTouchPointer || prefersReducedMotion) {
+    document.body.classList.add('native-cursor');
+    return;
+  }
+  if (document.querySelector('.custom-cursor')) return;
+
+  const customCursor = document.createElement('div');
+  customCursor.className = 'custom-cursor';
+  const cursorImg = document.createElement('img');
+  cursorImg.src = 'hinh/chuot_cursor.png';
+  cursorImg.alt = '';
+  customCursor.appendChild(cursorImg);
+  document.body.appendChild(customCursor);
+
+  const cursorAura = document.createElement('div');
+  cursorAura.className = 'cursor-aura';
+  document.body.appendChild(cursorAura);
+
+  let mouseX = -200;
+  let mouseY = -200;
+  let auraX = -200;
+  let auraY = -200;
+  let auraVisible = false;
+
+  document.addEventListener('mousemove', event => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    customCursor.style.left = mouseX + 'px';
+    customCursor.style.top = mouseY + 'px';
+
+    if (!auraVisible) {
+      auraVisible = true;
+      setTimeout(() => { cursorAura.style.opacity = '1'; }, 300);
+    }
+
+    if (Math.random() > 0.92) {
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      spark.style.left = event.clientX + 'px';
+      spark.style.top = event.clientY + 'px';
+      spark.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
+      spark.style.setProperty('--dy', (Math.random() * 60 - 30) + 'px');
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 800);
+    }
+  });
+
+  function animateAura() {
+    auraX += (mouseX - auraX) * 0.1;
+    auraY += (mouseY - auraY) * 0.1;
+    cursorAura.style.left = auraX + 'px';
+    cursorAura.style.top = auraY + 'px';
+    requestAnimationFrame(animateAura);
+  }
+  animateAura();
+
+  document.addEventListener('mouseover', event => {
+    if (!event.target.closest('a, button, .blog-card, .related-post-card, .blog-scroll-btn, .float-btn')) return;
+    customCursor.style.transform = 'translate(-14px, -46px) scale(1.25) rotate(-10deg)';
+  });
+  document.addEventListener('mouseout', event => {
+    if (!event.target.closest('a, button, .blog-card, .related-post-card, .blog-scroll-btn, .float-btn')) return;
+    customCursor.style.transform = 'translate(-14px, -46px) scale(1) rotate(0deg)';
+  });
+}
+
 // ============================================================
 // ⚙️  CẤU HÌNH BLOG
 // ============================================================
@@ -795,6 +864,7 @@ async function initPostPage() {
 // =========================================================================
 
 function initBlogShell() {
+  initBlogCursor();
   initScrollToTop();
   runWhenIdle(initBlogAudio);
 

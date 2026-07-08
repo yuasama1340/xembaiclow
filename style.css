@@ -41,6 +41,14 @@ body.js-loading {
 
 html { scroll-behavior: smooth; font-size: 18px; overflow-x: hidden; }
 a, button, .audio-btn, .float-btn, .toggle-btn { cursor: none !important; }
+body.native-cursor,
+body.native-cursor a,
+body.native-cursor button,
+body.native-cursor .audio-btn,
+body.native-cursor .float-btn,
+body.native-cursor .toggle-btn {
+  cursor: auto !important;
+}
 h1, h2, h3, h4, h5, h6, .logo, .hero-title, .section-title, .price-amount { font-family: 'Playfair Display', serif; }
 
 em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif; font-style: italic; font-weight: 700; color: var(--gold-light); }
