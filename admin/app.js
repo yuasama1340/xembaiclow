@@ -1185,7 +1185,7 @@ function renderSectionsOrderList() {
 
   list.innerHTML = '';
 
-  order.forEach(item => {
+  order.forEach((item, index) => {
     const key = item.key;
     const isNative   = !!NATIVE_SECTION_LABELS[key];
     const customSec  = customMap[key];
