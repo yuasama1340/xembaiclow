@@ -18,7 +18,9 @@ const state = {
   draggingPackage: '',
   customSections: [],
   sectionOrder: [],
+  navigation: [],
   draggingOrderItem: null,
+  draggingNavItem: null,
 };// ============================================================
 // UTILS
 // ============================================================
@@ -198,6 +200,9 @@ function renderSectionNav(groups) {
   if (typeof renderSectionsNavButton === 'function') {
     renderSectionsNavButton();
   }
+  if (typeof renderNavigationNavButton === 'function') {
+    renderNavigationNavButton();
+  }
   // Restore the Blog button
   if (typeof renderBlogNavButton === 'function') {
     renderBlogNavButton();
@@ -328,8 +333,10 @@ function renderContent() {
 
   const board = $('#content-board');
   const sectionsPanel = $('#sections-panel');
+  const navigationPanel = $('#navigation-panel');
   const blogPanel = $('#blog-panel');
   if (sectionsPanel) sectionsPanel.classList.add('is-hidden');
+  if (navigationPanel) navigationPanel.classList.add('is-hidden');
   if (blogPanel) blogPanel.classList.add('is-hidden');
   board.classList.remove('is-hidden');
   board.innerHTML = '';
@@ -1160,12 +1167,28 @@ function renderSectionsNavButton() {
   nav.appendChild(btn);
 }
 
+function renderNavigationNavButton() {
+  const nav = document.getElementById('section-nav');
+  if (!nav) return;
+  if (nav.querySelector('[data-tab="navigation"]')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-section';
+  btn.setAttribute('data-tab', 'navigation');
+  const count = state.navigation.length || '--';
+  btn.innerHTML = `<span>Menu trang chủ</span><span>${count}</span>`;
+  btn.addEventListener('click', () => showNavigationPanel());
+  nav.appendChild(btn);
+}
+
 function showSectionsPanel() {
   // An content board, hien sections panel
   const board = document.getElementById('content-board');
   const panel = document.getElementById('sections-panel');
+  const navigationPanel = document.getElementById('navigation-panel');
   const blogPanel = document.getElementById('blog-panel');
   if (board) board.classList.add('is-hidden');
+  if (navigationPanel) navigationPanel.classList.add('is-hidden');
   if (blogPanel) blogPanel.classList.add('is-hidden');
   if (panel) panel.classList.remove('is-hidden');
 
@@ -1180,6 +1203,147 @@ function showSectionsPanel() {
 function hideSectionsPanel() {
   const panel = document.getElementById('sections-panel');
   if (panel) panel.classList.add('is-hidden');
+}
+
+function showNavigationPanel() {
+  const board = document.getElementById('content-board');
+  const sectionsPanel = document.getElementById('sections-panel');
+  const navigationPanel = document.getElementById('navigation-panel');
+  const blogPanel = document.getElementById('blog-panel');
+  if (board) board.classList.add('is-hidden');
+  if (sectionsPanel) sectionsPanel.classList.add('is-hidden');
+  if (blogPanel) blogPanel.classList.add('is-hidden');
+  if (navigationPanel) navigationPanel.classList.remove('is-hidden');
+
+  document.querySelectorAll('.nav-section').forEach(b => b.classList.remove('is-active'));
+  const navigationBtn = document.querySelector('[data-tab="navigation"]');
+  if (navigationBtn) navigationBtn.classList.add('is-active');
+
+  loadAndRenderNavigation();
+}
+
+async function loadAndRenderNavigation() {
+  try {
+    const data = await api('listNavigationMenu');
+    state.navigation = data.navigation || [];
+    renderNavigationList();
+    renderNavigationNavButton();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function renderNavigationList() {
+  const list = document.getElementById('navigation-menu-list');
+  if (!list) return;
+  const items = state.navigation.length ? state.navigation : [
+    { key: 'about', label: 'Về dịch vụ', href: '#about', enabled: true, type: 'section' },
+    { key: 'benefits', label: 'Lợi ích', href: '#benefits', enabled: true, type: 'section' },
+    { key: 'pricing', label: 'Bảng giá', href: '#pricing', enabled: true, type: 'section' },
+    { key: 'flexible-3in1', label: '3 trong 1', href: '#flexible-3in1', enabled: true, type: 'section' },
+    { key: 'offer', label: 'Ưu đãi', href: '#offer', enabled: true, type: 'section' },
+    { key: 'blog', label: 'Giải Mã Clow', href: 'clow-blog.html', enabled: true, type: 'link' },
+    { key: 'contact', label: 'Đặt lịch', href: '#contact', enabled: true, type: 'cta' }
+  ];
+
+  list.innerHTML = '';
+  items.forEach((item, index) => {
+    const el = document.createElement('div');
+    el.className = `navigation-item${item.enabled ? '' : ' navigation-item--disabled'}`;
+    el.dataset.key = item.key;
+    el.draggable = true;
+    el.innerHTML = `
+      <span class="order-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
+      <label class="toggle-switch toggle-switch-small" title="Bật/tắt mục menu">
+        <input type="checkbox" class="navigation-enabled" ${item.enabled ? 'checked' : ''} />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </label>
+      <input type="text" class="navigation-input navigation-label" value="${escAttr(item.label || '')}" aria-label="Tên hiển thị" />
+      <input type="text" class="navigation-input navigation-href" value="${escAttr(item.href || '')}" aria-label="Link" />
+      <select class="navigation-type" aria-label="Loại menu">
+        <option value="section"${item.type === 'section' ? ' selected' : ''}>Section</option>
+        <option value="link"${item.type === 'link' ? ' selected' : ''}>Link</option>
+        <option value="cta"${item.type === 'cta' ? ' selected' : ''}>CTA</option>
+      </select>
+      <button type="button" class="order-move-btn js-navigation-up" title="Đưa lên" data-key="${escAttr(item.key)}" ${index === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+      <button type="button" class="order-move-btn js-navigation-down" title="Đưa xuống" data-key="${escAttr(item.key)}" ${index === items.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+    `;
+
+    const enabledInput = el.querySelector('.navigation-enabled');
+    enabledInput?.addEventListener('change', () => {
+      el.classList.toggle('navigation-item--disabled', !enabledInput.checked);
+    });
+
+    el.addEventListener('dragstart', e => {
+      state.draggingNavItem = el;
+      el.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('is-dragging');
+      state.draggingNavItem = null;
+      list.querySelectorAll('.navigation-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (state.draggingNavItem && state.draggingNavItem !== el) {
+        el.classList.add('drag-over');
+        const box = el.getBoundingClientRect();
+        list.insertBefore(state.draggingNavItem, e.clientY < box.y + box.height / 2 ? el : el.nextSibling);
+      }
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    list.appendChild(el);
+  });
+
+  list.querySelectorAll('.js-navigation-up').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); moveNavigationItem(btn.dataset.key, -1); });
+  });
+  list.querySelectorAll('.js-navigation-down').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); moveNavigationItem(btn.dataset.key, 1); });
+  });
+}
+
+function collectNavigationItems() {
+  const list = document.getElementById('navigation-menu-list');
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('.navigation-item')).map(el => ({
+    key: el.dataset.key,
+    label: el.querySelector('.navigation-label')?.value.trim() || '',
+    href: el.querySelector('.navigation-href')?.value.trim() || '',
+    enabled: !!el.querySelector('.navigation-enabled')?.checked,
+    type: el.querySelector('.navigation-type')?.value || 'section'
+  }));
+}
+
+function moveNavigationItem(key, direction) {
+  const items = collectNavigationItems();
+  const index = items.findIndex(item => item.key === key);
+  if (index < 0) return;
+  const nextIndex = index + direction;
+  if (nextIndex < 0 || nextIndex >= items.length) return;
+  const temp = items[index];
+  items[index] = items[nextIndex];
+  items[nextIndex] = temp;
+  state.navigation = items;
+  renderNavigationList();
+}
+
+async function saveNavigationMenu() {
+  const items = collectNavigationItems();
+  const invalid = items.find(item => !item.key || !item.label || !item.href);
+  if (invalid) {
+    showToast('Mỗi mục menu cần có tên hiển thị và link.', 'error');
+    return;
+  }
+  try {
+    const data = await api('saveNavigationMenu', { items: JSON.stringify(items) });
+    state.navigation = data.navigation || items;
+    renderNavigationList();
+    showToast('Đã lưu menu trang chủ.');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 // --- Load du lieu tu GAS ---
@@ -1205,20 +1369,16 @@ function renderSectionsOrderList() {
 
   // Neu chua co order, dung default
   let order = state.sectionOrder.length ? state.sectionOrder
-    : ['about','guide','benefits','testimonials','pricing','faq','flexible-3in1','offer','process','blog','contact'].map(k => ({key: k, enabled: true}));
+    : ['about','guide','benefits','testimonials','pricing','faq','flexible-3in1','offer','process','contact'].map(k => ({key: k, enabled: true}));
 
   // Đảm bảo tương thích ngược với order cũ là mảng string
   order = order.map(o => typeof o === 'string' ? {key: o, enabled: true} : o);
-
-  // Đảm bảo luôn có blog nếu trước đó chưa có
-  if (!order.find(o => o.key === 'blog')) {
-    const processIndex = order.findIndex(o => o.key === 'process');
-    order.splice(processIndex !== -1 ? processIndex + 1 : order.length - 1, 0, {key: 'blog', enabled: true});
-  }
+  order = order.filter(o => o.key !== 'blog');
   if (!order.find(o => o.key === 'faq')) {
     const pricingIndex = order.findIndex(o => o.key === 'pricing');
     order.splice(pricingIndex !== -1 ? pricingIndex + 1 : order.length, 0, {key: 'faq', enabled: true});
   }
+  state.sectionOrder = order;
 
   list.innerHTML = '';
 
@@ -1227,7 +1387,7 @@ function renderSectionsOrderList() {
     const isNative   = !!NATIVE_SECTION_LABELS[key];
     const customSec  = customMap[key];
     const label      = isNative
-      ? (item.navLabel || NATIVE_SECTION_LABELS[key])
+      ? NATIVE_SECTION_LABELS[key]
       : (customSec ? (customSec.label || customSec.id) : key);
     const isEnabled  = isNative ? item.enabled : (customSec ? customSec.enabled : true);
     const isCustom   = !isNative;
@@ -1248,9 +1408,8 @@ function renderSectionsOrderList() {
       ` : ''}
       ${isCustom  ? `<span class="order-badge order-badge--custom">${isEnabled ? 'Custom' : 'Ẩn'}</span>` : ''}
       <button type="button" class="order-move-btn js-order-up" title="Đưa lên" data-key="${escAttr(key)}" ${index === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
-      <button type="button" class="order-move-btn js-order-down" title="Đưa xuống" data-key="${escAttr(key)}" ${index === state.sectionOrder.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+      <button type="button" class="order-move-btn js-order-down" title="Đưa xuống" data-key="${escAttr(key)}" ${index === order.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
       ${isCustom  ? `<button type="button" class="order-edit-btn" data-id="${escAttr(key)}"><i class="fa-solid fa-pen"></i></button>` : ''}
-      ${isNative  ? `<button type="button" class="native-edit-btn" data-key="${escAttr(key)}" data-label="${escAttr(item.navLabel || label)}" title="Đổi tên Menu"><i class="fa-solid fa-pen"></i></button>` : ''}
     `;
 
     // Cập nhật giao diện khi toggle native
@@ -1305,28 +1464,6 @@ function renderSectionsOrderList() {
   list.querySelectorAll('.js-order-down').forEach(btn => {
     btn.addEventListener('click', (e) => { e.stopPropagation(); moveSectionOrder(btn.dataset.key, 1); });
   });
-
-  // Nut edit cho cac native section (để đổi tên menu)
-  list.querySelectorAll('.native-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const current = btn.dataset.label;
-      const newLabel = prompt('Nhập tên hiển thị trên menu cho mục này (để trống để dùng tên gốc):', current);
-      if (newLabel !== null) {
-        const key = btn.dataset.key;
-        let item = state.sectionOrder.find(o => (o.key || o) === key);
-        if (!item) {
-          item = { key: key, enabled: true };
-          state.sectionOrder.push(item);
-        }
-        if (typeof item === 'string') {
-          const idx = state.sectionOrder.indexOf(item);
-          state.sectionOrder[idx] = item = { key, enabled: true };
-        }
-        item.navLabel = newLabel.trim();
-        renderSectionsOrderList();
-      }
-    });
-  });
 }
 
 function moveSectionOrder(key, direction) {
@@ -1358,12 +1495,7 @@ async function saveSectionOrder() {
       enabled = !el.classList.contains('order-item--disabled');
     }
     
-    // Giữ lại navLabel từ state cũ
-    let navLabel = '';
-    const oldItem = state.sectionOrder.find(o => (o.key || o) === key);
-    if (oldItem && oldItem.navLabel) navLabel = oldItem.navLabel;
-
-    return { key, enabled, navLabel };
+    return { key, enabled };
   });
 
   try {
@@ -1478,6 +1610,7 @@ async function deleteSection(id) {
 function wireSectionsEvents() {
   const addBtn    = document.getElementById('btn-add-section');
   const saveOrder = document.getElementById('btn-save-order');
+  const saveNavigation = document.getElementById('btn-save-navigation');
   const modalSave = document.getElementById('section-modal-save');
   const modalDel  = document.getElementById('section-modal-delete');
   const modalClose= document.getElementById('section-modal-close');
@@ -1486,6 +1619,7 @@ function wireSectionsEvents() {
 
   if (addBtn)     addBtn.addEventListener('click', () => openSectionModal(null));
   if (saveOrder)  saveOrder.addEventListener('click', () => withButtonPending(saveOrder, saveSectionOrder));
+  if (saveNavigation) saveNavigation.addEventListener('click', () => withButtonPending(saveNavigation, saveNavigationMenu));
   if (modalSave)  modalSave.addEventListener('click', saveSectionFromModal);
   if (modalDel)   modalDel.addEventListener('click', () => {
     const id = document.getElementById('section-edit-id').value;
@@ -1500,6 +1634,7 @@ function wireSectionsEvents() {
 const _origWireEvents = typeof wireEvents === 'function' ? wireEvents : null;
 window.addEventListener('DOMContentLoaded', () => {
   renderSectionsNavButton();
+  renderNavigationNavButton();
   wireSectionsEvents();
   renderBlogNavButton();
   wireBlogEvents();

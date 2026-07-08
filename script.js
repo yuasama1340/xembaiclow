@@ -46,7 +46,7 @@ const runtimeConfig = {
 };
 
 let dynamicPackages = [];
-const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v2';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v3_navigation';
 const LANDING_CONTENT_CACHE_TTL_MS = 10 * 60 * 1000;
 
 function runWhenIdle(callback) {
@@ -185,6 +185,7 @@ function applyLandingPayload(data) {
   data.items.forEach(applyFeedbackImageItem);
   data.items.forEach(applyLandingContentItem);
   if (Array.isArray(data.packages) && data.packages.length) applyDynamicPackages(data.packages);
+  if (Array.isArray(data.navigation) && data.navigation.length) applyNavigationMenu(data.navigation);
   if (Array.isArray(data.customSections)) renderCustomSections(data.customSections);
   if (Array.isArray(data.sectionOrder) && data.sectionOrder.length) {
     applyAllSectionOrder(data.sectionOrder, data.customSections || []);
@@ -1143,6 +1144,28 @@ function renderCustomSections(sections) {
   });
 }
 
+function applyNavigationMenu(items) {
+  const navLinks = document.querySelector('.nav-links');
+  if (!navLinks || !Array.isArray(items)) return;
+
+  const enabledItems = items
+    .filter(item => item && item.enabled !== false && item.label && item.href)
+    .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+
+  if (!enabledItems.length) return;
+
+  navLinks.innerHTML = '';
+  enabledItems.forEach(item => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.textContent = item.label;
+    if (item.type === 'cta') a.className = 'nav-cta';
+    li.appendChild(a);
+    navLinks.appendChild(li);
+  });
+}
+
 /**
  * Áp dụng thứ tự section từ API lên DOM bằng CSS order
  * sectionOrder: array of section keys theo thứ tự mong muốn
@@ -1167,19 +1190,6 @@ function applyAllSectionOrder(sectionOrder, customSections) {
         el.style.display = 'none';
       } else {
         el.style.display = '';
-      }
-    }
-
-    // Ẩn/hiện và đổi tên link menu nếu là native section hoặc blog
-    const navLinks = document.querySelector('.nav-links');
-    if (navLinks) {
-      const a = item.key === 'blog'
-        ? navLinks.querySelector(`a[href="clow-blog.html"]`)
-        : navLinks.querySelector(`a[href="#${item.key}"]`);
-        
-      if (a && a.parentElement) {
-        a.parentElement.style.display = item.enabled ? '' : 'none';
-        if (item.navLabel) a.textContent = item.navLabel;
       }
     }
   });

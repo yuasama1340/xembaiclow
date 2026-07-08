@@ -28,9 +28,20 @@ const PUBLIC_CACHE_SECONDS = 7200; // 2 tiếng — blog ít thay đổi, cache 
 // Custom Sections
 const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
 const SECTION_ORDER_SHEET_NAME = 'Section Order';
+const NAVIGATION_MENU_SHEET_NAME = 'Navigation Menu';
 const CUSTOM_SECTIONS_HEADERS = ['Bat', 'ID', 'Nhan section', 'Tieu de', 'Mo ta ngan', 'Noi dung HTML', 'Nav label', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
 const SECTION_ORDER_HEADERS = ['Section key', 'Thu tu', 'Hien thi'];
 const DEFAULT_SECTION_ORDER = ['about', 'guide', 'benefits', 'testimonials', 'pricing', 'faq', 'flexible-3in1', 'offer', 'process', 'contact'];
+const NAVIGATION_MENU_HEADERS = ['Key', 'Label', 'Href', 'Enabled', 'Order', 'Type', 'Updated at', 'Updated by'];
+const DEFAULT_NAVIGATION_MENU = [
+  { key: 'about', label: 'Về dịch vụ', href: '#about', enabled: true, order: 1, type: 'section' },
+  { key: 'benefits', label: 'Lợi ích', href: '#benefits', enabled: true, order: 2, type: 'section' },
+  { key: 'pricing', label: 'Bảng giá', href: '#pricing', enabled: true, order: 3, type: 'section' },
+  { key: 'flexible-3in1', label: '3 trong 1', href: '#flexible-3in1', enabled: true, order: 4, type: 'section' },
+  { key: 'offer', label: 'Ưu đãi', href: '#offer', enabled: true, order: 5, type: 'section' },
+  { key: 'blog', label: 'Giải Mã Clow', href: 'clow-blog.html', enabled: true, order: 6, type: 'link' },
+  { key: 'contact', label: 'Đặt lịch', href: '#contact', enabled: true, order: 7, type: 'cta' }
+];
 
 // Blog Bài Clow
 const CLOW_TOPICS_SHEET_NAME = 'Clow Topics';
@@ -307,6 +318,10 @@ function doGet(e) {
       case 'admindeletecustomsection':
       case 'reorderallsections':
       case 'adminreorderallsections':
+      case 'listnavigationmenu':
+      case 'adminlistnavigationmenu':
+      case 'savenavigationmenu':
+      case 'adminsavenavigationmenu':
       case 'listusers':
       case 'adminlistusers':
       case 'createuser':
@@ -369,6 +384,12 @@ function doPost(e) {
       case 'reorderallsections':
       case 'adminreorderallsections':
         return handleReorderAllSections(params);
+      case 'listnavigationmenu':
+      case 'adminlistnavigationmenu':
+        return handleListNavigationMenu(params);
+      case 'savenavigationmenu':
+      case 'adminsavenavigationmenu':
+        return handleSaveNavigationMenu(params);
       case 'listusers':
       case 'adminlistusers':
         return handleListUsers(params);
@@ -436,6 +457,7 @@ function clearPublicCache() {
   const cache = CacheService.getScriptCache();
   cache.remove(PUBLIC_CACHE_KEY);
   cache.remove(PUBLIC_PACKAGES_CACHE_KEY);
+  cache.remove(PUBLIC_CACHE_SECTIONS_KEY);
 }
 
 function safeCachePut(key, value, seconds) {
@@ -684,7 +706,8 @@ function buildPublicLandingPayload() {
     items: readContentRows(false, { sync: false }),
     packages: readPackageRows(false, { format: false }),
     customSections: readCustomSectionRows(false),
-    sectionOrder: readSectionOrder()
+    sectionOrder: readSectionOrder(),
+    navigation: readNavigationMenu(false)
   };
 }
 
@@ -1278,6 +1301,49 @@ function ensureSectionOrderSheet() {
   return sheet;
 }
 
+function ensureNavigationMenuSheet() {
+  const sheet = getOrCreateSheet(NAVIGATION_MENU_SHEET_NAME, NAVIGATION_MENU_HEADERS);
+  if (sheet.getLastRow() < 2) {
+    const now = new Date();
+    const rows = DEFAULT_NAVIGATION_MENU.map(item => [
+      item.key,
+      item.label,
+      item.href,
+      item.enabled,
+      item.order,
+      item.type,
+      now,
+      'system'
+    ]);
+    sheet.getRange(2, 1, rows.length, NAVIGATION_MENU_HEADERS.length).setValues(rows);
+  }
+  return sheet;
+}
+
+function navigationMenuFromRow(row, map, rowIndex) {
+  return {
+    rowIndex: rowIndex,
+    key: String(row[map.Key - 1] || '').trim(),
+    label: String(row[map.Label - 1] || '').trim(),
+    href: String(row[map.Href - 1] || '').trim(),
+    enabled: row[map.Enabled - 1] === '' ? true : (row[map.Enabled - 1] === true || String(row[map.Enabled - 1]).toUpperCase() === 'TRUE'),
+    order: Number(row[map.Order - 1] || 999),
+    type: String(row[map.Type - 1] || 'section').trim() || 'section',
+    updatedAt: row[map['Updated at'] - 1],
+    updatedBy: row[map['Updated by'] - 1]
+  };
+}
+
+function readNavigationMenu(includeDisabled) {
+  const sheet = ensureNavigationMenuSheet();
+  if (!sheet || sheet.getLastRow() < 2) return DEFAULT_NAVIGATION_MENU.slice();
+  const map = getColumnMap(sheet);
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues()
+    .map((row, i) => navigationMenuFromRow(row, map, i + 2))
+    .filter(item => item.key && (includeDisabled || item.enabled))
+    .sort((a, b) => (a.order || 999) - (b.order || 999));
+}
+
 function customSectionFromRow(row, map, rowIndex) {
   return {
     rowIndex: rowIndex,
@@ -1309,14 +1375,13 @@ function readSectionOrder() {
   if (!sheet || sheet.getLastRow() < 2) {
     return DEFAULT_SECTION_ORDER.map(k => ({key: k, enabled: true}));
   }
-  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
   return rows
     .filter(r => String(r[0]).trim())
     .sort((a, b) => Number(a[1]) - Number(b[1]))
     .map(r => ({
       key: String(r[0]).trim(),
-      enabled: r[2] === '' ? true : (r[2] === true || String(r[2]).toUpperCase() === 'TRUE'),
-      navLabel: r[3] ? String(r[3]).trim() : ''
+      enabled: r[2] === '' ? true : (r[2] === true || String(r[2]).toUpperCase() === 'TRUE')
     }));
 }
 
@@ -1349,6 +1414,56 @@ function handleListCustomSections(params) {
   } catch (err) {
     return json({ success: false, error: err.message });
   }
+}
+
+function handleListNavigationMenu(params) {
+  requireSession(params, ['admin', 'editor']);
+  try {
+    return json({
+      success: true,
+      navigation: readNavigationMenu(true)
+    });
+  } catch (err) {
+    return json({ success: false, error: err.message });
+  }
+}
+
+function handleSaveNavigationMenu(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  let items;
+  try {
+    items = JSON.parse(params.items || '[]');
+  } catch (e) {
+    return json({ success: false, error: 'Dữ liệu menu không hợp lệ.' });
+  }
+  if (!Array.isArray(items) || !items.length) {
+    return json({ success: false, error: 'Danh sách menu rỗng.' });
+  }
+
+  const now = new Date();
+  const rows = items.map((item, index) => {
+    const key = String(item.key || '').trim();
+    const label = String(item.label || '').trim();
+    const href = String(item.href || '').trim();
+    const type = String(item.type || 'section').trim() || 'section';
+    if (!key || !label || !href) throw new Error('Mỗi mục menu cần có key, tên hiển thị và link.');
+    return [
+      key,
+      label,
+      href,
+      item.enabled === undefined ? true : !!item.enabled,
+      index + 1,
+      type,
+      now,
+      session.username
+    ];
+  });
+
+  const sheet = ensureNavigationMenuSheet();
+  if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
+  sheet.getRange(2, 1, rows.length, NAVIGATION_MENU_HEADERS.length).setValues(rows);
+  clearPublicCache();
+  return json({ success: true, message: 'Đã lưu menu trang chủ.', navigation: readNavigationMenu(true) });
 }
 
 // ADMIN: tạo mới hoặc cập nhật section
@@ -1459,10 +1574,10 @@ function handleReorderAllSections(params) {
   if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
   const rows = order.map((obj, i) => {
     // Hỗ trợ mảng string cũ hoặc mảng object mới
-    if (typeof obj === 'string') return [String(obj).trim(), i + 1, true, ''];
-    return [String(obj.key).trim(), i + 1, !!obj.enabled, obj.navLabel || ''];
+    if (typeof obj === 'string') return [String(obj).trim(), i + 1, true];
+    return [String(obj.key).trim(), i + 1, !!obj.enabled];
   });
-  sheet.getRange(2, 1, rows.length, 4).setValues(rows);
+  sheet.getRange(2, 1, rows.length, 3).setValues(rows);
 
   CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
   CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="../hinh/favicon.png" />
   <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
-  <link rel="stylesheet" href="./style.css?v=20260628-clow52-sort-search" />
+  <link rel="stylesheet" href="./style.css?v=20260708-navigation-menu" />
 </head>
 <body>
   <div class="admin-bg">
@@ -207,6 +207,32 @@
           <button type="button" class="primary-action" id="btn-save-order">
             <i class="fa-solid fa-floppy-disk"></i>
             <span>Lưu thứ tự hiển thị</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- NAVIGATION MENU PANEL -->
+      <section class="sections-panel navigation-panel is-hidden" id="navigation-panel">
+        <div class="sections-topbar">
+          <div>
+            <div class="eyebrow">Điều hướng</div>
+            <h2>Menu trang chủ</h2>
+          </div>
+        </div>
+
+        <div class="sections-order-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          Chỉnh tên, link, trạng thái bật/tắt và thứ tự menu trên trang chủ. Phần này độc lập với thứ tự section.
+        </div>
+
+        <div class="navigation-menu-list" id="navigation-menu-list">
+          <!-- JS render -->
+        </div>
+
+        <div class="sections-save-order">
+          <button type="button" class="primary-action" id="btn-save-navigation">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Lưu menu trang chủ</span>
           </button>
         </div>
       </section>
@@ -513,6 +539,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-  <script src="./app.js?v=20260628-clow52-sort-search"></script>
+  <script src="./app.js?v=20260708-navigation-menu"></script>
 </body>
 </html>
