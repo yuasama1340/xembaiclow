@@ -2575,7 +2575,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 #scroll-to-top {
   position: fixed;
   bottom: 32px;
-  right: 32px;
+  /* căn tâm thẳng hàng với icon mạng xã hội (right:20px, width:52px → tâm tại 46px) */
+  right: 22px;
   z-index: 9999;
   width: 48px;
   height: 48px;
@@ -2613,3 +2614,5 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 @media (max-width: 480px) {
   #scroll-to-top { bottom: 20px; right: 18px; width: 42px; height: 42px; }
 }
+/* Trang bài viết không có social icons → canh lề chuẩn */
+.post-page #scroll-to-top { right: 20px; }
