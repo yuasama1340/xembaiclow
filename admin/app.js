@@ -1683,11 +1683,13 @@ async function moveTopic(topicId, direction) {
   // Render lại danh sách ngay lập tức
   renderTopicsList();
   updateTopicDropdowns();
-  
-  // Gọi API lưu thứ tự ngầm
+}
+
+async function saveTopicOrder() {
   try {
     const order = blogState.topics.map(t => t.id);
     await api('reorderClowTopics', { token: state.token, order: JSON.stringify(order) });
+    showToast('Đã lưu thứ tự chủ đề', 'success');
   } catch (e) {
     showToast('Lỗi lưu thứ tự: ' + e.message, 'error');
   }
@@ -2241,6 +2243,7 @@ function wireBlogEvents() {
 
   // Topic modal
   document.getElementById('btn-new-topic')?.addEventListener('click', () => openTopicModal(null));
+  document.getElementById('btn-save-topic-order')?.addEventListener('click', e => withButtonPending(e.currentTarget, saveTopicOrder));
   document.getElementById('blog-topic-modal-save')?.addEventListener('click', saveTopic);
   document.getElementById('blog-topic-modal-cancel')?.addEventListener('click', closeTopicModal);
   document.getElementById('blog-topic-modal-close')?.addEventListener('click', closeTopicModal);
