@@ -1203,11 +1203,11 @@ function sortClow52BlogPosts(posts, mode) {
 }
 
 // ── Gọi API chung ──
-async function fetchBlogApi(action, params = {}) {
+async function fetchBlogApi(action, params = {}, _retried = false) {
   const urlParams = new URLSearchParams({ action, ...params });
   const cacheKey = `clowcat_cache_${action}_${urlParams.toString()}`;
   
-  // Cache client-side 2 phút
+  // Cache client-side 5 phút
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
     try {
@@ -1218,12 +1218,29 @@ async function fetchBlogApi(action, params = {}) {
 
   try {
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${urlParams.toString()}`);
+    
+    // Kiểm tra Content-Type trước khi parse JSON
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json') && !ct.includes('text/plain')) {
+      // Server trả HTML (error page/quota) — retry 1 lần sau 1.5s
+      if (!_retried) {
+        await new Promise(r => setTimeout(r, 1500));
+        return fetchBlogApi(action, params, true);
+      }
+      throw new Error('Máy chủ tạm thời không phản hồi. Vui lòng thử lại sau.');
+    }
+    
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Lỗi không xác định từ máy chủ');
     
     sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
     return data;
   } catch (err) {
+    // Nếu lỗi JSON parse (server trả HTML) — retry 1 lần
+    if (!_retried && (err instanceof SyntaxError || err.message.includes('token'))) {
+      await new Promise(r => setTimeout(r, 1500));
+      return fetchBlogApi(action, params, true);
+    }
     console.error(`Lỗi gọi API Blog [${action}]:`, err);
     throw err;
   }
@@ -1494,6 +1511,10 @@ async function loadSinglePost() {
 
     container.innerHTML = html;
 
+    // T\u0103ng l\u01b0\u1ee3t xem ng\u1ea7m sau khi \u0111\u00e3 hi\u1ec3n th\u1ecb b\u00e0i \u2014 kh\u00f4ng await, kh\u00f4ng block UI
+    fetch(`${LANDING_CONTENT_SCRIPT_URL}?action=incrementpostviews&id=${encodeURIComponent(postId)}`)
+      .catch(() => {}); // Im l\u1eb7ng n\u1ebfu l\u1ed7i
+
     // Lưu bài viết hiện tại vào lịch sử đã xem
     try {
       let viewed = JSON.parse(localStorage.getItem('clowcat_viewed_posts') || '[]');
@@ -1578,7 +1599,20 @@ async function loadSinglePost() {
     }
 
   } catch (err) {
-    container.innerHTML = `<div style="text-align:center; padding: 80px 0;"><h2 style="color:var(--danger)">Lỗi: ${err.message}</h2><a href="clow-blog.html" class="cta-button primary-action" style="margin-top:20px;display:inline-block">Quay lại</a></div>`;
+    container.innerHTML = `
+      <div style="text-align:center; padding: 80px 20px;">
+        <div style="font-size:3rem; margin-bottom:16px">⚠️</div>
+        <h2 style="color:var(--gold); margin-bottom:12px">Nội dung chưa sẵn sàng</h2>
+        <p style="color:rgba(255,255,255,0.6); margin-bottom:28px; max-width:380px; margin-left:auto; margin-right:auto">
+          Máy chủ đang bận. Vui lòng đợi vài giây rồi thử lại.
+        </p>
+        <button onclick="location.reload()" style="background:var(--gold); color:#1a0e2e; border:none; padding:12px 32px; border-radius:8px; font-weight:700; font-size:1rem; cursor:pointer; margin-right:12px">
+          🔄 Thử lại
+        </button>
+        <a href="clow-blog.html" class="cta-button primary-action" style="margin-top:0; display:inline-block">
+          ← Quay lại
+        </a>
+      </div>`;
   }
 }
 

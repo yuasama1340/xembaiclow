@@ -23,7 +23,7 @@ const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline'
 const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
 const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
 const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
-const PUBLIC_CACHE_SECONDS = 600;
+const PUBLIC_CACHE_SECONDS = 7200; // 2 tiếng — blog ít thay đổi, cache lâu để giảm số lần đọc Sheet
 
 // Custom Sections
 const CUSTOM_SECTIONS_SHEET_NAME = 'Custom Sections';
@@ -283,6 +283,8 @@ function doGet(e) {
         return handleGetPublicClowPosts(params);
       case 'getclowpost':
         return handleGetPublicClowPost(params);
+      case 'incrementpostviews':
+        return handleIncrementPostViews(params);
       case 'login':
       case 'adminlogin':
       case 'listcontent':
@@ -1720,12 +1722,12 @@ function handleGetPublicClowPost(params) {
   if (!id) return json({ success: false, error: 'Thiếu id bài viết.' });
 
   const cache = CacheService.getScriptCache();
-  // Safe cache key: chỉ lấy alphanumeric, còn lại biến thành _
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
   const cacheKey = 'clowcat_post_' + safeId;
+
+  // Ưu tiên trả từ cache (nếu có)
   let cached = null;
   try { cached = cache.get(cacheKey); } catch(e) {}
-  
   if (cached) {
     try {
       const post = JSON.parse(cached);
@@ -1733,6 +1735,7 @@ function handleGetPublicClowPost(params) {
     } catch(e) {}
   }
 
+  // Không có cache: đọc Sheet (views sẽ được tăng riêng biệt bởi incrementpostviews)
   const sheet = ensureClowPostsSheet();
   const map = getColumnMap(sheet);
   const lastRow = sheet.getLastRow();
@@ -1742,17 +1745,45 @@ function handleGetPublicClowPost(params) {
   for (let i = 0; i < rows.length; i++) {
     const post = clowPostToObj(rows[i], map);
     if (post.id === id && post.enabled) {
-      // Tăng lượt xem
-      const viewsCol = map['Luot xem'];
-      if (viewsCol) {
-        const currentViews = Number(rows[i][viewsCol - 1] || 0);
-        sheet.getRange(i + 2, viewsCol).setValue(currentViews + 1);
-      }
-      try { cache.put(cacheKey, JSON.stringify(post), 300); } catch(e) {}
+      // Cache 1 tiếng — không có thao tác ghi Sheet ở đây nữa
+      try { cache.put(cacheKey, JSON.stringify(post), 3600); } catch(e) {}
       return json({ success: true, post });
     }
   }
   return json({ success: false, error: 'Không tìm thấy bài viết.' });
+}
+
+// Tăng lượt xem được gọi riêng biệt, không block việc hiển thị bài
+function handleIncrementPostViews(params) {
+  const id = String(params.id || '').trim();
+  if (!id) return json({ success: true }); // Im lặng nếu không có id
+
+  try {
+    const sheet = ensureClowPostsSheet();
+    const map = getColumnMap(sheet);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return json({ success: true });
+
+    const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+    for (let i = 0; i < rows.length; i++) {
+      const rowId = String(rows[i][map['ID'] - 1] || '').trim();
+      if (rowId === id) {
+        const viewsCol = map['Luot xem'];
+        if (viewsCol) {
+          const currentViews = Number(rows[i][viewsCol - 1] || 0);
+          sheet.getRange(i + 2, viewsCol).setValue(currentViews + 1);
+          // Xóa cache bài này để lần sau lấy views mới
+          const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+          try { CacheService.getScriptCache().remove('clowcat_post_' + safeId); } catch(e) {}
+        }
+        break;
+      }
+    }
+  } catch(e) {
+    // Im lặng — views là số liệu thống kê, không nên gây lỗi hiển thị
+    console.error('incrementPostViews error:', e);
+  }
+  return json({ success: true });
 }
 
 // ── ADMIN API (POST, cần token) ───────────────────────────────
@@ -2012,4 +2043,20 @@ function handleUploadBlogImage(params) {
   const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
 
   return json({ success: true, url, fileId });
+}
+
+// ============================================================
+// WARM-UP TRIGGER — Chạy mỗi 10 phút để giữ GAS luôn warm
+// Trong GAS Editor: Extensions > Apps Script > Triggers > Add Trigger
+//   Function: warmUpBlogCache | Event: Time-driven | Every 10 minutes
+// ============================================================
+function warmUpBlogCache() {
+  try {
+    // Làm ấm cache topics + posts (không có params = lấy tất cả)
+    handleGetPublicClowTopics({});
+    handleGetPublicClowPosts({});
+    console.log('warmUpBlogCache: OK at ' + new Date().toISOString());
+  } catch(e) {
+    console.error('warmUpBlogCache error:', e);
+  }
 }
