@@ -164,7 +164,7 @@ async function loadLandingContent() {
   }
 }
 
-loadLandingContent();
+window.landingContentPromise = loadLandingContent();
 
 function formatPackageMoney(amount, compact = false) {
   const value = Number(amount || 0);
@@ -1781,12 +1781,10 @@ const _origInitPostPage = typeof initPostPage === 'function' ? initPostPage : nu
 initBlogPage = function() { console.log('Đã chặn gọi song song initBlogPage'); };
 initPostPage = function() { console.log('Đã chặn gọi song song initPostPage'); };
 
-// 3. Gọi tuần tự TẤT CẢ sau khi landing content xong
-const _origInitContent = typeof loadLandingContent === 'function' ? loadLandingContent : null;
-if (_origInitContent) {
-  loadLandingContent = async function() {
-    await _origInitContent(); // Xong landing page
-    await initBlogHome();     // Xong trang chủ (nếu có)
+// 3. Chờ loadLandingContent chạy xong mới gọi các hàm khởi tạo trang
+if (window.landingContentPromise) {
+  window.landingContentPromise.then(async () => {
+    await initBlogHome(); // Xong trang chủ (nếu có)
     
     // Gọi tiếp tuần tự nếu đang ở trang blog hoặc chi tiết
     if (_origInitBlogPage && document.getElementById('blog-topics-container')) {
@@ -1795,7 +1793,7 @@ if (_origInitContent) {
     if (_origInitPostPage && document.getElementById('post-container')) {
       await _origInitPostPage();
     }
-  };
+  });
 } else {
   // Dự phòng
   document.addEventListener('DOMContentLoaded', async () => {
