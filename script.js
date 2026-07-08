@@ -46,6 +46,8 @@ const runtimeConfig = {
 };
 
 let dynamicPackages = [];
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v2';
+const LANDING_CONTENT_CACHE_TTL_MS = 10 * 60 * 1000;
 
 // ============================================================
 // 🪄  NẠP NỘI DUNG LANDING PAGE TỪ GOOGLE SHEET
@@ -152,32 +154,56 @@ function updateFaqVisibility() {
   if (faqSection) faqSection.hidden = visibleCount === 0;
 }
 
+function readLandingContentCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(LANDING_CONTENT_CACHE_KEY) || 'null');
+    if (!cached?.data?.success) return null;
+    if (Date.now() - Number(cached.timestamp || 0) > LANDING_CONTENT_CACHE_TTL_MS) return null;
+    return cached.data;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeLandingContentCache(data) {
+  try {
+    localStorage.setItem(LANDING_CONTENT_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
+  } catch (error) {}
+}
+
+function applyLandingPayload(data) {
+  if (!data?.success || !Array.isArray(data.items)) return false;
+  data.items.forEach(applyRuntimeConfigItem);
+  data.items.forEach(applyFeedbackImageItem);
+  data.items.forEach(applyLandingContentItem);
+  if (Array.isArray(data.packages) && data.packages.length) applyDynamicPackages(data.packages);
+  if (Array.isArray(data.customSections)) renderCustomSections(data.customSections);
+  if (Array.isArray(data.sectionOrder) && data.sectionOrder.length) {
+    applyAllSectionOrder(data.sectionOrder, data.customSections || []);
+  }
+  updateFaqVisibility();
+  return true;
+}
+
 async function loadLandingContent() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) {
     updateFaqVisibility();
     return;
   }
 
+  const cached = readLandingContentCache();
+  if (cached && applyLandingPayload(cached)) {
+    document.body.classList.remove('js-loading');
+  }
+
   try {
-    const params = new URLSearchParams({ action: 'getLandingContent', t: Date.now().toString() });
-    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+    const params = new URLSearchParams({ action: 'getLandingContent' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'default' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.items)) return;
-    data.items.forEach(applyRuntimeConfigItem);
-    data.items.forEach(applyFeedbackImageItem);
-    data.items.forEach(applyLandingContentItem);
-    if (Array.isArray(data.packages) && data.packages.length) {
-      applyDynamicPackages(data.packages);
-    } else {
-      await loadDynamicPackages();
-    }
-    // Render custom sections nếu có trong response
-    if (Array.isArray(data.customSections)) {
-      renderCustomSections(data.customSections);
-    }
-    if (Array.isArray(data.sectionOrder) && data.sectionOrder.length) {
-      applyAllSectionOrder(data.sectionOrder, data.customSections || []);
-    }
+    writeLandingContentCache(data);
+    applyLandingPayload(data);
+    if (!Array.isArray(data.packages) || !data.packages.length) await loadDynamicPackages();
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   } finally {
@@ -216,8 +242,8 @@ function packageFeatures(pkg) {
 async function loadDynamicPackages() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
   try {
-    const params = new URLSearchParams({ action: 'listPublicPackages', t: Date.now().toString() });
-    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+    const params = new URLSearchParams({ action: 'listPublicPackages' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'default' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
     applyDynamicPackages(data.packages);
@@ -686,10 +712,10 @@ function createDust() {
   setTimeout(() => dust.remove(), 10000);
 }
 
-if (!prefersReducedMotion) {
+if (!prefersReducedMotion && !hasTouchPointer) {
   setInterval(() => {
     if (!document.hidden) createDust();
-  }, hasTouchPointer ? 1400 : 700);
+  }, 700);
 }
 
 // --- FALLING CARDS (Wave system) ---
@@ -793,7 +819,7 @@ function spawnWave() {
   setTimeout(spawnWave, nextDelay);
 }
 
-if (!prefersReducedMotion && !document.body?.classList.contains('post-page')) {
+if (!prefersReducedMotion && !hasTouchPointer && !document.body?.classList.contains('post-page')) {
   setTimeout(spawnWave, isMobileViewport() ? 400 : 1500);
 }
 
@@ -1169,6 +1195,8 @@ const blogState = {
   limit: 12,
   totalPages: 1
 };
+const BLOG_TOPIC_PREVIEW_LIMIT = 12;
+const BLOG_CLOW52_LIMIT = 60;
 
 function escapeBlogHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, ch => ({
@@ -1656,29 +1684,30 @@ async function initBlogPage() {
   container.innerHTML = '<div class="blog-skeleton-row">' + skeletonCard.repeat(3) + '</div>';
   
   try {
-    // GAS không xử lý được đồng thời nhiều request — tải tuần tự
     const topicsData = await fetchBlogApi('getclowtopics');
     const topics = topicsData.topics || [];
-
-    const postsData = await fetchBlogApi('getclowposts', { limit: 200 });
-    const allPosts = postsData.posts || [];
     
     if (topics.length === 0) {
       container.innerHTML = '<div style="text-align:center; padding: 60px; opacity:0.6;">Chưa có chủ đề nào.</div>';
       return;
     }
 
-    let html = '';
-
-    topics.forEach(t => {
-      // Lấy bài viết thuộc chủ đề này
+    const sections = [];
+    for (const t of topics) {
       const isClow52 = isClow52BlogTopic(t);
       const clow52SortMode = t.postSortMode || 'date';
-      const topicPosts = isClow52
-        ? sortClow52BlogPosts(allPosts.filter(p => p.topicId === t.id), clow52SortMode)
-        : allPosts.filter(p => p.topicId === t.id);
-      if (topicPosts.length === 0) return; // Ẩn chủ đề nếu không có bài
+      const postParams = {
+        topic: t.id,
+        limit: isClow52 ? BLOG_CLOW52_LIMIT : BLOG_TOPIC_PREVIEW_LIMIT
+      };
+      if (isClow52) postParams.sort = clow52SortMode;
+      const postsData = await fetchBlogApi('getclowposts', postParams);
+      const topicPosts = postsData.posts || [];
+      if (topicPosts.length) sections.push({ topic: t, posts: topicPosts, isClow52, clow52SortMode });
+    }
 
+    let html = '';
+    sections.forEach(({ topic: t, posts: topicPosts, isClow52, clow52SortMode }) => {
       // Build section HTML
       html += `
         <div class="blog-topic-section" data-topic-id="${escapeBlogHtml(t.id)}" data-clow52="${isClow52 ? 'true' : 'false'}">
@@ -1726,16 +1755,17 @@ async function initBlogPage() {
     
     // Gắn sự kiện drag scroll ngang bằng chuột
     setupBlogScrollRows();
-    setupClow52BlogTools(topics, allPosts);
+    setupClow52BlogTools(topics);
 
   } catch (err) {
     container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--danger)">Lỗi tải dữ liệu: ${err.message}</div>`;
   }
 }
 
-function setupClow52BlogTools(topics, allPosts) {
+function setupClow52BlogTools(topics) {
   const topicById = new Map(topics.map(t => [t.id, t]));
-  const rerender = topicId => {
+  const pendingTimers = new Map();
+  const rerender = async topicId => {
     const section = Array.from(document.querySelectorAll('.blog-topic-section[data-topic-id]'))
       .find(el => el.dataset.topicId === topicId);
     const row = section?.querySelector('.blog-scroll-row');
@@ -1745,18 +1775,30 @@ function setupClow52BlogTools(topics, allPosts) {
     const topic = topicById.get(topicId);
     if (!isClow52BlogTopic(topic)) return;
 
-    let posts = allPosts.filter(p => p.topicId === topicId);
-    if (query) posts = posts.filter(p => normalizeBlogText(p.title).includes(query));
-    posts = sortClow52BlogPosts(posts, mode);
-    row.innerHTML = posts.length
-      ? posts.map(renderBlogTopicCard).join('')
-      : '<div class="blog-empty-state">Không tìm thấy bài viết phù hợp.</div>';
-    row.scrollLeft = 0;
-    updateBlogScrollButtons(row);
+    row.setAttribute('aria-busy', 'true');
+    try {
+      const data = await fetchBlogApi('getclowposts', {
+        topic: topicId,
+        search: query,
+        sort: mode,
+        limit: BLOG_CLOW52_LIMIT
+      });
+      const posts = data.posts || [];
+      row.innerHTML = posts.length
+        ? posts.map(renderBlogTopicCard).join('')
+        : '<div class="blog-empty-state">Không tìm thấy bài viết phù hợp.</div>';
+      row.scrollLeft = 0;
+      updateBlogScrollButtons(row);
+    } finally {
+      row.removeAttribute('aria-busy');
+    }
   };
 
   document.querySelectorAll('.blog-clow52-search-input').forEach(input => {
-    input.addEventListener('input', () => rerender(input.dataset.topicId));
+    input.addEventListener('input', () => {
+      clearTimeout(pendingTimers.get(input.dataset.topicId));
+      pendingTimers.set(input.dataset.topicId, setTimeout(() => rerender(input.dataset.topicId), 250));
+    });
   });
   document.querySelectorAll('.blog-clow52-sort').forEach(select => {
     select.addEventListener('change', () => rerender(select.dataset.topicId));

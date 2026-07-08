@@ -1647,6 +1647,47 @@ function generateSlug(title) {
   return slug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 80);
 }
 
+function normalizeClowSearchText(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+function getClowPostCardCode(post) {
+  const explicit = String(post && post.cardCode || '').trim();
+  if (explicit) return explicit;
+  const match = String(((post && post.title) || '') + ' ' + ((post && post.id) || '')).match(/\b(\d{1,3})\b/);
+  return match ? match[1].padStart(2, '0') : '';
+}
+
+function compareClowPostCode(a, b) {
+  const codeA = getClowPostCardCode(a);
+  const codeB = getClowPostCardCode(b);
+  const numA = parseInt(codeA, 10);
+  const numB = parseInt(codeB, 10);
+  if (!isNaN(numA) && !isNaN(numB) && numA !== numB) return numA - numB;
+  if (codeA || codeB) return codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' });
+  return String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' });
+}
+
+function sortPublicClowPosts(posts, mode) {
+  const sorted = posts.slice();
+  if (mode === 'title') {
+    sorted.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'vi', { sensitivity: 'base' }));
+  } else if (mode === 'code') {
+    sorted.sort(compareClowPostCode);
+  } else {
+    sorted.sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
+    });
+  }
+  return sorted;
+}
+
 // ── PUBLIC API (GET) ──────────────────────────────────────────
 
 function handleGetPublicClowTopics(params) {
@@ -1672,8 +1713,10 @@ function handleGetPublicClowTopics(params) {
 
 function handleGetPublicClowPosts(params) {
   const topicId = String(params.topicId || params.topic || '').trim();
+  const query   = normalizeClowSearchText(params.search || params.q || '');
+  const sortMode = String(params.sort || '').trim();
   const page    = Math.max(1, parseInt(params.page || '1', 10));
-  const limit   = Math.min(50, parseInt(params.limit || '12', 10));
+  const limit   = Math.min(80, parseInt(params.limit || '12', 10));
 
   const cache = CacheService.getScriptCache();
   let allPosts = null;
@@ -1710,6 +1753,13 @@ function handleGetPublicClowPosts(params) {
 
   let posts = allPosts;
   if (topicId) posts = posts.filter(p => p.topicId === topicId);
+  if (query) {
+    posts = posts.filter(p => {
+      const haystack = normalizeClowSearchText([p.title, p.cardCode, p.id].join(' '));
+      return haystack.indexOf(query) !== -1;
+    });
+  }
+  if (sortMode) posts = sortPublicClowPosts(posts, sortMode);
 
   const total = posts.length;
   const paged = posts.slice((page - 1) * limit, page * limit);
