@@ -1,6 +1,8 @@
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr5AsulNW6ZaqxVl2PGjle17OnM5lPS6WIMWAhBdph0fq3hpLDzec1lPE44nrCsDrJ/exec';
 
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v3_navigation';
+const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v1';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
 const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null') || {};
 
@@ -70,6 +72,14 @@ function escHtml(str) {
 
 function escAttr(str) {
   return escHtml(str).replace(/'/g, '&#39;');
+}
+
+function writeNavigationMenuCache(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  try {
+    localStorage.setItem(NAVIGATION_MENU_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), items }));
+    localStorage.removeItem(LANDING_CONTENT_CACHE_KEY);
+  } catch (error) {}
 }
 
 // ============================================================
@@ -1339,6 +1349,7 @@ async function saveNavigationMenu() {
   try {
     const data = await api('saveNavigationMenu', { items: JSON.stringify(items) });
     state.navigation = data.navigation || items;
+    writeNavigationMenuCache(state.navigation);
     renderNavigationList();
     showToast('Đã lưu menu trang chủ.');
   } catch (err) {

@@ -48,6 +48,8 @@ const runtimeConfig = {
 let dynamicPackages = [];
 const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v3_navigation';
 const LANDING_CONTENT_CACHE_TTL_MS = 10 * 60 * 1000;
+const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v1';
+const NAVIGATION_MENU_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function runWhenIdle(callback) {
   if ('requestIdleCallback' in window) {
@@ -179,13 +181,34 @@ function writeLandingContentCache(data) {
   } catch (error) {}
 }
 
+function readNavigationMenuCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(NAVIGATION_MENU_CACHE_KEY) || 'null');
+    if (!Array.isArray(cached?.items) || !cached.items.length) return null;
+    if (Date.now() - Number(cached.timestamp || 0) > NAVIGATION_MENU_CACHE_TTL_MS) return null;
+    return cached.items;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeNavigationMenuCache(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  try {
+    localStorage.setItem(NAVIGATION_MENU_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), items }));
+  } catch (error) {}
+}
+
 function applyLandingPayload(data) {
   if (!data?.success || !Array.isArray(data.items)) return false;
   data.items.forEach(applyRuntimeConfigItem);
   data.items.forEach(applyFeedbackImageItem);
   data.items.forEach(applyLandingContentItem);
   if (Array.isArray(data.packages) && data.packages.length) applyDynamicPackages(data.packages);
-  if (Array.isArray(data.navigation) && data.navigation.length) applyNavigationMenu(data.navigation);
+  if (Array.isArray(data.navigation) && data.navigation.length) {
+    writeNavigationMenuCache(data.navigation);
+    applyNavigationMenu(data.navigation);
+  }
   if (Array.isArray(data.customSections)) renderCustomSections(data.customSections);
   if (Array.isArray(data.sectionOrder) && data.sectionOrder.length) {
     applyAllSectionOrder(data.sectionOrder, data.customSections || []);
@@ -204,6 +227,8 @@ async function loadLandingContent() {
   if (cached && applyLandingPayload(cached)) {
     document.body.classList.remove('js-loading');
   }
+  const cachedNavigation = readNavigationMenuCache();
+  if (cachedNavigation) applyNavigationMenu(cachedNavigation);
 
   try {
     const params = new URLSearchParams({ action: 'getLandingContent' });
