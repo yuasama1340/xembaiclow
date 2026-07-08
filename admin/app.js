@@ -783,13 +783,54 @@ function createFeedbackCard(slot, canEdit) {
   return card;
 }
 
-function fileToBase64(file) {
+/**
+ * Chuyển đổi ảnh bất kỳ sang WebP (quality=0.85) dùng Canvas API.
+ * Trả về { blob, base64, base64Full, mimeType, fileName, originalSize, newSize }
+ */
+function convertToWebP(file, quality = 0.85) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
-    reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
-    reader.readAsDataURL(file);
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        if (!blob) return reject(new Error('Không thể chuyển đổi ảnh sang WebP.'));
+        const reader = new FileReader();
+        reader.onload = e => {
+          const base64Full = e.target.result;
+          const base64 = base64Full.split(',')[1] || '';
+          resolve({ blob, base64, base64Full, mimeType: 'image/webp', originalSize: file.size, newSize: blob.size });
+        };
+        reader.onerror = () => reject(new Error('Lỗi đọc ảnh đã chuyển đổi.'));
+        reader.readAsDataURL(blob);
+      }, 'image/webp', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Không tải được ảnh.'));  };
+    img.src = url;
   });
+}
+
+/** Tạo tên file chuẩn: blog-[slug]-[timestamp].webp */
+function slugifyFileName(hint) {
+  const slug = String(hint || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  const ts = Math.floor(Date.now() / 1000);
+  return `blog-${slug || 'image'}-${ts}.webp`;
+}
+
+/** Dùng cho ảnh feedback (avatar): chuyển sang WebP rồi trả base64 */
+async function fileToBase64(file) {
+  const converted = await convertToWebP(file);
+  return converted.base64;
 }
 
 async function uploadFeedbackImage(slot, file) {
@@ -799,8 +840,8 @@ async function uploadFeedbackImage(slot, file) {
     const data = await fileToBase64(file);
     await api('uploadFeedbackImage', {
       slot,
-      filename: file.name,
-      mimeType: file.type,
+      filename: `feedback-${slot}-${Math.floor(Date.now()/1000)}.webp`,
+      mimeType: 'image/webp',
       data,
     });
     await loadContent();
@@ -1045,29 +1086,25 @@ function decorateQuillToolbar(quill) {
   });
 }
 
-function readImageFileAsBase64(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) return reject(new Error('Không tìm thấy ảnh.'));
-    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
-      return reject(new Error('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.'));
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      return reject(new Error('Ảnh quá lớn (tối đa 5MB).'));
-    }
-    const reader = new FileReader();
-    reader.onload = e => {
-      const base64Full = e.target.result;
-      const comma = String(base64Full).indexOf(',');
-      resolve({
-        base64Full,
-        base64: comma !== -1 ? String(base64Full).slice(comma + 1) : String(base64Full),
-        mimeType: file.type || 'image/jpeg',
-        fileName: file.name || ('blog-' + Date.now() + '.jpg')
-      });
-    };
-    reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
-    reader.readAsDataURL(file);
-  });
+/** Dùng cho ảnh blog (inline + cover): chuyển sang WebP, đặt tên chuẩn */
+async function readImageFileAsBase64(file, nameHint) {
+  if (!file) throw new Error('Không tìm thấy ảnh.');
+  if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+    throw new Error('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.');
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Ảnh quá lớn (tối đa 5MB).');
+  }
+  const converted = await convertToWebP(file);
+  const fileName  = slugifyFileName(nameHint || file.name.replace(/\.[^.]+$/, ''));
+  const saved = Math.round((1 - converted.newSize / converted.originalSize) * 100);
+  showToast(`Đã nén ảnh: ${(converted.originalSize/1024).toFixed(0)}KB → ${(converted.newSize/1024).toFixed(0)}KB (−${saved}%)`);
+  return {
+    base64Full: converted.base64Full,
+    base64:     converted.base64,
+    mimeType:   'image/webp',
+    fileName,
+  };
 }
 
 function getDriveFileId(url) {
@@ -1852,15 +1889,19 @@ function renderPostsTable() {
       try {
         await api('deleteClowPost', { token: state.token, id: btn.dataset.id });
         showToast('Đã xóa bài viết');
-        loadBlogPosts();
+        // Cập nhật cục bộ — không reload API
+        blogState.allPosts = blogState.allPosts.filter(p => p.id !== btn.dataset.id);
+        renderPostsTable();
+        const countEl = document.getElementById('blog-nav-count');
+        if (countEl) countEl.textContent = blogState.allPosts.length;
       } catch(e) { showToast(e.message, 'error'); }
     });
   });
 }
 
 // ── Post Modal ──────────────────────────────────────────────
-async function uploadBlogImageFile(file) {
-  const image = await readImageFileAsBase64(file);
+async function uploadBlogImageFile(file, nameHint) {
+  const image = await readImageFileAsBase64(file, nameHint);
   const data = await api('uploadBlogImage', {
     token: state.token,
     data: image.base64,
@@ -2077,10 +2118,21 @@ async function savePost() {
 
   const saveBtn = document.getElementById('blog-post-modal-save');
   await withButtonPending(saveBtn, async () => {
-    await api('saveClowPost', { token: state.token, id, title, cardCode, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
+    const result = await api('saveClowPost', { token: state.token, id, title, cardCode, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
     showToast(id ? 'Đã lưu bài viết' : 'Đã tạo bài viết mới');
     closePostModal();
-    loadBlogPosts();
+    // Cập nhật cục bộ thay vì reload toàn bộ API
+    const savedPost = result.post || { id: result.id || id, title, cardCode, topicId, excerpt, coverImage, publishedAt, enabled, pinned, updatedAt: new Date().toISOString() };
+    if (id) {
+      const idx = blogState.allPosts.findIndex(p => p.id === id);
+      if (idx !== -1) blogState.allPosts[idx] = Object.assign({}, blogState.allPosts[idx], savedPost);
+      else blogState.allPosts.unshift(savedPost);
+    } else {
+      blogState.allPosts.unshift(savedPost);
+    }
+    renderPostsTable();
+    const countEl = document.getElementById('blog-nav-count');
+    if (countEl) countEl.textContent = blogState.allPosts.length;
   });
 }
 
@@ -2152,7 +2204,8 @@ async function deleteTopic() {
 // ── Upload ảnh cover ─────────────────────────────────────────
 function handleCoverFileChange(file) {
   if (!file) return;
-  readImageFileAsBase64(file).then(async image => {
+  const titleHint = document.getElementById('blog-post-title')?.value.trim() || '';
+  readImageFileAsBase64(file, titleHint).then(async image => {
     document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(image.base64Full)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
     showToast('Đang upload ảnh lên Drive...');
     const data = await api('uploadBlogImage', { token: state.token, data: image.base64, mimeType: image.mimeType, fileName: image.fileName });
