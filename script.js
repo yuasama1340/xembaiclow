@@ -1483,17 +1483,36 @@ async function loadSinglePost() {
       </div>
       
       <!-- BÀI VIẾT LIÊN QUAN -->
-      <div id="related-posts-wrapper">
-        <div style="text-align:center; padding:40px; opacity:0.6;"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tải bài viết liên quan...</div>
-      </div>
+      <div id="related-posts-wrapper"></div>
     `;
 
     container.innerHTML = html;
 
+    // Lưu bài viết hiện tại vào lịch sử đã xem
+    try {
+      let viewed = JSON.parse(localStorage.getItem('clowcat_viewed_posts') || '[]');
+      if (!viewed.includes(p.id)) {
+        viewed.push(p.id);
+        if (viewed.length > 50) viewed.shift();
+        localStorage.setItem('clowcat_viewed_posts', JSON.stringify(viewed));
+      }
+    } catch(e) {}
+
     // Load bài viết liên quan song song sau khi đã render nội dung bài chính
     if (p.topicId) {
-      fetchBlogApi('getclowposts', { topic: p.topicId, limit: 6 }).then(relatedData => {
-        const relatedPosts = (relatedData.posts || []).filter(rp => rp.id !== p.id).slice(0, 5);
+      // Tải nhiều bài hơn (30) để lọc ra những bài chưa đọc
+      fetchBlogApi('getclowposts', { topic: p.topicId, limit: 30 }).then(relatedData => {
+        let viewedPosts = [];
+        try { viewedPosts = JSON.parse(localStorage.getItem('clowcat_viewed_posts') || '[]'); } catch(e) {}
+        
+        let allRelated = (relatedData.posts || []).filter(rp => rp.id !== p.id);
+        
+        // Chia làm 2 nhóm: chưa xem và đã xem
+        let unreadRelated = allRelated.filter(rp => !viewedPosts.includes(rp.id));
+        let readRelated = allRelated.filter(rp => viewedPosts.includes(rp.id));
+        
+        // Ưu tiên bài chưa xem lên trước, nếu thiếu thì lấy thêm bài đã xem cho đủ 5
+        const relatedPosts = [...unreadRelated, ...readRelated].slice(0, 5);
         const relatedWrapper = document.getElementById('related-posts-wrapper');
         
         if (relatedPosts.length === 0) {

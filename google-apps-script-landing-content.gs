@@ -1720,8 +1720,12 @@ function handleGetPublicClowPost(params) {
   if (!id) return json({ success: false, error: 'Thiếu id bài viết.' });
 
   const cache = CacheService.getScriptCache();
-  const cacheKey = 'clowcat_post_' + id;
-  const cached = cache.get(cacheKey);
+  // Safe cache key: chỉ lấy alphanumeric, còn lại biến thành _
+  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const cacheKey = 'clowcat_post_' + safeId;
+  let cached = null;
+  try { cached = cache.get(cacheKey); } catch(e) {}
+  
   if (cached) {
     try {
       const post = JSON.parse(cached);
