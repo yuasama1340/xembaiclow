@@ -1769,14 +1769,38 @@ async function initPostPage() {
   await loadSinglePost();
 }
 
-// Inject vào app init
+// =========================================================================
+// HỆ THỐNG ĐIỀU PHỐI API (Tránh lỗi sập GAS khi gọi song song)
+// =========================================================================
+
+// 1. Lưu lại hàm gốc
+const _origInitBlogPage = typeof initBlogPage === 'function' ? initBlogPage : null;
+const _origInitPostPage = typeof initPostPage === 'function' ? initPostPage : null;
+
+// 2. Chặn các trang HTML gọi trực tiếp (gây song song với loadLandingContent)
+initBlogPage = function() { console.log('Đã chặn gọi song song initBlogPage'); };
+initPostPage = function() { console.log('Đã chặn gọi song song initPostPage'); };
+
+// 3. Gọi tuần tự TẤT CẢ sau khi landing content xong
 const _origInitContent = typeof loadLandingContent === 'function' ? loadLandingContent : null;
 if (_origInitContent) {
   loadLandingContent = async function() {
-    await _origInitContent();
-    await initBlogHome();
+    await _origInitContent(); // Xong landing page
+    await initBlogHome();     // Xong trang chủ (nếu có)
+    
+    // Gọi tiếp tuần tự nếu đang ở trang blog hoặc chi tiết
+    if (_origInitBlogPage && document.getElementById('blog-topics-container')) {
+      await _origInitBlogPage();
+    }
+    if (_origInitPostPage && document.getElementById('post-container')) {
+      await _origInitPostPage();
+    }
   };
 } else {
-  // Dự phòng nếu DOMContentLoaded
-  document.addEventListener('DOMContentLoaded', initBlogHome);
+  // Dự phòng
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initBlogHome();
+    if (_origInitBlogPage && document.getElementById('blog-topics-container')) await _origInitBlogPage();
+    if (_origInitPostPage && document.getElementById('post-container')) await _origInitPostPage();
+  });
 }
