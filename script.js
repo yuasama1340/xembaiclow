@@ -5,7 +5,7 @@ window.addEventListener('scroll', () => {
 });
 
 // ── Scroll-to-top button (dùng chung mọi trang) ──────────────
-(function initScrollToTop() {
+function initScrollToTop() {
   const btn = document.getElementById('scroll-to-top');
   if (!btn) return;
 
@@ -16,8 +16,14 @@ window.addEventListener('scroll', () => {
 
   window.addEventListener('scroll', onScroll, { passive: true });
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  onScroll(); // Kiểm tra ngay khi load (trường hợp trang đã scroll sẵn)
-})();
+  onScroll();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initScrollToTop);
+} else {
+  initScrollToTop(); // DOM đã sẵn sàng (script defer hoặc cuối body)
+}
 
 
 // ============================================================
