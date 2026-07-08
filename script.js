@@ -1,8 +1,24 @@
 // Navbar scroll effect
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('navbar');
-  nav.classList.toggle('scrolled', window.scrollY > 40);
+  if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
 });
+
+// ── Scroll-to-top button (dùng chung mọi trang) ──────────────
+(function initScrollToTop() {
+  const btn = document.getElementById('scroll-to-top');
+  if (!btn) return;
+
+  const onScroll = () => {
+    const halfPage = document.documentElement.scrollHeight / 2;
+    btn.classList.toggle('is-visible', window.scrollY > halfPage);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  onScroll(); // Kiểm tra ngay khi load (trường hợp trang đã scroll sẵn)
+})();
+
 
 // ============================================================
 // ⚙️  CẤU HÌNH – Thay URL GAS sau khi deploy

@@ -2570,3 +2570,46 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Scroll-to-top button ───────────────────────────── */
+#scroll-to-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  background: rgba(10, 8, 18, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--gold);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(201, 168, 76, 0.18), 0 0 0 0 rgba(201, 168, 76, 0.3);
+  opacity: 0;
+  transform: translateY(16px) scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+#scroll-to-top.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+#scroll-to-top:hover {
+  border-color: var(--gold-light);
+  color: var(--gold-light);
+  box-shadow: 0 6px 32px rgba(201, 168, 76, 0.35), 0 0 0 6px rgba(201, 168, 76, 0.08);
+  transform: translateY(-3px) scale(1.08);
+}
+#scroll-to-top:active {
+  transform: translateY(0) scale(0.95);
+}
+@media (max-width: 480px) {
+  #scroll-to-top { bottom: 20px; right: 18px; width: 42px; height: 42px; }
+}
