@@ -276,6 +276,10 @@ function getSepaySecret() {
   return PropertiesService.getScriptProperties().getProperty('SEPAY_SECRET') || CONFIG.SEPAY_SECRET_FALLBACK || '';
 }
 
+function getBookingHealthSecret() {
+  return PropertiesService.getScriptProperties().getProperty('BOOKING_HEALTH_SECRET') || '';
+}
+
 function parseBoolean(value, fallback) {
   if (value === true || value === false) return value;
   const raw = String(value == null ? '' : value).trim().toLowerCase();
@@ -444,6 +448,86 @@ function sendLoggedEmail(type, to, subject, body, htmlBody) {
   } catch (err) {
     logEmail(type, to, false, err.message);
     logError('sendLoggedEmail:' + type, err, { to: to, subject: subject });
+  }
+}
+
+function bookingSheetContracts() {
+  return [
+    { key: 'NAME', labels: BOOKING_COLUMN_ALIASES.NAME, required: true },
+    { key: 'PHONE', labels: BOOKING_COLUMN_ALIASES.PHONE, required: true },
+    { key: 'EMAIL', labels: BOOKING_COLUMN_ALIASES.EMAIL, required: true },
+    { key: 'PACKAGE', labels: BOOKING_COLUMN_ALIASES.PACKAGE, required: true },
+    { key: 'FORMAT', labels: BOOKING_COLUMN_ALIASES.FORMAT, required: true },
+    { key: 'TOPIC', labels: BOOKING_COLUMN_ALIASES.TOPIC, required: true },
+    { key: 'TIMESTAMP', labels: BOOKING_COLUMN_ALIASES.TIMESTAMP, required: true },
+    { key: 'ORDER_ID', labels: CONFIG.COL_PAYMENT.ORDER_ID, required: true },
+    { key: 'STATUS', labels: CONFIG.COL_PAYMENT.STATUS, required: true },
+    { key: 'AMOUNT', labels: CONFIG.COL_PAYMENT.AMOUNT, required: true },
+    { key: 'PAID_AT', labels: CONFIG.COL_PAYMENT.PAID_AT, required: true },
+    { key: 'TRANSACTION_ID', labels: CONFIG.COL_PAYMENT.TRANSACTION_ID, required: true },
+    { key: 'PAID_AMOUNT', labels: CONFIG.COL_PAYMENT.PAID_AMOUNT, required: true },
+    { key: 'OWNER_EMAIL', labels: BOOKING_COLUMN_ALIASES.OWNER_EMAIL, required: false }
+  ];
+}
+
+function inspectBookingSheet() {
+  const sheet = getSheet();
+  const colMap = getColumnMap(sheet);
+  const columns = bookingSheetContracts().map(contract => {
+    const col = findColumnIndex(colMap, contract.labels);
+    return {
+      key: contract.key,
+      exists: !!col,
+      column: col || null,
+      labels: Array.isArray(contract.labels) ? contract.labels : [contract.labels],
+      required: contract.required
+    };
+  });
+
+  return {
+    name: sheet.getName(),
+    rows: Math.max(0, sheet.getLastRow() - 1),
+    columns: sheet.getLastColumn(),
+    missingRequired: columns.filter(item => item.required && !item.exists).map(item => item.key),
+    detail: columns
+  };
+}
+
+function handleBookingHealthCheck(params) {
+  const expected = getBookingHealthSecret();
+  const token = String(params.token || params.secret || '');
+  if (!expected) {
+    return buildJson({ success: false, error: 'Chưa cấu hình BOOKING_HEALTH_SECRET trong Script Properties.' });
+  }
+  if (token !== expected) {
+    return buildJson({ success: false, error: 'Unauthorized' });
+  }
+
+  try {
+    const bookingSheet = inspectBookingSheet();
+    const paymentConfig = getPaymentConfig();
+    const sepaySecretConfigured = !!getSepaySecret();
+    const checks = {
+      bookingSheetOk: bookingSheet.missingRequired.length === 0,
+      notifyEmailOk: isValidEmail(CONFIG.BOOKING_NOTIFY_EMAIL),
+      paymentConfigOk: !!paymentConfig.bankCode && !!paymentConfig.accountNo && !!paymentConfig.accountName,
+      sepaySecretConfigured: sepaySecretConfigured
+    };
+
+    return buildJson({
+      success: true,
+      ok: checks.bookingSheetOk && checks.notifyEmailOk && checks.paymentConfigOk && (!paymentConfig.enabled || sepaySecretConfigured),
+      checkedAt: new Date().toISOString(),
+      spreadsheetId: CONFIG.SHEET_ID,
+      notifyEmail: CONFIG.BOOKING_NOTIFY_EMAIL,
+      paymentEnabled: paymentConfig.enabled,
+      paymentProvider: paymentConfig.provider,
+      checks: checks,
+      bookingSheet: bookingSheet
+    });
+  } catch (err) {
+    logError('handleBookingHealthCheck', err, {});
+    return buildJson({ success: false, error: err.message });
   }
 }
 
@@ -894,6 +978,9 @@ function doGet(e) {
   const action = (params.action || '').toLowerCase();
 
   switch (action) {
+    case 'healthcheck':
+    case 'bookinghealthcheck':
+      return handleBookingHealthCheck(params);
     case 'check':    return handleCheck(params);
     case 'register':
     case 'manualconfirm':
@@ -910,6 +997,7 @@ function doPost(e) {
   try {
     const requestPayload = parsePostPayload(e);
     const requestAction = String(requestPayload.action || '').toLowerCase();
+    if (requestAction === 'healthcheck' || requestAction === 'bookinghealthcheck') return handleBookingHealthCheck(requestPayload);
     if (requestAction === 'register') return handleRegister(requestPayload);
     if (requestAction === 'manualconfirm') return handleManualConfirm(requestPayload);
     if (requestAction === 'check') return handleCheck(requestPayload);
