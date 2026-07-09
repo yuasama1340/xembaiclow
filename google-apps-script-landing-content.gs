@@ -10,9 +10,10 @@ const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const PACKAGES_SHEET_NAME = 'Packages';
+const AUDIT_LOG_SHEET_NAME = 'Audit log';
 const FEEDBACK_DRIVE_FOLDER = 'ClowCat Patronus/Testimonials';
 const ADMIN_DEFAULT_USERNAME = 'admin';
-const ADMIN_DEFAULT_PASSWORD = 'ClowCat@1340_X29!aM';
+const ADMIN_BOOTSTRAP_PASSWORD_PROPERTY = 'ADMIN_BOOTSTRAP_PASSWORD';
 const PASSWORD_SALT_PROPERTY = 'ADMIN_PASSWORD_SALT';
 const LEGACY_PASSWORD_SALT = 'CC_PATRONUS_V8_98A2B5F1_3C7D_4E9F_8123_456789ABCDEF';
 const SESSION_TTL_SECONDS = 21600;
@@ -20,6 +21,7 @@ const SESSION_TTL_SECONDS = 21600;
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
+const AUDIT_LOG_HEADERS = ['Timestamp', 'Action', 'Status', 'Username', 'Role', 'Target type', 'Target ID', 'Details', 'Message'];
 const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
 const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
 const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
@@ -51,6 +53,29 @@ const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Ma la bai', 'Tieu de', 'Mo ta ng
 const CLOW_BLOG_FOLDER = 'ClowCat Patronus/Blog';
 const PUBLIC_CLOW_TOPICS_CACHE_KEY = 'clowcat_public_clow_topics_v1';
 const PUBLIC_CLOW_POSTS_CACHE_KEY = 'clowcat_public_clow_posts_v1';
+
+const AUDITED_ACTION_TYPES = {
+  login: 'auth',
+  savecontent: 'content',
+  savepackage: 'package',
+  deletepackage: 'package',
+  reorderpackages: 'package',
+  uploadfeedbackimage: 'feedback',
+  deletefeedbackimage: 'feedback',
+  savecustomsection: 'section',
+  deletecustomsection: 'section',
+  reorderallsections: 'section',
+  savenavigationmenu: 'navigation',
+  createuser: 'user',
+  changepassword: 'user',
+  saveclowtopic: 'blog-topic',
+  deleteclowtopic: 'blog-topic',
+  reorderclowtopics: 'blog-topic',
+  saveclowpost: 'blog-post',
+  deleteclowpost: 'blog-post',
+  toggleclowpost: 'blog-post',
+  uploadblogimage: 'blog-image'
+};
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
   return [bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung, new Date(), 'system'];
@@ -296,6 +321,9 @@ function doGet(e) {
         return handleGetPublicClowPost(params);
       case 'incrementpostviews':
         return handleIncrementPostViews(params);
+      case 'healthcheck':
+      case 'adminhealthcheck':
+        return handleHealthCheck(params);
       case 'login':
       case 'adminlogin':
       case 'listcontent':
@@ -342,87 +370,96 @@ function doPost(e) {
   const action = String(params.action || '').toLowerCase();
 
   try {
-    switch (action) {
-      case 'login':
-      case 'adminlogin':
-        return handleLogin(params);
-      case 'admininit':
-        return handleAdminInit(params);
-      case 'listcontent':
-      case 'admingetcontent':
-        return handleListContent(params);
-      case 'savecontent':
-      case 'adminsavecontent':
-        return handleSaveContent(params);
-      case 'listpackages':
-      case 'adminlistpackages':
-        return handleListPackages(params);
-      case 'savepackage':
-      case 'adminsavepackage':
-        return handleSavePackage(params);
-      case 'deletepackage':
-      case 'admindeletepackage':
-        return handleDeletePackage(params);
-      case 'reorderpackages':
-      case 'adminreorderpackages':
-        return handleReorderPackages(params);
-      case 'uploadfeedbackimage':
-      case 'adminuploadfeedbackimage':
-        return handleUploadFeedbackImage(params);
-      case 'deletefeedbackimage':
-      case 'admindeletefeedbackimage':
-        return handleDeleteFeedbackImage(params);
-      case 'listcustomsections':
-      case 'adminlistcustomsections':
-        return handleListCustomSections(params);
-      case 'savecustomsection':
-      case 'adminsavecustomsection':
-        return handleSaveCustomSection(params);
-      case 'deletecustomsection':
-      case 'admindeletecustomsection':
-        return handleDeleteCustomSection(params);
-      case 'reorderallsections':
-      case 'adminreorderallsections':
-        return handleReorderAllSections(params);
-      case 'listnavigationmenu':
-      case 'adminlistnavigationmenu':
-        return handleListNavigationMenu(params);
-      case 'savenavigationmenu':
-      case 'adminsavenavigationmenu':
-        return handleSaveNavigationMenu(params);
-      case 'listusers':
-      case 'adminlistusers':
-        return handleListUsers(params);
-      case 'createuser':
-      case 'admincreateuser':
-        return handleCreateUser(params);
-      case 'changepassword':
-      case 'adminchangepassword':
-        return handleChangePassword(params);
-      // Blog Clow
-      case 'listclowtopics':
-        return handleListClowTopics(params);
-      case 'saveclowtopic':
-        return handleSaveClowTopic(params);
-      case 'deleteclowtopic':
-        return handleDeleteClowTopic(params);
-      case 'reorderclowtopics':
-        return handleReorderClowTopics(params);
-      case 'listclowposts':
-        return handleListClowPosts(params);
-      case 'saveclowpost':
-        return handleSaveClowPost(params);
-      case 'deleteclowpost':
-        return handleDeleteClowPost(params);
-      case 'toggleclowpost':
-        return handleToggleClowPost(params);
-      case 'uploadblogimage':
-        return handleUploadBlogImage(params);
-      default:
-        return json({ success: false, error: 'Thao tác không hợp lệ.' });
-    }
+    const result = dispatchPostAction(action, params);
+    safeAuditAction(action, params, 'processed', '');
+    return result;
   } catch (err) {
+    safeAuditAction(action, params, 'error', err.message);
     return json({ success: false, error: err.message });
+  }
+}
+
+function dispatchPostAction(action, params) {
+  switch (action) {
+    case 'login':
+    case 'adminlogin':
+      return handleLogin(params);
+    case 'admininit':
+      return handleAdminInit(params);
+    case 'healthcheck':
+    case 'adminhealthcheck':
+      return handleHealthCheck(params);
+    case 'listcontent':
+    case 'admingetcontent':
+      return handleListContent(params);
+    case 'savecontent':
+    case 'adminsavecontent':
+      return handleSaveContent(params);
+    case 'listpackages':
+    case 'adminlistpackages':
+      return handleListPackages(params);
+    case 'savepackage':
+    case 'adminsavepackage':
+      return handleSavePackage(params);
+    case 'deletepackage':
+    case 'admindeletepackage':
+      return handleDeletePackage(params);
+    case 'reorderpackages':
+    case 'adminreorderpackages':
+      return handleReorderPackages(params);
+    case 'uploadfeedbackimage':
+    case 'adminuploadfeedbackimage':
+      return handleUploadFeedbackImage(params);
+    case 'deletefeedbackimage':
+    case 'admindeletefeedbackimage':
+      return handleDeleteFeedbackImage(params);
+    case 'listcustomsections':
+    case 'adminlistcustomsections':
+      return handleListCustomSections(params);
+    case 'savecustomsection':
+    case 'adminsavecustomsection':
+      return handleSaveCustomSection(params);
+    case 'deletecustomsection':
+    case 'admindeletecustomsection':
+      return handleDeleteCustomSection(params);
+    case 'reorderallsections':
+    case 'adminreorderallsections':
+      return handleReorderAllSections(params);
+    case 'listnavigationmenu':
+    case 'adminlistnavigationmenu':
+      return handleListNavigationMenu(params);
+    case 'savenavigationmenu':
+    case 'adminsavenavigationmenu':
+      return handleSaveNavigationMenu(params);
+    case 'listusers':
+    case 'adminlistusers':
+      return handleListUsers(params);
+    case 'createuser':
+    case 'admincreateuser':
+      return handleCreateUser(params);
+    case 'changepassword':
+    case 'adminchangepassword':
+      return handleChangePassword(params);
+    case 'listclowtopics':
+      return handleListClowTopics(params);
+    case 'saveclowtopic':
+      return handleSaveClowTopic(params);
+    case 'deleteclowtopic':
+      return handleDeleteClowTopic(params);
+    case 'reorderclowtopics':
+      return handleReorderClowTopics(params);
+    case 'listclowposts':
+      return handleListClowPosts(params);
+    case 'saveclowpost':
+      return handleSaveClowPost(params);
+    case 'deleteclowpost':
+      return handleDeleteClowPost(params);
+    case 'toggleclowpost':
+      return handleToggleClowPost(params);
+    case 'uploadblogimage':
+      return handleUploadBlogImage(params);
+    default:
+      return json({ success: false, error: 'Thao tác không hợp lệ.' });
   }
 }
 
@@ -453,11 +490,198 @@ function getSheetIfExists(name) {
   return getSpreadsheet().getSheetByName(name);
 }
 
-function clearPublicCache() {
+function publicCacheGroups() {
+  return {
+    all: [PUBLIC_CACHE_KEY, PUBLIC_PACKAGES_CACHE_KEY, PUBLIC_CACHE_SECTIONS_KEY, PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
+    landing: [PUBLIC_CACHE_KEY],
+    content: [PUBLIC_CACHE_KEY],
+    packages: [PUBLIC_CACHE_KEY, PUBLIC_PACKAGES_CACHE_KEY],
+    sections: [PUBLIC_CACHE_KEY, PUBLIC_CACHE_SECTIONS_KEY],
+    navigation: [PUBLIC_CACHE_KEY],
+    blog: [PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
+    blogTopics: [PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
+    blogPosts: [PUBLIC_CLOW_POSTS_CACHE_KEY]
+  };
+}
+
+function clearPublicCache(group) {
   const cache = CacheService.getScriptCache();
-  cache.remove(PUBLIC_CACHE_KEY);
-  cache.remove(PUBLIC_PACKAGES_CACHE_KEY);
-  cache.remove(PUBLIC_CACHE_SECTIONS_KEY);
+  const groups = publicCacheGroups();
+  const keys = groups[group || 'all'] || groups.all;
+  const unique = {};
+  keys.forEach(key => {
+    if (!key || unique[key]) return;
+    unique[key] = true;
+    cache.remove(key);
+  });
+}
+
+function ensureAuditLogSheet() {
+  const sheet = getOrCreateSheet(AUDIT_LOG_SHEET_NAME, AUDIT_LOG_HEADERS);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, AUDIT_LOG_HEADERS.length).setFontWeight('bold');
+  sheet.getRange('A:A').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  return sheet;
+}
+
+function normalizeAuditAction(action) {
+  return String(action || '').toLowerCase().replace(/^admin/, '');
+}
+
+function isAuditedAction(action) {
+  return !!AUDITED_ACTION_TYPES[normalizeAuditAction(action)];
+}
+
+function getAuditSession(params) {
+  const baseAction = normalizeAuditAction(params && params.action);
+  if (baseAction === 'login') {
+    return {
+      username: String(params.username || '').trim() || 'unknown',
+      role: 'login'
+    };
+  }
+  try {
+    const token = String(params.token || '');
+    if (!token) return { username: 'anonymous', role: '' };
+    const raw = CacheService.getScriptCache().get('admin_session_' + token);
+    return raw ? JSON.parse(raw) : { username: 'expired-session', role: '' };
+  } catch (err) {
+    return { username: 'audit-error', role: '' };
+  }
+}
+
+function auditTargetId(params) {
+  return String(params.key || params.code || params.id || params.slot || params.username || params.field || '').slice(0, 180);
+}
+
+function safeAuditDetails(params) {
+  const blocked = {
+    token: true,
+    password: true,
+    currentPassword: true,
+    newPassword: true,
+    data: true,
+    base64: true,
+    content: true,
+    contentHtml: true,
+    excerpt: true
+  };
+  const safe = {};
+  Object.keys(params || {}).forEach(key => {
+    if (blocked[key]) return;
+    let value = params[key];
+    if (value == null) value = '';
+    value = String(value);
+    safe[key] = value.length > 300 ? value.slice(0, 300) + '…' : value;
+  });
+  const jsonText = JSON.stringify(safe);
+  return jsonText.length > 4500 ? jsonText.slice(0, 4500) + '…' : jsonText;
+}
+
+function safeAuditAction(action, params, status, message) {
+  if (!isAuditedAction(action)) return;
+  try {
+    const baseAction = normalizeAuditAction(action);
+    const session = getAuditSession(Object.assign({}, params, { action: baseAction }));
+    const sheet = ensureAuditLogSheet();
+    sheet.appendRow([
+      new Date(),
+      baseAction,
+      status,
+      session.username || '',
+      session.role || '',
+      AUDITED_ACTION_TYPES[baseAction] || '',
+      auditTargetId(params),
+      safeAuditDetails(params),
+      String(message || '').slice(0, 500)
+    ]);
+  } catch (err) {
+    // Audit khong duoc lam hong thao tac chinh.
+  }
+}
+
+function expectedSheetContracts() {
+  return [
+    { name: LANDING_CONTENT_SHEET_NAME, headers: CONTENT_HEADERS },
+    { name: PACKAGES_SHEET_NAME, headers: PACKAGE_HEADERS },
+    { name: NAVIGATION_MENU_SHEET_NAME, headers: NAVIGATION_MENU_HEADERS },
+    { name: SECTION_ORDER_SHEET_NAME, headers: SECTION_ORDER_HEADERS },
+    { name: CUSTOM_SECTIONS_SHEET_NAME, headers: CUSTOM_SECTIONS_HEADERS },
+    { name: CLOW_TOPICS_SHEET_NAME, headers: CLOW_TOPICS_HEADERS },
+    { name: CLOW_POSTS_SHEET_NAME, headers: CLOW_POSTS_HEADERS },
+    { name: ADMIN_USERS_SHEET_NAME, headers: USER_HEADERS },
+    { name: AUDIT_LOG_SHEET_NAME, headers: AUDIT_LOG_HEADERS }
+  ];
+}
+
+function inspectSheetContract(contract) {
+  const sheet = getSheetIfExists(contract.name);
+  if (!sheet) {
+    return {
+      name: contract.name,
+      exists: false,
+      rows: 0,
+      columns: 0,
+      missingHeaders: contract.headers.slice()
+    };
+  }
+  const map = getColumnMap(sheet);
+  return {
+    name: contract.name,
+    exists: true,
+    rows: Math.max(0, sheet.getLastRow() - 1),
+    columns: sheet.getLastColumn(),
+    missingHeaders: contract.headers.filter(header => !map[header])
+  };
+}
+
+function handleHealthCheck(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  ensureAuditLogSheet();
+  const sheets = expectedSheetContracts().map(inspectSheetContract);
+  const ok = sheets.every(sheet => sheet.exists && sheet.missingHeaders.length === 0);
+  return json({
+    success: true,
+    ok: ok,
+    scriptVersion: SCRIPT_VERSION,
+    checkedAt: new Date().toISOString(),
+    checkedBy: session.username,
+    spreadsheetId: SPREADSHEET_ID,
+    cacheGroups: Object.keys(publicCacheGroups()),
+    sheets: sheets
+  });
+}
+
+function sanitizeInlineStyle(style) {
+  return String(style || '')
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/vbscript\s*:/gi, '')
+    .replace(/data\s*:\s*text\/html/gi, '')
+    .replace(/behavior\s*:/gi, '')
+    .replace(/-moz-binding\s*:/gi, '')
+    .replace(/@import/gi, '')
+    .replace(/[<>]/g, '')
+    .trim();
+}
+
+function sanitizeEditableHtml(html) {
+  let clean = String(html || '');
+  const blockedTags = 'script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|option|svg|math';
+  clean = clean.replace(new RegExp('<\\s*(' + blockedTags + ')[\\s\\S]*?<\\/\\s*\\1\\s*>', 'gi'), '');
+  clean = clean.replace(new RegExp('<\\s*(' + blockedTags + ')[^>]*\\/?>', 'gi'), '');
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  clean = clean.replace(/\s+(href|src|xlink:href)\s*=\s*(['"]?)\s*(javascript|vbscript|data:text\/html)[^'">\s]*\2/gi, ' $1="#"');
+  clean = clean.replace(/\s+style\s*=\s*("([^"]*)"|'([^']*)')/gi, function(match, quoted, doubleQuoted, singleQuoted) {
+    const style = sanitizeInlineStyle(doubleQuoted || singleQuoted || '');
+    return style ? ' style="' + style.replace(/"/g, '&quot;') + '"' : '';
+  });
+  return clean;
+}
+
+function shouldSanitizeContentType(type) {
+  const normalized = String(type || '').trim().toLowerCase();
+  return normalized === 'html' || normalized === 'richtext';
 }
 
 function safeCachePut(key, value, seconds) {
@@ -816,12 +1040,14 @@ function handleSaveContent(params) {
   if (index === -1) throw new Error('Không tìm thấy khóa: ' + key);
 
   const row = index + 2;
+  const type = map.Kieu ? sheet.getRange(row, map.Kieu).getValue() : '';
+  const safeContent = shouldSanitizeContentType(type) ? sanitizeEditableHtml(content) : content;
   const contentRange = sheet.getRange(row, map['Noi dung']);
   contentRange.setNumberFormat('@'); // Prevent dropping leading zero
-  contentRange.setValue(content);
+  contentRange.setValue(safeContent);
   sheet.getRange(row, map['Cap nhat luc']).setValue(new Date());
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
-  clearPublicCache();
+  clearPublicCache('content');
   return json({ success: true, key, updatedBy: session.username, updatedAt: new Date() });
 }
 
@@ -843,13 +1069,17 @@ function saveContentValue(key, content, session, meta) {
     sheet.getRange(row, map['Thuoc tinh']).setValue('');
   }
 
+  const type = index === -1
+    ? (meta && meta.type ? meta.type : 'text')
+    : (map.Kieu ? sheet.getRange(row, map.Kieu).getValue() : '');
+  const safeContent = shouldSanitizeContentType(type) ? sanitizeEditableHtml(content) : content;
   const contentRange = sheet.getRange(row, map['Noi dung']);
   contentRange.setNumberFormat('@'); // Prevent dropping leading zero
-  contentRange.setValue(content);
+  contentRange.setValue(safeContent);
   sheet.getRange(row, map['Cap nhat luc']).setValue(new Date());
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
-  clearPublicCache();
-  return { row, key, content };
+  clearPublicCache('content');
+  return { row, key, content: safeContent };
 }
 
 function getOrCreateDriveFolder(path) {
@@ -1032,7 +1262,7 @@ function handleSavePackage(params) {
   sheet.getRange(row, map['Cap nhat luc']).setValue(now);
   sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   formatPackagesSheet(sheet);
-  clearPublicCache();
+  clearPublicCache('packages');
 
   return json({ success: true, package: item, updatedAt: now, updatedBy: session.username });
 }
@@ -1043,7 +1273,7 @@ function handleDeletePackage(params) {
   const found = findPackageRow(code);
   if (!found) throw new Error('Không tìm thấy gói: ' + code);
   found.sheet.deleteRow(found.row);
-  clearPublicCache();
+  clearPublicCache('packages');
   return json({ success: true });
 }
 
@@ -1073,8 +1303,19 @@ function handleReorderPackages(params) {
     sheet.getRange(row, map['Cap nhat luc']).setValue(now);
     sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   });
-  clearPublicCache();
+  clearPublicCache('packages');
   return json({ success: true, updatedAt: now, updatedBy: session.username });
+}
+
+function getBootstrapAdminPassword() {
+  const password = PropertiesService.getScriptProperties().getProperty(ADMIN_BOOTSTRAP_PASSWORD_PROPERTY);
+  if (!password) {
+    throw new Error('Chưa cấu hình Script Property ' + ADMIN_BOOTSTRAP_PASSWORD_PROPERTY + ' để tạo/reset tài khoản admin.');
+  }
+  if (password.length < 12) {
+    throw new Error('Script Property ' + ADMIN_BOOTSTRAP_PASSWORD_PROPERTY + ' cần tối thiểu 12 ký tự.');
+  }
+  return password;
 }
 
 function ensureAdminUsersSheet() {
@@ -1082,7 +1323,7 @@ function ensureAdminUsersSheet() {
   if (sheet.getLastRow() < 2) {
     sheet.appendRow([
       ADMIN_DEFAULT_USERNAME,
-      hashPassword(ADMIN_DEFAULT_PASSWORD),
+      hashPassword(getBootstrapAdminPassword()),
       'admin',
       'active',
       'Quản trị viên',
@@ -1462,7 +1703,7 @@ function handleSaveNavigationMenu(params) {
   const sheet = ensureNavigationMenuSheet();
   if (sheet.getLastRow() >= 2) sheet.deleteRows(2, sheet.getLastRow() - 1);
   sheet.getRange(2, 1, rows.length, NAVIGATION_MENU_HEADERS.length).setValues(rows);
-  clearPublicCache();
+  clearPublicCache('navigation');
   return json({ success: true, message: 'Đã lưu menu trang chủ.', navigation: readNavigationMenu(true) });
 }
 
@@ -1479,7 +1720,7 @@ function handleSaveCustomSection(params) {
   const label = String(params.label || '').trim();
   const title = String(params.title || '').trim();
   const description = String(params.description || '').trim();
-  const contentHtml = String(params.contentHtml || '').trim();
+  const contentHtml = sanitizeEditableHtml(params.contentHtml || '').trim();
   const navLabel = String(params.navLabel || '').trim();
   const order = Number(params.order || 999);
 
@@ -1511,8 +1752,7 @@ function handleSaveCustomSection(params) {
     sheet.appendRow(rowData);
   }
 
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  clearPublicCache('sections');
   return json({ success: true, message: 'Đã lưu section.' });
 }
 
@@ -1552,8 +1792,7 @@ function handleDeleteCustomSection(params) {
     }
   }
 
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  clearPublicCache('sections');
   return json({ success: true, message: 'Đã xóa section.' });
 }
 
@@ -1579,17 +1818,17 @@ function handleReorderAllSections(params) {
   });
   sheet.getRange(2, 1, rows.length, 3).setValues(rows);
 
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_KEY);
-  CacheService.getScriptCache().remove(PUBLIC_CACHE_SECTIONS_KEY);
+  clearPublicCache('sections');
   return json({ success: true, message: 'Đã cập nhật thứ tự và trạng thái section.' });
 }
 
 // ============================================================
-// 🔑  RESET MẬT KHẨU ADMIN — Chạy 1 lần khi deploy mới bị mất salt
-// Sau khi chạy xong: đăng nhập bằng  admin / admin123
+// 🔑  RESET MẬT KHẨU ADMIN — Chạy 1 lần khi deploy mới bị mất salt.
+// Mật khẩu reset lấy từ Script Properties: ADMIN_BOOTSTRAP_PASSWORD.
 // ============================================================
 function resetAdminPassword() {
   try {
+    const bootstrapPassword = getBootstrapAdminPassword();
     // 1. Xóa salt cũ → tạo salt mới
     const props = PropertiesService.getScriptProperties();
     props.deleteProperty(PASSWORD_SALT_PROPERTY);
@@ -1600,7 +1839,7 @@ function resetAdminPassword() {
     props.setProperty(PASSWORD_SALT_PROPERTY, newSalt);
     Logger.log('✅ Đã tạo salt mới: ' + newSalt);
 
-    const newHash = hashPasswordWithSalt(ADMIN_DEFAULT_PASSWORD, newSalt);
+    const newHash = hashPasswordWithSalt(bootstrapPassword, newSalt);
 
     // 3. Tìm tài khoản admin trong sheet
     const sheet = ensureAdminUsersSheet();
@@ -1651,8 +1890,8 @@ function resetAdminPassword() {
       }
     }
 
-    Logger.log('🎉 XONG! Đăng nhập bằng: ' + ADMIN_DEFAULT_USERNAME + ' / ' + ADMIN_DEFAULT_PASSWORD);
-    return '✅ Reset thành công! Đăng nhập: admin / admin123';
+    Logger.log('🎉 XONG! Đã reset mật khẩu tài khoản: ' + ADMIN_DEFAULT_USERNAME);
+    return '✅ Reset thành công! Đăng nhập bằng tài khoản admin và mật khẩu trong Script Properties.';
   } catch (err) {
     Logger.log('❌ Lỗi reset: ' + err.message);
     return '❌ Lỗi: ' + err.message;
@@ -2014,8 +2253,7 @@ function handleSaveClowTopic(params) {
     if (!found) throw new Error('Không tìm thấy chủ đề.');
   }
 
-  CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
-  CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+  clearPublicCache('blogTopics');
   return json({ success: true, id: topicId });
 }
 
@@ -2033,7 +2271,7 @@ function handleDeleteClowTopic(params) {
   for (let i = 0; i < rows.length; i++) {
     if (String(rows[i][map['ID'] - 1]).trim() === id) {
       sheet.deleteRow(i + 2);
-      CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+      clearPublicCache('blogTopics');
       return json({ success: true });
     }
   }
@@ -2060,7 +2298,7 @@ function handleReorderClowTopics(params) {
       }
     }
   });
-  CacheService.getScriptCache().remove(PUBLIC_CLOW_TOPICS_CACHE_KEY);
+  clearPublicCache('blogTopics');
   return json({ success: true });
 }
 
@@ -2094,6 +2332,8 @@ function handleSaveClowPost(params) {
 
   const postId = id || (generateSlug(title) + '-' + Date.now().toString(36));
   const cardCode = String(params.cardCode || '').trim() || inferClowCardCodeFromPostText(title, postId);
+  const excerpt = sanitizeEditableHtml(params.excerpt || '').trim();
+  const contentHtml = sanitizeEditableHtml(params.content || '');
   const now = new Date();
   const publishedAt = params.publishedAt ? new Date(params.publishedAt) : now;
 
@@ -2103,8 +2343,8 @@ function handleSaveClowPost(params) {
     row[map['Chu de ID'] - 1] = String(params.topicId || '').trim();
     if (map['Ma la bai']) row[map['Ma la bai'] - 1] = cardCode;
     row[map['Tieu de'] - 1] = title;
-    row[map['Mo ta ngan'] - 1] = String(params.excerpt || '').trim();
-    row[map['Noi dung HTML'] - 1] = String(params.content || '');
+    row[map['Mo ta ngan'] - 1] = excerpt;
+    row[map['Noi dung HTML'] - 1] = contentHtml;
     row[map['Anh dai dien'] - 1] = String(params.coverImage || '').trim();
     row[map['Ngay dang'] - 1] = publishedAt;
     row[map['Bat'] - 1] = params.enabled !== false && params.enabled !== 'false';
@@ -2124,8 +2364,8 @@ function handleSaveClowPost(params) {
         sheet.getRange(rowNum, map['Chu de ID']).setValue(String(params.topicId || '').trim());
         if (map['Ma la bai']) sheet.getRange(rowNum, map['Ma la bai']).setValue(cardCode);
         sheet.getRange(rowNum, map['Tieu de']).setValue(title);
-        sheet.getRange(rowNum, map['Mo ta ngan']).setValue(String(params.excerpt || '').trim());
-        if (params.content !== undefined) sheet.getRange(rowNum, map['Noi dung HTML']).setValue(String(params.content || ''));
+        sheet.getRange(rowNum, map['Mo ta ngan']).setValue(excerpt);
+        if (params.content !== undefined) sheet.getRange(rowNum, map['Noi dung HTML']).setValue(contentHtml);
         if (params.coverImage !== undefined) sheet.getRange(rowNum, map['Anh dai dien']).setValue(String(params.coverImage || '').trim());
         if (params.publishedAt) sheet.getRange(rowNum, map['Ngay dang']).setValue(new Date(params.publishedAt));
         if (params.enabled !== undefined) sheet.getRange(rowNum, map['Bat']).setValue(params.enabled === true || params.enabled === 'true');
@@ -2138,7 +2378,7 @@ function handleSaveClowPost(params) {
     if (!found) throw new Error('Không tìm thấy bài viết.');
   }
 
-  CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+  clearPublicCache('blogPosts');
   return json({ success: true, id: postId });
 }
 
@@ -2156,7 +2396,7 @@ function handleDeleteClowPost(params) {
   for (let i = 0; i < rows.length; i++) {
     if (String(rows[i][map['ID'] - 1]).trim() === id) {
       sheet.deleteRow(i + 2);
-      CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+      clearPublicCache('blogPosts');
       return json({ success: true });
     }
   }
@@ -2181,7 +2421,7 @@ function handleToggleClowPost(params) {
       const current = rows[i][col - 1] === true || String(rows[i][col - 1]).toLowerCase() === 'true';
       sheet.getRange(i + 2, col).setValue(!current);
       sheet.getRange(i + 2, map['Cap nhat luc']).setValue(new Date());
-      CacheService.getScriptCache().remove(PUBLIC_CLOW_POSTS_CACHE_KEY);
+      clearPublicCache('blogPosts');
       return json({ success: true, value: !current });
     }
   }
