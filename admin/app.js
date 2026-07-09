@@ -1,8 +1,8 @@
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr5AsulNW6ZaqxVl2PGjle17OnM5lPS6WIMWAhBdph0fq3hpLDzec1lPE44nrCsDrJ/exec';
 
 const SESSION_KEY      = 'clowcat_patronus_admin_session';
-const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v3_navigation';
-const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v1';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v4_navigation';
+const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v2';
 const ADMIN_READ_ACTIONS = new Set(['version', 'getLandingContent', 'getPublicConfig', 'listPublicPackages', 'getPackages']);
 const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null') || {};
 
@@ -79,6 +79,13 @@ function writeNavigationMenuCache(items) {
   try {
     localStorage.setItem(NAVIGATION_MENU_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), items }));
     localStorage.removeItem(LANDING_CONTENT_CACHE_KEY);
+  } catch (error) {}
+}
+
+function clearPublicLocalCaches() {
+  try {
+    localStorage.removeItem(LANDING_CONTENT_CACHE_KEY);
+    localStorage.removeItem(NAVIGATION_MENU_CACHE_KEY);
   } catch (error) {}
 }
 
@@ -681,6 +688,7 @@ async function savePackageFromForm(formData, order) {
       order,
     };
     await api('savePackage', params);
+    clearPublicLocalCaches();
     await loadPackages();
     renderContent();
     showToast('Đã lưu gói tư vấn.');
@@ -691,6 +699,7 @@ async function deletePackage(code) {
   if (!confirm('Bạn muốn xoá gói này khỏi bảng giá?')) return;
   try {
     await api('deletePackage', { code });
+    clearPublicLocalCaches();
     await loadPackages();
     renderContent();
     showToast('Đã xoá gói.');
@@ -704,6 +713,7 @@ async function savePackageOrder() {
       .map(pkg => pkg.code)
       .join(',');
     await api('reorderPackages', { codes });
+    clearPublicLocalCaches();
     await loadPackages();
     renderContent();
     showToast('Đã lưu thứ tự bảng giá.');
@@ -861,6 +871,7 @@ async function uploadFeedbackImage(slot, file) {
       mimeType: 'image/webp',
       data,
     });
+    clearPublicLocalCaches();
     await loadContent();
     showToast('Đã upload ảnh feedback.');
   } catch (error) {
@@ -872,6 +883,7 @@ async function deleteFeedbackImage(slot) {
   if (!confirm('Bạn muốn xóa ảnh Drive của feedback này và quay về ảnh local?')) return;
   try {
     await api('deleteFeedbackImage', { slot });
+    clearPublicLocalCaches();
     await loadContent();
     showToast('Đã xóa ảnh feedback.');
   } catch (error) {
@@ -912,6 +924,7 @@ async function saveContentItem(key, value) {
     if (item) { item.content = value; item.updatedAt = new Date().toISOString(); item.updatedBy = state.user?.username || ''; }
     state.originals.set(key, value);
     state.pending.delete(key);
+    clearPublicLocalCaches();
     renderContent();
     showToast('Đã lưu nội dung.');
   } catch (error) { showToast(error.message, 'error'); }
@@ -933,6 +946,7 @@ async function saveKeys(keys) {
       state.originals.set(key, value);
       state.pending.delete(key);
     }
+    clearPublicLocalCaches();
     renderContent();
     showToast(`Đã lưu ${changedKeys.length} thay đổi.`);
   } catch (error) { showToast(error.message, 'error'); }
@@ -1368,6 +1382,7 @@ async function saveNavigationMenu() {
   try {
     const data = await api('saveNavigationMenu', { items: JSON.stringify(items) });
     state.navigation = data.navigation || items;
+    localStorage.removeItem(LANDING_CONTENT_CACHE_KEY);
     writeNavigationMenuCache(state.navigation);
     renderNavigationList();
     showToast('Đã lưu menu trang chủ.');
@@ -1530,6 +1545,7 @@ async function saveSectionOrder() {
 
   try {
     await api('reorderAllSections', { order: JSON.stringify(items) });
+    clearPublicLocalCaches();
     showToast('Đã cập nhật thứ tự section!');
     state.sectionOrder = items;
   } catch (err) {
@@ -1610,6 +1626,7 @@ async function saveSectionFromModal() {
         contentHtml: html,
         navLabel
       });
+      clearPublicLocalCaches();
       showToast('Đã lưu section!');
       closeSectionModal();
       await loadAndRenderSections();
@@ -1627,6 +1644,7 @@ async function deleteSection(id) {
   await withButtonPending(deleteBtn, async () => {
     try {
       await api('deleteCustomSection', { id });
+      clearPublicLocalCaches();
       showToast('Đã xóa section!');
       closeSectionModal();
       await loadAndRenderSections();

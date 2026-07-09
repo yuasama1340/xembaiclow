@@ -46,9 +46,9 @@ const runtimeConfig = {
 };
 
 let dynamicPackages = [];
-const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v3_navigation';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v4_navigation';
 const LANDING_CONTENT_CACHE_TTL_MS = 10 * 60 * 1000;
-const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v1';
+const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v2';
 const NAVIGATION_MENU_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function runWhenIdle(callback) {
@@ -232,7 +232,7 @@ async function loadLandingContent() {
 
   try {
     const params = new URLSearchParams({ action: 'getLandingContent' });
-    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'default' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.items)) return;
     writeLandingContentCache(data);
@@ -277,7 +277,7 @@ async function loadDynamicPackages() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
   try {
     const params = new URLSearchParams({ action: 'listPublicPackages' });
-    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'default' });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
     applyDynamicPackages(data.packages);
