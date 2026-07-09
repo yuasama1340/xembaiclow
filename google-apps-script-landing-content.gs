@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-06-17-custom-sections-v1';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-09-booking-health-proxy-v1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -14,6 +14,8 @@ const AUDIT_LOG_SHEET_NAME = 'Audit log';
 const FEEDBACK_DRIVE_FOLDER = 'ClowCat Patronus/Testimonials';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_BOOTSTRAP_PASSWORD_PROPERTY = 'ADMIN_BOOTSTRAP_PASSWORD';
+const BOOKING_WEB_APP_URL_PROPERTY = 'BOOKING_WEB_APP_URL';
+const BOOKING_HEALTH_SECRET_PROPERTY = 'BOOKING_HEALTH_SECRET';
 const PASSWORD_SALT_PROPERTY = 'ADMIN_PASSWORD_SALT';
 const LEGACY_PASSWORD_SALT = 'CC_PATRONUS_V8_98A2B5F1_3C7D_4E9F_8123_456789ABCDEF';
 const SESSION_TTL_SECONDS = 21600;
@@ -389,6 +391,9 @@ function dispatchPostAction(action, params) {
     case 'healthcheck':
     case 'adminhealthcheck':
       return handleHealthCheck(params);
+    case 'bookinghealthcheck':
+    case 'adminbookinghealthcheck':
+      return handleBookingHealthCheckProxy(params);
     case 'listcontent':
     case 'admingetcontent':
       return handleListContent(params);
@@ -649,6 +654,46 @@ function handleHealthCheck(params) {
     spreadsheetId: SPREADSHEET_ID,
     cacheGroups: Object.keys(publicCacheGroups()),
     sheets: sheets
+  });
+}
+
+function handleBookingHealthCheckProxy(params) {
+  const session = requireSession(params, ['admin']);
+  const props = PropertiesService.getScriptProperties();
+  const bookingUrl = String(props.getProperty(BOOKING_WEB_APP_URL_PROPERTY) || '').trim();
+  const healthSecret = String(props.getProperty(BOOKING_HEALTH_SECRET_PROPERTY) || '').trim();
+
+  if (!bookingUrl) {
+    throw new Error('Chưa cấu hình Script Property ' + BOOKING_WEB_APP_URL_PROPERTY + ' trong admin content Apps Script.');
+  }
+  if (!healthSecret) {
+    throw new Error('Chưa cấu hình Script Property ' + BOOKING_HEALTH_SECRET_PROPERTY + ' trong admin content Apps Script.');
+  }
+
+  const response = UrlFetchApp.fetch(bookingUrl, {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      action: 'bookingHealthCheck',
+      token: healthSecret
+    })
+  });
+  const status = response.getResponseCode();
+  let payload;
+  try {
+    payload = JSON.parse(response.getContentText() || '{}');
+  } catch (err) {
+    throw new Error('Booking health trả về dữ liệu không phải JSON. HTTP ' + status + '.');
+  }
+
+  return json({
+    success: true,
+    ok: !!payload.ok,
+    checkedAt: new Date().toISOString(),
+    checkedBy: session.username,
+    httpStatus: status,
+    booking: payload
   });
 }
 

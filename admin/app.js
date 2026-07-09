@@ -996,6 +996,22 @@ async function runHealthCheck() {
   showToast(`Cần kiểm tra ${issues.length} sheet/cấu trúc. Xem Console để biết chi tiết.`, 'error');
 }
 
+async function runBookingHealthCheck() {
+  const data = await api('bookingHealthCheck');
+  console.log('ClowCat bookingHealthCheck:', data);
+
+  if (data.ok && data.booking?.ok) {
+    const payment = data.booking.payment || {};
+    const mode = payment.sepayEnabled ? 'SePay bật' : 'SePay tắt';
+    showToast(`Booking ổn: ${mode}, sheet và email đã cấu hình.`);
+    return;
+  }
+
+  const checks = data.booking?.checks || {};
+  const failed = Object.keys(checks).filter(key => checks[key] === false);
+  showToast(`Booking cần kiểm tra: ${failed.join(', ') || 'xem Console để biết chi tiết'}.`, 'error');
+}
+
 // ============================================================
 // WIRE EVENTS
 // ============================================================
@@ -1016,6 +1032,7 @@ function wireEvents() {
   $('#logout-btn').addEventListener('click', () => { clearSession(); showLogin(); });
   $('#refresh-content').addEventListener('click', event => withButtonPending(event.currentTarget, () => loadContent().then(() => showToast('Đã tải lại.')).catch(err => showToast(err.message, 'error'))));
   $('#health-check').addEventListener('click', event => withButtonPending(event.currentTarget, () => runHealthCheck().catch(err => showToast(err.message, 'error'))));
+  $('#booking-health-check').addEventListener('click', event => withButtonPending(event.currentTarget, () => runBookingHealthCheck().catch(err => showToast(err.message, 'error'))));
   $('#save-all').addEventListener('click', event => withButtonPending(event.currentTarget, () => saveKeys([...state.pending.keys()])));
   $('#content-search').addEventListener('input', renderContent);
   $('#reload-users').addEventListener('click', loadUsers);
