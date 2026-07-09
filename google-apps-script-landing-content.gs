@@ -305,12 +305,12 @@ function doGet(e) {
       case 'version':
         return json({ success: true, scriptVersion: SCRIPT_VERSION });
       case 'getlandingcontent':
-        return handleGetLandingContent();
+        return handleGetLandingContent(params);
       case 'getpublicconfig':
         return handleGetPublicConfig();
       case 'listpublicpackages':
       case 'getpackages':
-        return handleListPublicPackages();
+        return handleListPublicPackages(params);
       case 'getcustomsections':
         return handleGetPublicCustomSections();
       case 'getclowtopics':
@@ -935,19 +935,26 @@ function buildPublicLandingPayload() {
   };
 }
 
-function handleGetLandingContent() {
+function shouldBypassPublicCache(params) {
+  return ['1', 'true', 'yes'].indexOf(String(params && (params.fresh || params.nocache) || '').toLowerCase()) !== -1;
+}
+
+function handleGetLandingContent(params) {
+  const bypassCache = shouldBypassPublicCache(params);
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(PUBLIC_CACHE_KEY);
+  const cached = bypassCache ? null : cache.get(PUBLIC_CACHE_KEY);
   if (cached) return json(JSON.parse(cached));
 
   const payload = buildPublicLandingPayload();
-  safeCachePut(PUBLIC_CACHE_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
-  safeCachePut(PUBLIC_PACKAGES_CACHE_KEY, JSON.stringify({
-    success: true,
-    scriptVersion: payload.scriptVersion,
-    generatedAt: payload.generatedAt,
-    packages: payload.packages
-  }), PUBLIC_CACHE_SECONDS);
+  if (!bypassCache) {
+    safeCachePut(PUBLIC_CACHE_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
+    safeCachePut(PUBLIC_PACKAGES_CACHE_KEY, JSON.stringify({
+      success: true,
+      scriptVersion: payload.scriptVersion,
+      generatedAt: payload.generatedAt,
+      packages: payload.packages
+    }), PUBLIC_CACHE_SECONDS);
+  }
   return json(payload);
 }
 
@@ -1150,9 +1157,10 @@ function handleDeleteFeedbackImage(params) {
   return json({ success: true, slot, key });
 }
 
-function handleListPublicPackages() {
+function handleListPublicPackages(params) {
+  const bypassCache = shouldBypassPublicCache(params);
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(PUBLIC_PACKAGES_CACHE_KEY);
+  const cached = bypassCache ? null : cache.get(PUBLIC_PACKAGES_CACHE_KEY);
   if (cached) return json(JSON.parse(cached));
 
   const payload = {
@@ -1161,7 +1169,7 @@ function handleListPublicPackages() {
     generatedAt: new Date().toISOString(),
     packages: readPackageRows(false, { format: false })
   };
-  safeCachePut(PUBLIC_PACKAGES_CACHE_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
+  if (!bypassCache) safeCachePut(PUBLIC_PACKAGES_CACHE_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
   return json(payload);
 }
 

@@ -231,7 +231,7 @@ async function loadLandingContent() {
   if (cachedNavigation) applyNavigationMenu(cachedNavigation);
 
   try {
-    const params = new URLSearchParams({ action: 'getLandingContent' });
+    const params = new URLSearchParams({ action: 'getLandingContent', fresh: '1', t: String(Date.now()) });
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.items)) return;
@@ -276,7 +276,7 @@ function packageFeatures(pkg) {
 async function loadDynamicPackages() {
   if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
   try {
-    const params = new URLSearchParams({ action: 'listPublicPackages' });
+    const params = new URLSearchParams({ action: 'listPublicPackages', fresh: '1', t: String(Date.now()) });
     const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
