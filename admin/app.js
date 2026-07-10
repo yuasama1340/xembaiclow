@@ -1721,7 +1721,16 @@ const blogState = {
   blogQuill: null,
   blogExcerptQuill: null,
   htmlMode: false,
+  originalPostPublishedAtLocal: '',
 };
+
+function toDatetimeLocalValue(value) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = number => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 function normalizeViText(str) {
   return String(str || '')
@@ -1987,6 +1996,10 @@ function renderPostsTable() {
     specialSortSelect.value = blogState.specialSortMode;
   }
   if (useSpecialSort) filtered = sortClow52Posts(filtered, blogState.specialSortMode);
+  else filtered = filtered.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
+  });
 
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;opacity:.5">Chưa có bài viết nào.</td></tr>';
@@ -2234,7 +2247,9 @@ function openPostModal(postId) {
   document.getElementById('blog-post-topic').value = '';
   if (blogState.blogExcerptQuill) blogState.blogExcerptQuill.setText('');
   document.getElementById('blog-post-excerpt').value = '';
-  document.getElementById('blog-post-date').value = new Date().toISOString().slice(0, 16);
+  const newPostDate = toDatetimeLocalValue(new Date());
+  document.getElementById('blog-post-date').value = newPostDate;
+  blogState.originalPostPublishedAtLocal = '';
   document.getElementById('blog-post-enabled').checked = true;
   document.getElementById('blog-post-pinned').checked = false;
   document.getElementById('blog-cover-url').value = '';
@@ -2257,7 +2272,9 @@ function openPostModal(postId) {
           setQuillHtml(blogState.blogExcerptQuill, '');
         }
       }
-      if (post.publishedAt) document.getElementById('blog-post-date').value = new Date(post.publishedAt).toISOString().slice(0, 16);
+      const publishedAtLocal = toDatetimeLocalValue(post.publishedAt);
+      document.getElementById('blog-post-date').value = publishedAtLocal;
+      blogState.originalPostPublishedAtLocal = publishedAtLocal;
       document.getElementById('blog-post-enabled').checked = post.enabled;
       document.getElementById('blog-post-pinned').checked = post.pinned;
       if (post.coverImage) {
@@ -2310,6 +2327,7 @@ async function savePost() {
     : (blogState.blogQuill ? blogState.blogQuill.root.innerHTML : '');
   const coverImage = document.getElementById('blog-cover-url').value.trim();
   const publishedAt = document.getElementById('blog-post-date').value;
+  const publishedAtChanged = !id || publishedAt !== blogState.originalPostPublishedAtLocal;
   const enabled = document.getElementById('blog-post-enabled').checked;
   const pinned = document.getElementById('blog-post-pinned').checked;
 
@@ -2318,11 +2336,28 @@ async function savePost() {
 
   const saveBtn = document.getElementById('blog-post-modal-save');
   await withButtonPending(saveBtn, async () => {
-    const result = await api('saveClowPost', { token: state.token, id, title, cardCode, topicId, excerpt, content, coverImage, publishedAt, enabled, pinned });
+    const payload = { token: state.token, id, title, cardCode, topicId, excerpt, content, coverImage, enabled, pinned };
+    if (publishedAtChanged) {
+      payload.publishedAt = publishedAt;
+      payload.publishedAtChanged = 'true';
+    }
+    const result = await api('saveClowPost', payload);
     showToast(id ? 'Đã lưu bài viết' : 'Đã tạo bài viết mới');
     closePostModal();
     // Cập nhật cục bộ thay vì reload toàn bộ API
-    const savedPost = result.post || { id: result.id || id, title, cardCode, topicId, excerpt, coverImage, publishedAt, enabled, pinned, updatedAt: new Date().toISOString() };
+    const existingPost = id ? blogState.allPosts.find(p => p.id === id) : null;
+    const savedPost = result.post || {
+      id: result.id || id,
+      title,
+      cardCode,
+      topicId,
+      excerpt,
+      coverImage,
+      publishedAt: publishedAtChanged ? publishedAt : existingPost?.publishedAt,
+      enabled,
+      pinned,
+      updatedAt: new Date().toISOString()
+    };
     if (id) {
       const idx = blogState.allPosts.findIndex(p => p.id === id);
       if (idx !== -1) blogState.allPosts[idx] = Object.assign({}, blogState.allPosts[idx], savedPost);

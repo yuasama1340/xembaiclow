@@ -2149,7 +2149,7 @@ function handleGetPublicClowPosts(params) {
         
       allPosts.sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-        return new Date(b.publishedAt || b.updatedAt) - new Date(a.publishedAt || a.updatedAt);
+        return new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
       });
     }
 
@@ -2366,12 +2366,19 @@ function handleListClowPosts(params) {
   const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
   let posts = rows.map(row => clowPostToObj(row, map)).filter(p => p.id);
   if (topicId) posts = posts.filter(p => p.topicId === topicId);
-  posts.sort((a, b) => new Date(b.publishedAt || b.updatedAt) - new Date(a.publishedAt || a.updatedAt));
+  posts.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
+  });
 
   // Admin: trả content đầy đủ (chỉ khi params.withContent=true)
   if (params.withContent !== 'true') posts = posts.map(p => Object.assign({}, p, { content: '' }));
 
   return json({ success: true, posts });
+}
+
+function isTrueParam(value) {
+  return value === true || String(value).toLowerCase() === 'true';
 }
 
 function handleSaveClowPost(params) {
@@ -2389,6 +2396,7 @@ function handleSaveClowPost(params) {
   const contentHtml = sanitizeEditableHtml(params.content || '');
   const now = new Date();
   const publishedAt = params.publishedAt ? new Date(params.publishedAt) : now;
+  if (isNaN(publishedAt.getTime())) throw new Error('Ngày đăng không hợp lệ.');
 
   if (!id) {
     const row = new Array(sheet.getLastColumn()).fill('');
@@ -2420,7 +2428,11 @@ function handleSaveClowPost(params) {
         sheet.getRange(rowNum, map['Mo ta ngan']).setValue(excerpt);
         if (params.content !== undefined) sheet.getRange(rowNum, map['Noi dung HTML']).setValue(contentHtml);
         if (params.coverImage !== undefined) sheet.getRange(rowNum, map['Anh dai dien']).setValue(String(params.coverImage || '').trim());
-        if (params.publishedAt) sheet.getRange(rowNum, map['Ngay dang']).setValue(new Date(params.publishedAt));
+        if (isTrueParam(params.publishedAtChanged) && params.publishedAt) {
+          const nextPublishedAt = new Date(params.publishedAt);
+          if (isNaN(nextPublishedAt.getTime())) throw new Error('Ngày đăng không hợp lệ.');
+          sheet.getRange(rowNum, map['Ngay dang']).setValue(nextPublishedAt);
+        }
         if (params.enabled !== undefined) sheet.getRange(rowNum, map['Bat']).setValue(params.enabled === true || params.enabled === 'true');
         if (params.pinned !== undefined) sheet.getRange(rowNum, map['Ghim']).setValue(params.pinned === true || params.pinned === 'true');
         sheet.getRange(rowNum, map['Cap nhat luc']).setValue(now);
