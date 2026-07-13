@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-09-booking-health-proxy-v1';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-13-backup-restore-v1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -16,6 +16,7 @@ const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_BOOTSTRAP_PASSWORD_PROPERTY = 'ADMIN_BOOTSTRAP_PASSWORD';
 const BOOKING_WEB_APP_URL_PROPERTY = 'BOOKING_WEB_APP_URL';
 const BOOKING_HEALTH_SECRET_PROPERTY = 'BOOKING_HEALTH_SECRET';
+const BACKUP_FOLDER_ID_PROPERTY = 'BACKUP_FOLDER_ID';
 const PASSWORD_SALT_PROPERTY = 'ADMIN_PASSWORD_SALT';
 const LEGACY_PASSWORD_SALT = 'CC_PATRONUS_V8_98A2B5F1_3C7D_4E9F_8123_456789ABCDEF';
 const SESSION_TTL_SECONDS = 21600;
@@ -24,6 +25,12 @@ const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
 const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
 const AUDIT_LOG_HEADERS = ['Timestamp', 'Action', 'Status', 'Username', 'Role', 'Target type', 'Target ID', 'Details', 'Message'];
+const BACKUP_LOG_SHEET_NAME = 'Backup log';
+const BACKUP_LOG_HEADERS = ['Timestamp', 'Type', 'Status', 'Username', 'File ID', 'File name', 'File URL', 'Details', 'Message'];
+const BACKUP_COOLDOWN_SECONDS = 120;
+const AUTO_BACKUP_RETENTION = 12;
+const AUTO_BACKUP_HANDLER = 'runScheduledBackup';
+const BACKUP_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
 const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
 const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
@@ -55,6 +62,15 @@ const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Ma la bai', 'Tieu de', 'Mo ta ng
 const CLOW_BLOG_FOLDER = 'ClowCat Patronus/Blog';
 const PUBLIC_CLOW_TOPICS_CACHE_KEY = 'clowcat_public_clow_topics_v1';
 const PUBLIC_CLOW_POSTS_CACHE_KEY = 'clowcat_public_clow_posts_v1';
+const RESTORABLE_SHEET_NAMES = [
+  LANDING_CONTENT_SHEET_NAME,
+  PACKAGES_SHEET_NAME,
+  NAVIGATION_MENU_SHEET_NAME,
+  SECTION_ORDER_SHEET_NAME,
+  CUSTOM_SECTIONS_SHEET_NAME,
+  CLOW_TOPICS_SHEET_NAME,
+  CLOW_POSTS_SHEET_NAME
+];
 
 const AUDITED_ACTION_TYPES = {
   login: 'auth',
@@ -76,7 +92,10 @@ const AUDITED_ACTION_TYPES = {
   saveclowpost: 'blog-post',
   deleteclowpost: 'blog-post',
   toggleclowpost: 'blog-post',
-  uploadblogimage: 'blog-image'
+  uploadblogimage: 'blog-image',
+  createbackup: 'backup',
+  restorebackup: 'backup-restore',
+  togglebackupschedule: 'backup-schedule'
 };
 
 function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
@@ -394,6 +413,14 @@ function dispatchPostAction(action, params) {
     case 'bookinghealthcheck':
     case 'adminbookinghealthcheck':
       return handleBookingHealthCheckProxy(params);
+    case 'getbackupstatus':
+      return handleGetBackupStatus(params);
+    case 'createbackup':
+      return handleCreateBackup(params);
+    case 'restorebackup':
+      return handleRestoreBackup(params);
+    case 'togglebackupschedule':
+      return handleToggleBackupSchedule(params);
     case 'listcontent':
     case 'admingetcontent':
       return handleListContent(params);
@@ -615,7 +642,8 @@ function expectedSheetContracts() {
     { name: CLOW_TOPICS_SHEET_NAME, headers: CLOW_TOPICS_HEADERS },
     { name: CLOW_POSTS_SHEET_NAME, headers: CLOW_POSTS_HEADERS },
     { name: ADMIN_USERS_SHEET_NAME, headers: USER_HEADERS },
-    { name: AUDIT_LOG_SHEET_NAME, headers: AUDIT_LOG_HEADERS }
+    { name: AUDIT_LOG_SHEET_NAME, headers: AUDIT_LOG_HEADERS },
+    { name: BACKUP_LOG_SHEET_NAME, headers: BACKUP_LOG_HEADERS }
   ];
 }
 
@@ -643,8 +671,13 @@ function inspectSheetContract(contract) {
 function handleHealthCheck(params) {
   const session = requireSession(params, ['admin', 'editor']);
   ensureAuditLogSheet();
+  ensureBackupLogSheet();
   const sheets = expectedSheetContracts().map(inspectSheetContract);
-  const ok = sheets.every(sheet => sheet.exists && sheet.missingHeaders.length === 0);
+  const backup = inspectBackupSystem(session.role === 'admin');
+  const ok = sheets.every(sheet => sheet.exists && sheet.missingHeaders.length === 0)
+    && backup.folderConfigured
+    && backup.folderAccessible
+    && backup.timezoneMatches;
   return json({
     success: true,
     ok: ok,
@@ -653,7 +686,8 @@ function handleHealthCheck(params) {
     checkedBy: session.username,
     spreadsheetId: SPREADSHEET_ID,
     cacheGroups: Object.keys(publicCacheGroups()),
-    sheets: sheets
+    sheets: sheets,
+    backup: backup
   });
 }
 
@@ -2529,4 +2563,256 @@ function warmUpBlogCache() {
   } catch(e) {
     console.error('warmUpBlogCache error:', e);
   }
+}
+
+// ============================================================
+// BACKUP / RESTORE / AUTOMATION
+// ============================================================
+function ensureBackupLogSheet() {
+  const sheet = getOrCreateSheet(BACKUP_LOG_SHEET_NAME, BACKUP_LOG_HEADERS);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, BACKUP_LOG_HEADERS.length).setFontWeight('bold');
+  sheet.getRange('A:A').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  return sheet;
+}
+
+function appendBackupLog(type, status, username, file, details, message) {
+  try {
+    ensureBackupLogSheet().appendRow([
+      new Date(), String(type || ''), String(status || ''), String(username || 'system'),
+      file ? file.getId() : '', file ? file.getName() : '', file ? file.getUrl() : '',
+      String(details || '').slice(0, 4500), String(message || '').slice(0, 500)
+    ]);
+  } catch (err) {}
+}
+
+function getBackupFolder() {
+  const id = String(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY) || '').trim();
+  if (!id) throw new Error('Chưa cấu hình Script Property ' + BACKUP_FOLDER_ID_PROPERTY + '.');
+  try {
+    const folder = DriveApp.getFolderById(id);
+    folder.getName();
+    return folder;
+  } catch (err) {
+    throw new Error('Không thể truy cập thư mục backup. Kiểm tra ' + BACKUP_FOLDER_ID_PROPERTY + ' và tài khoản sở hữu deployment.');
+  }
+}
+
+function backupNameForType(type) {
+  const prefix = { manual: 'ClowCat-Manual-Sheet-', auto: 'ClowCat-Auto-Sheet-', pre_restore: 'ClowCat-Before-Restore-' }[type] || 'ClowCat-Manual-Sheet-';
+  return prefix + Utilities.formatDate(new Date(), BACKUP_TIMEZONE, 'yyyyMMdd-HHmmss');
+}
+
+function isClowCatBackupName(name) {
+  return /^(ClowCat-Manual-Sheet-|ClowCat-Auto-Sheet-|ClowCat-Before-Restore-)/.test(String(name || ''));
+}
+
+function fileBelongsToFolder(file, folderId) {
+  const parents = file.getParents();
+  while (parents.hasNext()) if (parents.next().getId() === folderId) return true;
+  return false;
+}
+
+function findLatestBackupFile(folder) {
+  const files = folder.getFiles();
+  let latest = null;
+  while (files.hasNext()) {
+    const file = files.next();
+    if (!isClowCatBackupName(file.getName()) || file.isTrashed()) continue;
+    if (!latest || file.getDateCreated().getTime() > latest.getDateCreated().getTime()) latest = file;
+  }
+  return latest;
+}
+
+function publicBackupFile(file) {
+  return file ? { id: file.getId(), name: file.getName(), url: file.getUrl(), createdAt: file.getDateCreated().toISOString() } : null;
+}
+
+function getBackupTriggers() {
+  return ScriptApp.getProjectTriggers().filter(trigger => trigger.getHandlerFunction() === AUTO_BACKUP_HANDLER);
+}
+
+function getLatestAutoBackupResult() {
+  const sheet = getSheetIfExists(BACKUP_LOG_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return null;
+  const map = getColumnMap(sheet);
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][map.Type - 1]) !== 'auto') continue;
+    const at = rows[i][map.Timestamp - 1];
+    return { status: String(rows[i][map.Status - 1] || ''), at: at instanceof Date ? at.toISOString() : String(at || ''), fileName: String(rows[i][map['File name'] - 1] || ''), message: String(rows[i][map.Message - 1] || '') };
+  }
+  return null;
+}
+
+function inspectBackupSystem(includePrivateLinks) {
+  const folderId = String(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY) || '').trim();
+  const result = {
+    folderConfigured: !!folderId, folderAccessible: false, triggerPermission: false,
+    triggerCount: 0, scheduleEnabled: false, schedule: 'Chủ Nhật, khoảng 02:00-03:00',
+    timezone: BACKUP_TIMEZONE, projectTimezone: Session.getScriptTimeZone(), retention: AUTO_BACKUP_RETENTION,
+    latestBackup: null, latestAutoResult: getLatestAutoBackupResult(), errors: []
+  };
+  result.timezoneMatches = result.projectTimezone === BACKUP_TIMEZONE;
+  if (!result.timezoneMatches) result.errors.push('Project timezone cần đặt thành ' + BACKUP_TIMEZONE + '.');
+  if (folderId) {
+    try {
+      const folder = getBackupFolder();
+      result.folderAccessible = true;
+      if (includePrivateLinks) result.latestBackup = publicBackupFile(findLatestBackupFile(folder));
+    } catch (err) { result.errors.push(err.message); }
+  }
+  try {
+    const triggers = getBackupTriggers();
+    result.triggerPermission = true;
+    result.triggerCount = triggers.length;
+    result.scheduleEnabled = triggers.length > 0;
+  } catch (err) { result.errors.push('Chưa có quyền script.scriptapp. Chạy “Clow Cat → Cấp quyền backup tự động”.'); }
+  return result;
+}
+
+function handleGetBackupStatus(params) {
+  requireSession(params, ['admin']);
+  return json({ success: true, backup: inspectBackupSystem(true) });
+}
+
+function createSpreadsheetBackup(type, username) {
+  const folder = getBackupFolder();
+  const file = DriveApp.getFileById(SPREADSHEET_ID).makeCopy(backupNameForType(type), folder);
+  appendBackupLog(type, 'success', username, file, 'spreadsheetId=' + SPREADSHEET_ID, 'Đã tạo bản sao.');
+  return file;
+}
+
+function handleCreateBackup(params) {
+  const session = requireSession(params, ['admin']);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error('Một tác vụ backup/restore khác đang chạy. Vui lòng thử lại sau.');
+  let file = null;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const lastAt = Number(props.getProperty('LAST_MANUAL_BACKUP_AT') || 0);
+    const remaining = BACKUP_COOLDOWN_SECONDS * 1000 - (Date.now() - lastAt);
+    if (remaining > 0) throw new Error('Sao lưu thủ công giới hạn một lần mỗi 2 phút. Thử lại sau ' + Math.ceil(remaining / 1000) + ' giây.');
+    file = createSpreadsheetBackup('manual', session.username);
+    props.setProperty('LAST_MANUAL_BACKUP_AT', String(Date.now()));
+    return json({ success: true, backup: publicBackupFile(file), status: inspectBackupSystem(true) });
+  } catch (err) {
+    appendBackupLog('manual', 'error', session.username, file, '', err.message);
+    throw err;
+  } finally { lock.releaseLock(); }
+}
+
+function validateRestoreCandidate(file, folder) {
+  if (!fileBelongsToFolder(file, folder.getId())) throw new Error('File không thuộc đúng thư mục backup đã cấu hình.');
+  if (!isClowCatBackupName(file.getName())) throw new Error('File không phải bản backup ClowCat hợp lệ.');
+  let source;
+  try { source = SpreadsheetApp.openById(file.getId()); }
+  catch (err) { throw new Error('Không thể mở file backup dưới dạng Google Sheet.'); }
+  const missing = RESTORABLE_SHEET_NAMES.filter(name => !source.getSheetByName(name));
+  if (missing.length) throw new Error('File backup thiếu sheet nghiệp vụ: ' + missing.join(', ') + '.');
+  return source;
+}
+
+function replaceBusinessSheetsFromBackup(source, destination) {
+  const staged = {};
+  try {
+    RESTORABLE_SHEET_NAMES.forEach((name, index) => {
+      staged[name] = source.getSheetByName(name).copyTo(destination).setName('__restore__' + index + '__' + Date.now());
+    });
+  } catch (err) {
+    Object.keys(staged).forEach(name => {
+      try { destination.deleteSheet(staged[name]); } catch (cleanupError) {}
+    });
+    throw new Error('Không thể chuẩn bị đầy đủ sheet phục hồi: ' + err.message);
+  }
+  RESTORABLE_SHEET_NAMES.forEach(name => {
+    const oldSheet = destination.getSheetByName(name);
+    if (oldSheet) destination.deleteSheet(oldSheet);
+    staged[name].setName(name);
+  });
+}
+
+function handleRestoreBackup(params) {
+  const session = requireSession(params, ['admin']);
+  if (String(params.confirmation || '') !== 'PHUC HOI') throw new Error('Cụm xác nhận phục hồi chưa chính xác.');
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error('Một tác vụ backup/restore khác đang chạy. Vui lòng thử lại sau.');
+  let candidate = null;
+  try {
+    const folder = getBackupFolder();
+    const fileId = String(params.fileId || '').trim();
+    candidate = fileId ? DriveApp.getFileById(fileId) : findLatestBackupFile(folder);
+    if (!candidate) throw new Error('Chưa tìm thấy bản backup để phục hồi.');
+    const source = validateRestoreCandidate(candidate, folder);
+    const safetyCopy = createSpreadsheetBackup('pre_restore', session.username);
+    replaceBusinessSheetsFromBackup(source, getSpreadsheet());
+    clearPublicCache('all');
+    appendBackupLog('restore', 'success', session.username, candidate, 'safetyCopyId=' + safetyCopy.getId() + '; sheets=' + RESTORABLE_SHEET_NAMES.join('|'), 'Đã phục hồi và giữ nguyên các sheet quyền/log.');
+    return json({ success: true, restoredFrom: publicBackupFile(candidate), safetyBackup: publicBackupFile(safetyCopy), restoredSheets: RESTORABLE_SHEET_NAMES.slice(), status: inspectBackupSystem(true) });
+  } catch (err) {
+    appendBackupLog('restore', 'error', session.username, candidate, '', err.message);
+    throw err;
+  } finally { lock.releaseLock(); }
+}
+
+function deleteBackupTriggers() {
+  getBackupTriggers().forEach(trigger => ScriptApp.deleteTrigger(trigger));
+}
+
+function createWeeklyBackupTrigger() {
+  deleteBackupTriggers();
+  return ScriptApp.newTrigger(AUTO_BACKUP_HANDLER).timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+}
+
+function handleToggleBackupSchedule(params) {
+  const session = requireSession(params, ['admin']);
+  getBackupFolder();
+  const enabled = String(params.enabled || '').toLowerCase() === 'true';
+  try {
+    if (enabled) createWeeklyBackupTrigger(); else deleteBackupTriggers();
+  } catch (err) {
+    throw new Error('Không thể cập nhật lịch backup. Hãy cấp quyền script.scriptapp bằng menu “Clow Cat” rồi thử lại. Chi tiết: ' + err.message);
+  }
+  appendBackupLog('schedule', 'success', session.username, null, 'enabled=' + enabled, enabled ? 'Đã bật lịch.' : 'Đã tắt lịch.');
+  return json({ success: true, backup: inspectBackupSystem(true) });
+}
+
+function retainAutomaticBackups(folder) {
+  const files = folder.getFiles();
+  const candidates = [];
+  while (files.hasNext()) {
+    const file = files.next();
+    if (!file.isTrashed() && file.getName().indexOf('ClowCat-Auto-Sheet-') === 0 && !file.isStarred()) candidates.push(file);
+  }
+  candidates.sort((a, b) => b.getDateCreated().getTime() - a.getDateCreated().getTime());
+  candidates.slice(AUTO_BACKUP_RETENTION).forEach(file => file.setTrashed(true));
+}
+
+function runScheduledBackup() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    appendBackupLog('auto', 'error', 'system', null, '', 'Bỏ qua vì tác vụ backup/restore khác đang chạy.');
+    return;
+  }
+  let file = null;
+  try {
+    file = createSpreadsheetBackup('auto', 'system');
+    retainAutomaticBackups(getBackupFolder());
+  } catch (err) {
+    appendBackupLog('auto', 'error', 'system', file, '', err.message);
+    throw err;
+  } finally { lock.releaseLock(); }
+}
+
+function authorizeBackupAutomation() {
+  const folder = getBackupFolder();
+  folder.getName();
+  ScriptApp.getProjectTriggers();
+  try { SpreadsheetApp.getUi().alert('Đã xác nhận quyền Drive và script.scriptapp. Quay lại admin để bật lịch.'); }
+  catch (err) { Logger.log('Đã xác nhận quyền Drive và script.scriptapp.'); }
+}
+
+function onOpen() {
+  try { SpreadsheetApp.getUi().createMenu('Clow Cat').addItem('Cấp quyền backup tự động', 'authorizeBackupAutomation').addToUi(); }
+  catch (err) { Logger.log('Menu Clow Cat chỉ xuất hiện khi script được liên kết với Google Sheet.'); }
 }

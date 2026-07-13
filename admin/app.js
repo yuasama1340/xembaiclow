@@ -23,6 +23,7 @@ const state = {
   navigation: [],
   draggingOrderItem: null,
   draggingNavItem: null,
+  backup: null,
 };// ============================================================
 // UTILS
 // ============================================================
@@ -167,6 +168,7 @@ function showShell() {
   $('#current-user-name').textContent = state.user?.displayName || state.user?.username || 'Quản trị viên';
   $('#current-user-role').textContent = displayRole(state.user?.role);
   $('#users-panel').style.display = state.user?.role === 'admin' ? '' : 'none';
+  $('#backup-panel').style.display = state.user?.role === 'admin' ? '' : 'none';
 }
 
 // ============================================================
@@ -996,6 +998,76 @@ async function runHealthCheck() {
   showToast(`Cần kiểm tra ${issues.length} sheet/cấu trúc. Xem Console để biết chi tiết.`, 'error');
 }
 
+function renderBackupStatus(backup) {
+  state.backup = backup || null;
+  const available = !!backup?.folderConfigured && !!backup?.folderAccessible;
+  const latest = backup?.latestBackup || null;
+  const scheduleEnabled = !!backup?.scheduleEnabled;
+  const auto = backup?.latestAutoResult;
+  $('#backup-folder-status').textContent = !backup?.folderConfigured ? 'Chưa cấu hình' : (backup.folderAccessible ? 'Đã kết nối' : 'Không truy cập được');
+  $('#backup-latest-name').textContent = latest?.name || 'Chưa có';
+  $('#backup-schedule-status').textContent = !backup?.triggerPermission ? 'Cần cấp quyền' : (scheduleEnabled ? 'Đã bật · Chủ Nhật 02:00' : 'Đang tắt');
+  $('#backup-auto-result').textContent = auto ? `${auto.status === 'success' ? 'Thành công' : 'Lỗi'} · ${formatDate(auto.at)}` : 'Chưa chạy';
+  const pill = $('#backup-status-pill');
+  pill.textContent = available ? (scheduleEnabled ? 'Lịch đã bật' : 'Sẵn sàng') : 'Cần thiết lập';
+  pill.classList.toggle('is-ok', available);
+  pill.classList.toggle('is-warning', !available);
+  $('#create-backup-btn').disabled = !available;
+  $('#open-backup-btn').disabled = !latest?.url;
+  $('#restore-backup-btn').disabled = !latest?.id;
+  const scheduleButton = $('#toggle-backup-schedule-btn');
+  scheduleButton.disabled = !available;
+  scheduleButton.innerHTML = scheduleEnabled
+    ? '<i class="fa-solid fa-calendar-xmark"></i><span>Lịch đã bật</span>'
+    : '<i class="fa-solid fa-calendar-plus"></i><span>Bật lịch</span>';
+  scheduleButton.title = scheduleEnabled
+    ? `Lần chạy gần nhất: ${auto ? formatDate(auto.at) : 'chưa chạy'}. Bấm để tắt lịch.`
+    : (!backup?.triggerPermission ? 'Cần cấp quyền script.scriptapp trước khi bật lịch.' : 'Bật backup tự động hàng tuần.');
+  const errors = backup?.errors || [];
+  $('#backup-note').textContent = errors.length ? errors.join(' ') : 'Giữ 12 bản tự động gần nhất; file được gắn sao trên Drive sẽ không bị retention xóa.';
+}
+
+async function loadBackupStatus() {
+  if (state.user?.role !== 'admin') return;
+  try {
+    const data = await api('getBackupStatus');
+    renderBackupStatus(data.backup);
+  } catch (error) { renderBackupStatus({ errors: [error.message] }); }
+}
+
+async function createBackup() {
+  const data = await api('createBackup');
+  renderBackupStatus(data.status);
+  showToast(`Đã sao lưu: ${data.backup?.name || 'thành công'}.`);
+}
+
+function openLatestBackup() {
+  const url = state.backup?.latestBackup?.url;
+  if (!url) return showToast('Chưa có bản backup để mở.', 'error');
+  window.open(url, '_blank', 'noopener');
+}
+
+async function restoreLatestBackup() {
+  const latest = state.backup?.latestBackup;
+  if (!latest?.id) return showToast('Chưa có bản backup để phục hồi.', 'error');
+  const confirmation = prompt(`Phục hồi từ “${latest.name}” sẽ ghi đè 7 sheet nghiệp vụ.\n\nNhập chính xác PHUC HOI để tiếp tục:`);
+  if (confirmation === null) return;
+  if (confirmation !== 'PHUC HOI') return showToast('Cụm xác nhận chưa chính xác.', 'error');
+  const data = await api('restoreBackup', { fileId: latest.id, confirmation });
+  clearPublicLocalCaches();
+  renderBackupStatus(data.status);
+  await loadContent();
+  showToast('Phục hồi thành công. Hãy bấm Kiểm tra và kiểm tra landing/blog.');
+}
+
+async function toggleBackupSchedule() {
+  const enabled = !state.backup?.scheduleEnabled;
+  if (!confirm(enabled ? 'Bật backup tự động vào Chủ Nhật khoảng 02:00-03:00?' : 'Tắt lịch backup tự động? Các file đã có sẽ được giữ nguyên.')) return;
+  const data = await api('toggleBackupSchedule', { enabled });
+  renderBackupStatus(data.backup);
+  showToast(enabled ? 'Đã bật lịch backup tự động.' : 'Đã tắt lịch backup tự động.');
+}
+
 async function runBookingHealthCheck() {
   const data = await api('bookingHealthCheck');
   console.log('ClowCat bookingHealthCheck:', data);
@@ -1025,6 +1097,7 @@ function wireEvents() {
       showShell();
       await loadContent();
       await loadUsers();
+      await loadBackupStatus();
       showToast('Đăng nhập thành công.');
     } catch (error) { showToast(error.message, 'error'); }
   });
@@ -1036,6 +1109,13 @@ function wireEvents() {
   $('#save-all').addEventListener('click', event => withButtonPending(event.currentTarget, () => saveKeys([...state.pending.keys()])));
   $('#content-search').addEventListener('input', renderContent);
   $('#reload-users').addEventListener('click', loadUsers);
+  $('#create-backup-btn').addEventListener('click', event => withButtonPending(event.currentTarget, () => createBackup().catch(error => showToast(error.message, 'error'))));
+  $('#open-backup-btn').addEventListener('click', openLatestBackup);
+  $('#restore-backup-btn').addEventListener('click', event => withButtonPending(event.currentTarget, () => restoreLatestBackup().catch(error => showToast(error.message, 'error'))));
+  $('#toggle-backup-schedule-btn').addEventListener('click', event => {
+    withButtonPending(event.currentTarget, () => toggleBackupSchedule().catch(error => showToast(error.message, 'error')))
+      .then(() => renderBackupStatus(state.backup));
+  });
 
   $('#create-user-form').addEventListener('submit', async event => {
     event.preventDefault();
@@ -1071,7 +1151,8 @@ async function init() {
     // Chạy song song tất cả các request để giảm thời gian load
     await Promise.all([
       loadContent(),
-      state.user?.role === 'admin' ? loadUsers() : Promise.resolve()
+      state.user?.role === 'admin' ? loadUsers() : Promise.resolve(),
+      state.user?.role === 'admin' ? loadBackupStatus() : Promise.resolve()
     ]);
   } catch (error) {
     clearSession();

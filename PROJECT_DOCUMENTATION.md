@@ -1,6 +1,6 @@
 # ClowCat Patronus - Tài Liệu Dự Án Hiện Hành
 
-Cập nhật: 09/07/2026
+Cập nhật: 13/07/2026
 
 Tài liệu này là nguồn tham chiếu chính cho dự án. Các tài liệu kế hoạch/audit cũ đã được gom lại để tránh cấu hình nhầm.
 
@@ -112,6 +112,9 @@ Username | Password hash | Role | Status | Display name | Created at | Updated a
 
 Audit log:
 Timestamp | Action | Status | Username | Role | Target type | Target ID | Details | Message
+
+Backup log:
+Timestamp | Type | Status | Username | File ID | File name | File URL | Details | Message
 ```
 
 ### Booking/payment spreadsheet
@@ -145,6 +148,7 @@ Admin/content Apps Script:
 ADMIN_BOOTSTRAP_PASSWORD
 BOOKING_WEB_APP_URL
 BOOKING_HEALTH_SECRET
+BACKUP_FOLDER_ID
 ```
 
 Booking/payment Apps Script:
@@ -191,6 +195,7 @@ listClowPosts / saveClowPost / deleteClowPost / toggleClowPost / uploadBlogImage
 listUsers / createUser / changePassword
 healthCheck
 bookingHealthCheck
+getBackupStatus / createBackup / restoreBackup / toggleBackupSchedule
 ```
 
 ### `Code.gs`
@@ -209,8 +214,33 @@ SePay webhook POST
 
 Các nút kiểm tra:
 
-- `Kiểm tra`: gọi `healthCheck`, xác nhận 9 sheet admin/content đúng cấu trúc.
+- `Kiểm tra`: gọi `healthCheck`, xác nhận 10 sheet admin/content, thư mục backup và quyền trigger.
 - `Booking`: gọi proxy `bookingHealthCheck`, xác nhận booking sheet, email config và SePay config.
+- `Sao lưu`: tạo bản copy Google Sheet vào thư mục `BACKUP_FOLDER_ID`; chỉ role `admin`, tối đa một lần mỗi 2 phút.
+- `Phục hồi`: yêu cầu nhập `PHUC HOI`, tự tạo bản `ClowCat-Before-Restore-*`, rồi phục hồi 7 sheet nghiệp vụ.
+- `Bật lịch`: tạo trigger Chủ Nhật khoảng 02:00-03:00; giữ 12 bản tự động không gắn sao gần nhất.
+
+Các sheet được phục hồi:
+
+```text
+Landing content
+Packages
+Navigation Menu
+Section Order
+Custom Sections
+Clow Topics
+Clow Posts
+```
+
+Các sheet `Admin users`, `Audit log`, `Backup log` hiện tại luôn được giữ nguyên. `SPREADSHEET_ID`, Script Properties, source Apps Script và deployment URL không bị thay đổi.
+
+### Cấp quyền backup tự động
+
+1. Tạo thư mục Drive bằng tài khoản sở hữu Web App và thêm ID vào Script Property `BACKUP_FOLDER_ID`.
+2. Deploy version mới, tải lại Google Sheet.
+3. Chọn `Clow Cat` -> `Cấp quyền backup tự động`; nếu menu chưa xuất hiện, chạy `authorizeBackupAutomation` trong Apps Script Editor.
+4. Quay lại admin và bấm `Bật lịch`.
+5. Project timezone cần là `Asia/Ho_Chi_Minh` để cửa sổ 02:00-03:00 đúng giờ Việt Nam.
 
 Các nhóm chỉnh sửa chính:
 
@@ -223,17 +253,17 @@ Các nhóm chỉnh sửa chính:
 
 ## 7. Deploy checklist
 
-1. Deploy `google-apps-script-landing-content.gs`.
-2. Deploy `Code.gs`.
-3. Cập nhật URL Apps Script trong frontend/admin.
-4. Cấu hình Script Properties.
-5. Đăng nhập admin.
-6. Bấm `Kiểm tra`.
-7. Bấm `Booking`.
-8. Sửa thử một menu hoặc FAQ, lưu và reload landing.
-9. Test booking khi SePay tắt.
-10. Test booking khi SePay bật.
-11. Kiểm tra `Audit log`, `Email log`, `Error log`.
+1. Cấu hình `BACKUP_FOLDER_ID` và xác nhận project timezone `Asia/Ho_Chi_Minh`.
+2. Deploy `google-apps-script-landing-content.gs`.
+3. Cấp quyền backup tự động bằng menu Google Sheet hoặc hàm `authorizeBackupAutomation`.
+4. Deploy `Code.gs` nếu booking/payment có thay đổi.
+5. Cập nhật URL Apps Script trong frontend/admin nếu deployment URL đổi.
+6. Đăng nhập admin, bấm `Kiểm tra`, `Sao lưu` và mở bản gần nhất.
+7. Bấm `Bật lịch`, tải lại trạng thái và xác nhận `Lịch đã bật`.
+8. Bấm `Booking`.
+9. Sửa thử một menu hoặc FAQ, lưu và reload landing.
+10. Test booking khi SePay tắt và khi SePay bật.
+11. Kiểm tra `Backup log`, `Audit log`, `Email log`, `Error log`.
 
 ## 8. QA checklist
 

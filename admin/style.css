@@ -464,6 +464,38 @@ input:disabled, textarea:disabled {
   margin-top: 18px;
 }
 
+.backup-panel { grid-column: 1 / -1; }
+.backup-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 18px;
+}
+.backup-summary > div {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+.backup-summary span, .backup-summary strong { display: block; }
+.backup-summary span { margin-bottom: 6px; color: var(--text-muted); font-size: 0.8rem; }
+.backup-summary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 18px 16px; }
+.backup-actions button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.backup-note { margin: 0; padding: 14px 18px 18px; border-top: 1px solid var(--border); color: var(--text-muted); line-height: 1.55; }
+.backup-status-pill {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.backup-status-pill.is-ok { color: var(--ok); border-color: rgba(140,227,189,.45); background: rgba(140,227,189,.08); }
+.backup-status-pill.is-warning { color: var(--gold-light); border-color: rgba(232,204,122,.45); background: rgba(232,204,122,.08); }
+
 .users-list { display: grid; gap: 10px; padding: 18px; }
 
 .user-row {
@@ -1063,6 +1095,7 @@ input:disabled, textarea:disabled {
   .sidebar { position: relative; height: auto; }
   .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .field-grid, .management-grid { grid-template-columns: 1fr; }
+  .backup-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
@@ -1074,6 +1107,8 @@ input:disabled, textarea:disabled {
   .workspace, .sidebar, .login-view { padding: 16px; }
   .topbar, .section-heading, .panel-heading { display: grid; }
   .topbar-actions, .search-box, .primary-action, .secondary-action { width: 100%; }
+  .backup-summary { grid-template-columns: 1fr; }
+  .backup-actions .danger-action { width: 100%; }
   .status-strip, .side-nav, .inline-form { grid-template-columns: 1fr; }
   .inline-form button { grid-column: auto; }
   .pkg-modal-footer { flex-direction: column; }
