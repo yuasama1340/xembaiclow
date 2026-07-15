@@ -11,7 +11,7 @@
   <link rel="dns-prefetch" href="https://script.google.com" />
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="./style.css?v=20260708-navigation-menu" />
+  <link rel="stylesheet" href="./style.css?v=20260715-booking-package-sync" />
   <link rel="icon" type="image/png" href="hinh/favicon.png" />
   
   <!-- Open Graph / Facebook -->
@@ -373,7 +373,7 @@
               <li>✦ Lời khuyên thực tế ngay lập tức</li>
             </ul>
             <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
-            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price" data-booking-package="kham-pha" data-booking-mode="online">Đặt Lịch Ngay</a>
           </div>
 
           <div class="price-card price-featured pricing-online-card" id="price-ket-noi">
@@ -393,7 +393,7 @@
               <li>✦ Lời khuyên thực tế ngay lập tức</li>
             </ul>
             <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
-            <a href="#contact" class="btn-price btn-price-featured">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price btn-price-featured" data-booking-package="ket-noi" data-booking-mode="online">Đặt Lịch Ngay</a>
           </div>
 
           <div class="price-card pricing-online-card" id="price-toan-dien">
@@ -413,7 +413,7 @@
               <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
             </ul>
             <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
-            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price" data-booking-package="toan-dien" data-booking-mode="online">Đặt Lịch Ngay</a>
           </div>
 
           <!-- OFFLINE CARDS (ẩn mặc định, loadLandingContent() cập nhật giá) -->
@@ -433,7 +433,7 @@
               <li>✦ Lời khuyên thực tế ngay lập tức</li>
             </ul>
             <div class="price-note">Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.</div>
-            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price" data-booking-package="kham-pha" data-booking-mode="offline">Đặt Lịch Ngay</a>
           </div>
 
           <div class="price-card price-featured pricing-offline-card" id="price-ket-noi-off" style="display:none">
@@ -453,7 +453,7 @@
               <li>✦ Lời khuyên thực tế ngay lập tức</li>
             </ul>
             <div class="price-note">Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.</div>
-            <a href="#contact" class="btn-price btn-price-featured">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price btn-price-featured" data-booking-package="ket-noi" data-booking-mode="offline">Đặt Lịch Ngay</a>
           </div>
 
           <div class="price-card pricing-offline-card" id="price-toan-dien-off" style="display:none">
@@ -473,7 +473,7 @@
               <li>✦ Tặng kèm file PDF tóm tắt buổi tư vấn</li>
             </ul>
             <div class="price-note">Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.</div>
-            <a href="#contact" class="btn-price">Đặt Lịch Ngay</a>
+            <a href="#contact" class="btn-price" data-booking-package="toan-dien" data-booking-mode="offline">Đặt Lịch Ngay</a>
           </div>
 
         </div>
@@ -790,19 +790,20 @@
           </div>
           <div class="form-group">
             <label for="package">Gói dịch vụ *</label>
-            <select id="package" name="package" required>
-              <option value="">-- Chọn gói --</option>
+            <select id="package" name="package" required disabled aria-describedby="package-booking-note">
+              <option value="">-- Chọn hình thức trước --</option>
               <optgroup label="Online">
-                <option id="pkg-online-discovery" data-package-amount="250000" value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
-                <option id="pkg-online-connect" data-package-amount="350000" value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
-                <option id="pkg-online-full" data-package-amount="500000" value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
+                <option id="pkg-online-discovery" data-package-code="kham-pha" data-package-amount="250000" value="Gói Khám Phá – 250k / 30 phút">Gói Khám Phá – 250k / 30 phút</option>
+                <option id="pkg-online-connect" data-package-code="ket-noi" data-package-amount="350000" value="Gói Kết Nối – 350k / 45 phút">Gói Kết Nối – 350k / 45 phút</option>
+                <option id="pkg-online-full" data-package-code="toan-dien" data-package-amount="500000" value="Gói Toàn Diện – 500k / 60 phút">Gói Toàn Diện – 500k / 60 phút</option>
               </optgroup>
               <optgroup label="Offline">
-                <option id="pkg-offline-discovery" data-package-amount="300000" value="Gói Khám Phá – 300k / 30 phút">Gói Khám Phá – 300k / 30 phút</option>
-                <option id="pkg-offline-connect" data-package-amount="400000" value="Gói Kết Nối – 400k / 45 phút">Gói Kết Nối – 400k / 45 phút</option>
-                <option id="pkg-offline-full" data-package-amount="550000" value="Gói Toàn Diện – 550k / 60 phút">Gói Toàn Diện – 550k / 60 phút</option>
+                <option id="pkg-offline-discovery" data-package-code="kham-pha" data-package-amount="300000" value="Gói Khám Phá – 300k / 30 phút">Gói Khám Phá – 300k / 30 phút</option>
+                <option id="pkg-offline-connect" data-package-code="ket-noi" data-package-amount="400000" value="Gói Kết Nối – 400k / 45 phút">Gói Kết Nối – 400k / 45 phút</option>
+                <option id="pkg-offline-full" data-package-code="toan-dien" data-package-amount="550000" value="Gói Toàn Diện – 550k / 60 phút">Gói Toàn Diện – 550k / 60 phút</option>
               </optgroup>
             </select>
+            <p class="package-booking-note" id="package-booking-note" hidden></p>
           </div>
           <div class="form-group">
             <label for="topic">Chủ đề / Vấn đề muốn chia sẻ</label>
@@ -887,7 +888,7 @@
     </a>
   </div>
 
-  <script src="script.js?v=20260708-navigation-menu-cache" defer></script>
+  <script src="script.js?v=20260715-booking-package-sync" defer></script>
 
   <button id="scroll-to-top" aria-label="Lên đầu trang" title="Lên đầu trang">
     <i class="fa-solid fa-chevron-up"></i>

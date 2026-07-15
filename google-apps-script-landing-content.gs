@@ -4,7 +4,7 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-13-backup-restore-v1';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-15-package-booking-note-v1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
@@ -23,7 +23,7 @@ const SESSION_TTL_SECONDS = 21600;
 
 const CONTENT_HEADERS = ['Bat', 'Khoa', 'Section', 'Mo ta', 'Selector', 'Kieu', 'Thuoc tinh', 'Noi dung', 'Cap nhat luc', 'Cap nhat boi'];
 const USER_HEADERS = ['Username', 'Password hash', 'Role', 'Status', 'Display name', 'Created at', 'Updated at', 'Last login'];
-const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
+const PACKAGE_HEADERS = ['Bat', 'Ma goi', 'Ten goi', 'Gia online', 'Gia offline', 'Don vi', 'Icon', 'Mau nhan', 'Noi bat', 'Badge', 'Thoi luong', 'Quyen loi', 'Ghi chu', 'Luu y dat lich', 'Nut', 'Thu tu', 'Cap nhat luc', 'Cap nhat boi'];
 const AUDIT_LOG_HEADERS = ['Timestamp', 'Action', 'Status', 'Username', 'Role', 'Target type', 'Target ID', 'Details', 'Message'];
 const BACKUP_LOG_SHEET_NAME = 'Backup log';
 const BACKUP_LOG_HEADERS = ['Timestamp', 'Type', 'Status', 'Username', 'File ID', 'File name', 'File URL', 'Details', 'Message'];
@@ -62,6 +62,7 @@ const CLOW_POSTS_HEADERS = ['ID', 'Chu de ID', 'Ma la bai', 'Tieu de', 'Mo ta ng
 const CLOW_BLOG_FOLDER = 'ClowCat Patronus/Blog';
 const PUBLIC_CLOW_TOPICS_CACHE_KEY = 'clowcat_public_clow_topics_v1';
 const PUBLIC_CLOW_POSTS_CACHE_KEY = 'clowcat_public_clow_posts_v1';
+const SPECIAL_3IN1_BOOKING_NOTE = 'Bạn vui lòng điền thêm dưới phần mô tả "Họ & Tên - Ngày - Tháng - Năm - GIỜ - Nơi sinh" (dương lịch) chính xác để mình lập Bản Đồ Sao cho bạn nhé';
 const RESTORABLE_SHEET_NAMES = [
   LANDING_CONTENT_SHEET_NAME,
   PACKAGES_SHEET_NAME,
@@ -102,21 +103,21 @@ function lc(bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung) {
   return [bat, khoa, section, moTa, selector, kieu, thuocTinh, noiDung, new Date(), 'system'];
 }
 
-function pkg(bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, button, order) {
-  return [bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, button, order, new Date(), 'system'];
+function pkg(bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, bookingNote, button, order) {
+  return [bat, code, name, onlinePrice, offlinePrice, unit, icon, accent, featured, badge, duration, features, note, bookingNote, button, order, new Date(), 'system'];
 }
 
 function buildDefaultPackageRows() {
   return [
     pkg(true, 'kham-pha', 'Gói Khám Phá', 250000, 300000, '/buổi', 'moon', 'purple', false, '', '30 phút',
       '1 chủ đề trọng tâm\nPhân tích bài Clow chuyên sâu\nThông điệp chữa lành\nLời khuyên thực tế ngay lập tức',
-      'Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.', 'Đặt Lịch Ngay', 1),
+      'Phù hợp cho những vấn đề cấp bách cần câu trả lời ngay.', '', 'Đặt Lịch Ngay', 1),
     pkg(true, 'ket-noi', 'Gói Kết Nối', 350000, 400000, '/buổi', 'sparkles', 'gold', true, '✦ Phổ biến nhất', '45 phút',
       '2 chủ đề (VD: sự nghiệp + tình cảm)\nPhân tích bài Clow chuyên sâu\nThông điệp chữa lành\nLời khuyên thực tế ngay lập tức',
-      'Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.', 'Đặt Lịch Ngay', 2),
+      'Lựa chọn tối ưu để đào sâu vào cả công việc và tình cảm.', '', 'Đặt Lịch Ngay', 2),
     pkg(true, 'toan-dien', 'Gói Toàn Diện', 500000, 550000, '/buổi', 'star', 'teal', false, '', '60 phút',
       'Đa chủ đề không giới hạn\nPhân tích bài Clow chuyên sâu\nLời khuyên thực tế ngay lập tức\nThông điệp chữa lành\nTặng kèm file PDF tóm tắt buổi tư vấn',
-      'Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.', 'Đặt Lịch Ngay', 3)
+      'Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.', '', 'Đặt Lịch Ngay', 3)
   ];
 }
 
@@ -935,11 +936,16 @@ function formatPackagesSheet(sheet) {
 }
 
 function packageFromRow(row, map, rowIndex) {
+  const code = String(row[map['Ma goi'] - 1] || '');
+  const name = String(row[map['Ten goi'] - 1] || '');
+  const bookingNoteColumn = map['Luu y dat lich'];
+  let bookingNote = bookingNoteColumn ? String(row[bookingNoteColumn - 1] || '') : '';
+  if (!bookingNote && /(?:3\s*(?:-?\s*in\s*-?|trong|-)\s*1|3in1)/i.test(code + ' ' + name)) bookingNote = SPECIAL_3IN1_BOOKING_NOTE;
   return {
     rowIndex: rowIndex,
     enabled: row[map.Bat - 1] === true || String(row[map.Bat - 1]).toUpperCase() === 'TRUE',
-    code: String(row[map['Ma goi'] - 1] || ''),
-    name: String(row[map['Ten goi'] - 1] || ''),
+    code: code,
+    name: name,
     onlinePrice: Number(row[map['Gia online'] - 1] || 0),
     offlinePrice: Number(row[map['Gia offline'] - 1] || 0),
     unit: String(row[map['Don vi'] - 1] || '/buổi'),
@@ -950,6 +956,7 @@ function packageFromRow(row, map, rowIndex) {
     duration: String(row[map['Thoi luong'] - 1] || ''),
     features: String(row[map['Quyen loi'] - 1] || ''),
     note: String(row[map['Ghi chu'] - 1] || ''),
+    bookingNote: bookingNote,
     button: String(row[map.Nut - 1] || 'Đặt Lịch Ngay'),
     order: Number(row[map['Thu tu'] - 1] || 999),
     updatedAt: row[map['Cap nhat luc'] - 1],
@@ -1314,6 +1321,7 @@ function packagePayload(params) {
     duration: String(params.duration || '').trim(),
     features: String(params.features || '').trim(),
     note: String(params.note || '').trim(),
+    bookingNote: String(params.bookingNote || '').trim(),
     button: String(params.button || 'Đặt Lịch Ngay').trim(),
     order: Number(params.order || 999)
   };
@@ -1344,6 +1352,7 @@ function handleSavePackage(params) {
   sheet.getRange(row, map['Thoi luong']).setValue(item.duration);
   sheet.getRange(row, map['Quyen loi']).setValue(item.features);
   sheet.getRange(row, map['Ghi chu']).setValue(item.note);
+  sheet.getRange(row, map['Luu y dat lich']).setValue(item.bookingNote);
   sheet.getRange(row, map.Nut).setValue(item.button);
   sheet.getRange(row, map['Thu tu']).setValue(item.order);
   sheet.getRange(row, map['Cap nhat luc']).setValue(now);

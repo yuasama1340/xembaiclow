@@ -330,7 +330,7 @@ function renderDynamicPricing() {
             }).join('')}
           </ul>
           ${pkg.note ? `<div class="price-note">${escapeHtml(pkg.note)}</div>` : ''}
-          <a href="#contact" class="btn-price${isFeatured ? ' btn-price-featured' : ''}">${escapeHtml(pkg.button || 'Đặt Lịch Ngay')}</a>
+          <a href="#contact" class="btn-price${isFeatured ? ' btn-price-featured' : ''}" data-booking-package="${escapeHtml(pkg.code)}" data-booking-mode="${mode}">${escapeHtml(pkg.button || 'Đặt Lịch Ngay')}</a>
         </div>
       `);
     });
@@ -349,13 +349,13 @@ function renderDynamicPackageOptions() {
       .map(pkg => {
         const text = packageSelectText(pkg, mode);
         const amount = Number(mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice) || 0;
-        return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${amount}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
+        return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${amount}" data-booking-note="${escapeHtml(pkg.bookingNote || '')}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
       })
       .join('');
     return `<optgroup label="${mode === 'online' ? 'Online' : 'Offline'}">${options}</optgroup>`;
   }).join('');
 
-  packageSelect.innerHTML = `<option value="">-- Chọn gói --</option>${groups}`;
+  packageSelect.innerHTML = `<option value="">-- Chọn hình thức trước --</option>${groups}`;
 }
 
 // ============================================================
@@ -378,7 +378,7 @@ function updatePackageOptions() {
 
   groups.forEach(group => {
     const groupMode = String(group.label || '').toLowerCase().includes('offline') ? 'offline' : 'online';
-    const shouldShow = !mode || groupMode === mode;
+    const shouldShow = !!mode && groupMode === mode;
     group.hidden = !shouldShow;
     group.disabled = !shouldShow;
     group.querySelectorAll('option').forEach(option => {
@@ -388,6 +388,40 @@ function updatePackageOptions() {
   });
 
   if (currentOption && currentOption.disabled) packageSelect.value = '';
+  packageSelect.disabled = !mode;
+  const placeholder = packageSelect.querySelector('option[value=""]');
+  if (placeholder) placeholder.textContent = mode ? '-- Chọn gói --' : '-- Chọn hình thức trước --';
+  updatePackageBookingNote();
+}
+
+function updatePackageBookingNote() {
+  const packageSelect = document.getElementById('package');
+  const noteElement = document.getElementById('package-booking-note');
+  if (!packageSelect || !noteElement) return;
+  const note = String(packageSelect.selectedOptions?.[0]?.dataset?.bookingNote || '').trim();
+  noteElement.textContent = note;
+  noteElement.hidden = !note;
+}
+
+function chooseBookingPackage(packageCode, mode) {
+  const formatSelect = document.getElementById('format');
+  const packageSelect = document.getElementById('package');
+  if (!formatSelect || !packageSelect || !packageCode) return;
+
+  const formatOption = mode === 'offline'
+    ? formatSelect.querySelector('#format-offline-1')
+    : formatSelect.querySelector('#format-online');
+  if (!formatOption) return;
+  formatSelect.value = formatOption.value;
+  updatePackageOptions();
+
+  const option = Array.from(packageSelect.options).find(item =>
+    item.dataset.packageCode === packageCode && !item.disabled
+  );
+  if (option) {
+    packageSelect.value = option.value;
+    updatePackageBookingNote();
+  }
 }
 
 function getSelectedPackageAmount() {
@@ -408,9 +442,16 @@ function getSelectedPackageAmount() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const formatSelect = document.getElementById('format');
-  if (!formatSelect) return;
+  const packageSelect = document.getElementById('package');
+  if (!formatSelect || !packageSelect) return;
   updatePackageOptions();
   formatSelect.addEventListener('change', updatePackageOptions);
+  packageSelect.addEventListener('change', updatePackageBookingNote);
+  document.getElementById('pricing-track')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-booking-package]');
+    if (!button) return;
+    chooseBookingPackage(button.dataset.bookingPackage, button.dataset.bookingMode || pricingMode || 'online');
+  });
 });
 
 // ============================================================

@@ -576,6 +576,7 @@ function openPackageModal(pkg = null) {
     duration: '',
     features: '',
     note: '',
+    bookingNote: '',
     button: 'Đặt Lịch Ngay',
     order: state.packages.length + 1,
   };
@@ -642,6 +643,11 @@ function openPackageModal(pkg = null) {
           <span>Ghi chú</span>
           <textarea name="note" rows="3">${escHtml(current.note)}</textarea>
         </label>
+        <label class="pkg-label" style="margin-top:14px;">
+          <span>Lưu ý đặt lịch</span>
+          <textarea name="bookingNote" rows="3" placeholder="Hiển thị dưới gói dịch vụ khi khách chọn gói này">${escHtml(current.bookingNote)}</textarea>
+          <small>Để trống nếu gói không cần nhắc khách bổ sung thông tin.</small>
+        </label>
         <div class="pkg-form-row">
           <label class="pkg-check-label"><input name="enabled" type="checkbox"${current.enabled ? ' checked' : ''} /> Bật gói</label>
           <label class="pkg-check-label"><input name="featured" type="checkbox"${current.featured ? ' checked' : ''} /> Gói nổi bật</label>
@@ -686,6 +692,7 @@ async function savePackageFromForm(formData, order) {
       duration: formData.get('duration'),
       features: formData.get('features'),
       note: formData.get('note'),
+      bookingNote: formData.get('bookingNote'),
       button: formData.get('button'),
       order,
     };

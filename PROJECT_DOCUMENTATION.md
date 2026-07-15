@@ -90,7 +90,7 @@ Landing content:
 Bat | Khoa | Section | Mo ta | Selector | Kieu | Thuoc tinh | Noi dung | Cap nhat luc | Cap nhat boi
 
 Packages:
-Bat | Ma goi | Ten goi | Gia online | Gia offline | Don vi | Icon | Mau nhan | Noi bat | Badge | Thoi luong | Quyen loi | Ghi chu | Nut | Thu tu | Cap nhat luc | Cap nhat boi
+Bat | Ma goi | Ten goi | Gia online | Gia offline | Don vi | Icon | Mau nhan | Noi bat | Badge | Thoi luong | Quyen loi | Ghi chu | Luu y dat lich | Nut | Thu tu | Cap nhat luc | Cap nhat boi
 
 Navigation Menu:
 Key | Label | Href | Enabled | Order | Type | Updated at | Updated by
