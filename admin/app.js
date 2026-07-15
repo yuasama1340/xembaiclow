@@ -1106,7 +1106,12 @@ function wireEvents() {
       await loadUsers();
       await loadBackupStatus();
       showToast('Đăng nhập thành công.');
-    } catch (error) { showToast(error.message, 'error'); }
+    } catch (error) {
+      const passwordInput = $('#login-password');
+      passwordInput.value = '';
+      passwordInput.focus();
+      showToast(error.message, 'error');
+    }
   });
 
   $('#logout-btn').addEventListener('click', () => { clearSession(); showLogin(); });
