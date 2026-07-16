@@ -23,334 +23,7 @@
   <meta property="twitter:title" content="Thanh Toán Thành Công ✨ | Clow Cat Patronus" />
   <meta property="twitter:description" content="Thanh toán thành công! Cảm ơn bạn đã đặt lịch tư vấn Clow Cat Patronus." />
   <meta property="twitter:image" content="https://coibai.clowcat.com.vn/hinh/Landing_page_preview_image.jpeg" />
-  <style>
-    /* ===== TOKENS ===== */
-    :root {
-      --bg:           #0d0b14;
-      --surface:      #16121f;
-      --surface2:     #1e1828;
-      --gold:         #c9a84c;
-      --gold-light:   #e8c96a;
-      --gold-dim:     rgba(201,168,76,0.15);
-      --purple:       #7b5ea7;
-      --purple-light: #a07fd4;
-      --purple-glow:  rgba(123,94,167,0.35);
-      --text:         #e8e0d0;
-      --text-muted:   #9a8fa0;
-      --success:      #4caf7d;
-      --success-dim:  rgba(76,175,125,0.15);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Lora', serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 16px;
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    /* ===== STAR FIELD ===== */
-    .stars {
-      position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background:
-        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.3) 0%, transparent 100%);
-    }
-
-    /* ===== ANIMATED ORBS ===== */
-    .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-    .orb {
-      position: absolute; border-radius: 50%; filter: blur(90px);
-      animation: float 10s ease-in-out infinite;
-    }
-    .orb1 { width: 500px; height: 500px; background: var(--purple); opacity: 0.2; top: -150px; right: -150px; }
-    .orb2 { width: 350px; height: 350px; background: var(--gold); opacity: 0.15; bottom: -100px; left: -100px; animation-delay: -5s; }
-    .orb3 { width: 250px; height: 250px; background: var(--success); opacity: 0.1; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: -2s; }
-    @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-25px) scale(1.05)} }
-    .orb3 { animation: float3 12s ease-in-out infinite; }
-    @keyframes float3 { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,calc(-50% - 20px)) scale(1.1)} }
-
-    /* ===== MAGIC PARTICLES ===== */
-    .particle {
-      position: fixed; pointer-events: none; z-index: 0;
-      border-radius: 50%;
-      animation: particleFly var(--dur) ease-out forwards;
-    }
-    @keyframes particleFly {
-      0%   { transform: translate(0,0) scale(1); opacity: 1; }
-      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-    }
-
-    /* ===== MAIN CONTENT ===== */
-    .main {
-      position: relative; z-index: 1;
-      display: flex; flex-direction: column; align-items: center;
-      max-width: 560px; width: 100%;
-      text-align: center;
-      animation: fadeUp 0.8s ease both;
-    }
-    @keyframes fadeUp {
-      0%   { opacity: 0; transform: translateY(40px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== LOGO ===== */
-    .logo-wrap { margin-bottom: 32px; }
-    .logo-wrap picture { display: contents; }
-    .logo-wrap img {
-      width: 80px; height: 80px; object-fit: contain;
-      filter: drop-shadow(0 0 20px rgba(201,168,76,0.5));
-      animation: logoGlow 3s ease-in-out infinite;
-    }
-    @keyframes logoGlow {
-      0%,100% { filter: drop-shadow(0 0 16px rgba(201,168,76,0.4)); }
-      50%      { filter: drop-shadow(0 0 32px rgba(201,168,76,0.8)); }
-    }
-
-    /* ===== SUCCESS BADGE ===== */
-    .success-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: var(--success-dim);
-      border: 1px solid rgba(76,175,125,0.4);
-      color: var(--success);
-      font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase;
-      padding: 6px 18px; border-radius: 99px;
-      margin-bottom: 24px;
-      animation: fadeUp 0.8s 0.2s ease both;
-    }
-    .success-badge .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--success);
-      box-shadow: 0 0 8px var(--success);
-    }
-
-    /* ===== HERO TEXT ===== */
-    .hero-emoji {
-      font-size: 5rem; line-height: 1;
-      margin-bottom: 16px;
-      animation: bounceIn 0.8s 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-    }
-    @keyframes bounceIn {
-      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-      60%  { transform: scale(1.15) rotate(5deg); }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
-    .hero-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.8rem, 5vw, 2.6rem);
-      font-weight: 900;
-      color: #fff;
-      line-height: 1.2;
-      margin-bottom: 12px;
-      animation: fadeUp 0.8s 0.3s ease both;
-    }
-    .hero-title em {
-      font-style: italic;
-      background: linear-gradient(135deg, var(--gold-light), var(--purple-light));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero-sub {
-      font-size: 1rem; color: var(--text-muted);
-      line-height: 1.7; margin-bottom: 36px;
-      animation: fadeUp 0.8s 0.4s ease both;
-    }
-
-    /* ===== CARD ===== */
-    .info-card {
-      background: var(--surface);
-      border: 1px solid rgba(201,168,76,0.2);
-      border-radius: 20px;
-      padding: 28px 28px;
-      width: 100%;
-      margin-bottom: 28px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(201,168,76,0.1);
-      animation: fadeUp 0.8s 0.5s ease both;
-    }
-    .card-header {
-      font-size: 0.8rem; letter-spacing: 2px; color: var(--gold);
-      text-transform: uppercase; margin-bottom: 18px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .card-header::before, .card-header::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
-    }
-
-    .info-rows { display: flex; flex-direction: column; gap: 12px; }
-    .info-row {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      gap: 12px; font-size: 0.9rem; padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .info-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .info-label { color: var(--text-muted); flex-shrink: 0; }
-    .info-value { color: var(--text); font-weight: 600; text-align: right; }
-    .info-value.gold {
-      color: var(--gold-light);
-      font-family: 'Playfair Display', serif;
-    }
-    .info-value.order {
-      background: var(--gold-dim);
-      color: var(--gold);
-      padding: 2px 10px; border-radius: 6px;
-      font-size: 0.85rem; letter-spacing: 1px;
-    }
-
-    /* ===== BOOKING CARD ===== */
-    .booking-card {
-      background: var(--surface);
-      border: 1px solid rgba(123, 94, 167, 0.3);
-      border-radius: 20px;
-      padding: 28px 28px;
-      width: 100%;
-      margin-bottom: 28px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(123, 94, 167, 0.15);
-      animation: fadeUp 0.8s 0.65s ease both;
-    }
-    .booking-sub {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
-    /* ===== NEXT STEPS ===== */
-    .next-steps {
-      background: linear-gradient(135deg, rgba(123,94,167,0.12), rgba(201,168,76,0.08));
-      border: 1px solid rgba(201,168,76,0.18);
-      border-radius: 16px;
-      padding: 24px 24px;
-      width: 100%; margin-bottom: 28px;
-      text-align: left;
-      animation: fadeUp 0.8s 0.55s ease both;
-    }
-    .next-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem; color: var(--gold-light);
-      margin-bottom: 16px; text-align: center;
-    }
-    .step-list { display: flex; flex-direction: column; gap: 12px; }
-    .step-item {
-      display: flex; align-items: flex-start; gap: 12px;
-      font-size: 0.88rem; line-height: 1.5;
-    }
-    .step-num {
-      width: 28px; height: 28px; flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--gold-dim);
-      border: 1px solid rgba(201,168,76,0.3);
-      color: var(--gold);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.78rem; font-weight: 700;
-    }
-    .step-text { color: var(--text-muted); padding-top: 4px; }
-    .step-text strong { color: var(--text); }
-
-    /* ===== MESSENGER BUTTON ===== */
-    .btn-messenger {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 12px;
-      padding: 10px 20px;
-      background: linear-gradient(135deg, #0084ff, #8a3ffc);
-      color: #fff !important;
-      font-weight: 700;
-      font-size: 0.88rem;
-      text-decoration: none !important;
-      border-radius: 99px;
-      box-shadow: 0 4px 15px rgba(0, 132, 255, 0.4), 0 0 10px rgba(138, 63, 252, 0.3);
-      transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    .btn-messenger:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 132, 255, 0.6), 0 0 15px rgba(138, 63, 252, 0.5);
-      background: linear-gradient(135deg, #0091ff, #9a54ff);
-    }
-    .btn-messenger:active {
-      transform: translateY(0);
-    }
-    .messenger-icon {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    /* ===== CTA BUTTONS ===== */
-    .cta-group {
-      display: flex; flex-direction: column; gap: 12px;
-      width: 100%;
-      animation: fadeUp 0.8s 0.7s ease both;
-    }
-    .btn-home {
-      display: block; width: 100%;
-      padding: 16px 28px;
-      background: linear-gradient(135deg, var(--gold), #a07030);
-      color: #0d0b14;
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem; font-weight: 800;
-      border: none; border-radius: 12px;
-      cursor: pointer; text-decoration: none;
-      letter-spacing: 1px; text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 20px rgba(201,168,76,0.35);
-    }
-    .btn-home:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.5); }
-
-    .btn-social {
-      display: block; width: 100%;
-      padding: 14px 28px;
-      background: transparent;
-      color: var(--text);
-      font-size: 0.9rem; font-weight: 600;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 12px;
-      cursor: pointer; text-decoration: none;
-      text-align: center;
-      transition: all 0.2s;
-    }
-    .btn-social:hover {
-      border-color: var(--gold);
-      color: var(--gold-light);
-      background: var(--gold-dim);
-    }
-
-    /* ===== MAGIC CIRCLES ===== */
-    .magic-ring {
-      position: fixed; pointer-events: none; z-index: 0;
-      border-radius: 50%;
-      border: 1px solid rgba(201,168,76,0.08);
-      animation: ringExpand 4s ease-out infinite;
-    }
-    @keyframes ringExpand {
-      0%   { transform: scale(0.8); opacity: 0.5; }
-      100% { transform: scale(1.6); opacity: 0; }
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 480px) {
-      .info-card, .next-steps { padding: 20px 16px; }
-      .hero-emoji { font-size: 3.5rem; }
-    }
-  </style>
+  <link rel="stylesheet" href="thankyou.css?v=20260716-csp-style" />
 </head>
 <body>
 
@@ -362,9 +35,9 @@
     <div class="orb orb3"></div>
   </div>
   <!-- Magic rings -->
-  <div class="magic-ring" style="width:300px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:0s;"></div>
-  <div class="magic-ring" style="width:500px;height:500px;top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:1.3s;"></div>
-  <div class="magic-ring" style="width:700px;height:700px;top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:2.6s;"></div>
+  <div class="magic-ring magic-ring-1"></div>
+  <div class="magic-ring magic-ring-2"></div>
+  <div class="magic-ring magic-ring-3"></div>
 
   <!-- Main -->
   <div class="main">
@@ -388,7 +61,7 @@
     <h1 class="hero-title">Cảm Ơn Bạn Đã<br /><em>Tin Tưởng Clow!</em></h1>
     <p class="hero-sub">
       Đơn đặt lịch của bạn đã được ghi nhận và thanh toán thành công.<br />
-      Chúng tôi sẽ liên hệ để xác nhận lịch hẹn trong vòng <strong style="color:var(--gold-light)">24 giờ</strong>.
+      Chúng tôi sẽ liên hệ để xác nhận lịch hẹn trong vòng <strong class="text-gold">24 giờ</strong>.
     </p>
 
     <!-- Order Info Card -->
@@ -409,7 +82,7 @@
         </div>
         <div class="info-row">
           <span class="info-label">Trạng thái</span>
-          <span class="info-value" style="color:var(--success)">✅ Đã thanh toán</span>
+          <span class="info-value text-success">✅ Đã thanh toán</span>
         </div>
       </div>
     </div>
@@ -422,8 +95,8 @@
           <div class="step-num">1</div>
           <div class="step-text">
             <strong>Kết nối Page</strong> – Nhấp vào nút Messenger bên dưới để kết nối với Page Clow Cat Patronus và nhắn tin theo cú pháp:
-            <div style="margin: 8px 0; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; font-style: italic; color: var(--gold-light); display: inline-block; width: 100%; box-sizing: border-box; text-align: left;">
-              "Mình vừa đăng kí lịch tư vấn với tên <strong id="msg-name" style="color:#fff;">...</strong>"
+            <div class="messenger-copy">
+              "Mình vừa đăng kí lịch tư vấn với tên <strong id="msg-name" class="text-white">...</strong>"
             </div>
             <br>
             <a href="https://m.me/clowcatpatronus" target="_blank" class="btn-messenger">
@@ -459,6 +132,6 @@
 
   </div>
 
-  <script src="thankyou.js?v=20260716-csp"></script>
+  <script src="thankyou.js?v=20260716-csp-style"></script>
 </body>
 </html>

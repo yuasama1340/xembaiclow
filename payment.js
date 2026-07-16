@@ -125,7 +125,7 @@ async function refreshPaymentConfigInBackground(stored) {
 function updateTransferHint() {
   document.getElementById('transfer-hint').innerHTML =
     `📌 ${escapeHtml(CLIENT_CONFIG.TRANSFER_NOTE)}<br/>` +
-    `<strong id="hint-order-id" style="color: var(--gold); font-size: 1rem; letter-spacing: 1px;">${escapeHtml(orderId || 'CLOW-XXX')}</strong>`;
+      `<strong id="hint-order-id" class="transfer-order-id">${escapeHtml(orderId || 'CLOW-XXX')}</strong>`;
 }
 
 function getQrSignature() {
@@ -303,7 +303,7 @@ function handlePaymentSuccess(isManual) {
   // Animate progress bar rồi redirect
   setTimeout(() => {
     const bar = document.getElementById('redirect-progress');
-    bar.style.width = '100%';
+    bar.classList.add('is-complete');
 
     document.getElementById('redirect-label').textContent =
       'Đang chuyển hướng đến trang xác nhận...';
