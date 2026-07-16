@@ -2126,7 +2126,7 @@ function renderPostsTable() {
         <div class="blog-post-title-wrap">
           <span class="blog-post-title-text">${escHtml(p.title)}</span>
           ${inferClowCardCode(p) ? `<span class="blog-card-code-pill">Mã ${escHtml(inferClowCardCode(p))}</span>` : ''}
-          ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb" onerror="this.style.display='none'"/>` : ''}
+          ${p.coverImage ? `<img src="${escAttr(p.coverImage)}" class="blog-post-thumb"/>` : ''}
         </div>
       </td>
       <td>
@@ -2148,6 +2148,10 @@ function renderPostsTable() {
       </td>
     </tr>`;
   }).join('');
+
+  tbody.querySelectorAll('.blog-post-thumb').forEach(image => {
+    image.addEventListener('error', () => { image.style.display = 'none'; });
+  });
 
   // Render pagination UI
   if (pag) {
@@ -2315,6 +2319,13 @@ function initBlogQuill() {
   decorateQuillToolbar(blogState.blogExcerptQuill);
 }
 
+function renderBlogCoverPreview(preview, url) {
+  preview.innerHTML = `<img src="${escAttr(url)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+  preview.querySelector('img')?.addEventListener('error', () => {
+    preview.innerHTML = '<span>Ảnh lỗi</span>';
+  });
+}
+
 function openPostModal(postId) {
   initBlogQuill();
   updateTopicDropdowns();
@@ -2372,7 +2383,7 @@ function openPostModal(postId) {
       document.getElementById('blog-post-pinned').checked = post.pinned;
       if (post.coverImage) {
         document.getElementById('blog-cover-url').value = post.coverImage;
-        document.getElementById('blog-cover-preview').innerHTML = `<img src="${escAttr(drivePreviewUrl(post.coverImage, 1000))}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+        renderBlogCoverPreview(document.getElementById('blog-cover-preview'), drivePreviewUrl(post.coverImage, 1000));
       }
       delBtn.style.display = '';
       // Load full content
@@ -2617,7 +2628,7 @@ function wireBlogEvents() {
     const url = e.target.value.trim();
     const preview = document.getElementById('blog-cover-preview');
     if (url) {
-      preview.innerHTML = `<img src="${escAttr(drivePreviewUrl(url, 1000))}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.parentElement.innerHTML='<span>Ảnh lỗi</span>'" />`;
+      renderBlogCoverPreview(preview, drivePreviewUrl(url, 1000));
     } else {
       preview.innerHTML = '<i class="fa-solid fa-image" style="font-size:2rem;opacity:.3"></i><span>Chưa chọn ảnh</span>';
     }

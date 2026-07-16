@@ -600,13 +600,14 @@ async function loadSinglePost() {
         <p style="color:rgba(255,255,255,0.6); margin-bottom:28px; max-width:380px; margin-left:auto; margin-right:auto">
           Máy chủ đang bận. Vui lòng đợi vài giây rồi thử lại.
         </p>
-        <button onclick="location.reload()" style="background:var(--gold); color:#1a0e2e; border:none; padding:12px 32px; border-radius:8px; font-weight:700; font-size:1rem; cursor:pointer; margin-right:12px">
+        <button class="js-reload-page" style="background:var(--gold); color:#1a0e2e; border:none; padding:12px 32px; border-radius:8px; font-weight:700; font-size:1rem; cursor:pointer; margin-right:12px">
           🔄 Thử lại
         </button>
         <a href="clow-blog.html" class="cta-button primary-action" style="margin-top:0; display:inline-block">
           ← Quay lại
         </a>
       </div>`;
+    container.querySelector('.js-reload-page')?.addEventListener('click', () => location.reload());
   }
 }
 

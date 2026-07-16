@@ -317,22 +317,22 @@
 
       <!-- Navigation dots -->
       <div class="test-dots" id="test-dots" role="tablist" aria-label="Feedback navigation">
-        <button class="test-dot active" id="test-dot-0" onclick="goToTestimonial(0)" aria-label="Feedback 1"></button>
-        <button class="test-dot" id="test-dot-1" onclick="goToTestimonial(1)" aria-label="Feedback 2"></button>
-        <button class="test-dot" id="test-dot-2" onclick="goToTestimonial(2)" aria-label="Feedback 3"></button>
-        <button class="test-dot" id="test-dot-3" onclick="goToTestimonial(3)" aria-label="Feedback 4"></button>
-        <button class="test-dot" id="test-dot-4" onclick="goToTestimonial(4)" aria-label="Feedback 5"></button>
-        <button class="test-dot" id="test-dot-5" onclick="goToTestimonial(5)" aria-label="Feedback 6"></button>
-        <button class="test-dot" id="test-dot-6" onclick="goToTestimonial(6)" aria-label="Feedback 7"></button>
-        <button class="test-dot" id="test-dot-7" onclick="goToTestimonial(7)" aria-label="Feedback 8"></button>
-        <button class="test-dot" id="test-dot-8" onclick="goToTestimonial(8)" aria-label="Feedback 9"></button>
-        <button class="test-dot" id="test-dot-9" onclick="goToTestimonial(9)" aria-label="Feedback 10"></button>
+        <button class="test-dot active" id="test-dot-0" data-testimonial-index="0" aria-label="Feedback 1"></button>
+        <button class="test-dot" id="test-dot-1" data-testimonial-index="1" aria-label="Feedback 2"></button>
+        <button class="test-dot" id="test-dot-2" data-testimonial-index="2" aria-label="Feedback 3"></button>
+        <button class="test-dot" id="test-dot-3" data-testimonial-index="3" aria-label="Feedback 4"></button>
+        <button class="test-dot" id="test-dot-4" data-testimonial-index="4" aria-label="Feedback 5"></button>
+        <button class="test-dot" id="test-dot-5" data-testimonial-index="5" aria-label="Feedback 6"></button>
+        <button class="test-dot" id="test-dot-6" data-testimonial-index="6" aria-label="Feedback 7"></button>
+        <button class="test-dot" id="test-dot-7" data-testimonial-index="7" aria-label="Feedback 8"></button>
+        <button class="test-dot" id="test-dot-8" data-testimonial-index="8" aria-label="Feedback 9"></button>
+        <button class="test-dot" id="test-dot-9" data-testimonial-index="9" aria-label="Feedback 10"></button>
       </div>
 
       <!-- Prev / Next arrows -->
       <div class="test-arrows">
-        <button class="test-arrow" id="test-prev" onclick="prevTestimonial()" aria-label="Trước">‹</button>
-        <button class="test-arrow" id="test-next" onclick="nextTestimonial()" aria-label="Tiếp">›</button>
+        <button class="test-arrow" id="test-prev" aria-label="Trước">‹</button>
+        <button class="test-arrow" id="test-next" aria-label="Tiếp">›</button>
       </div>
     </div>
   </section>
@@ -348,8 +348,8 @@
       <h2 class="section-title">Chọn Gói <em>Phù Hợp Với Bạn</em></h2>
       
       <div class="pricing-mode-toggle">
-        <button class="toggle-btn active" id="btn-online" onclick="switchPricing('online')">Online</button>
-        <button class="toggle-btn" id="btn-offline" onclick="switchPricing('offline')">Offline (TP.HCM)</button>
+        <button class="toggle-btn active" id="btn-online" data-pricing-mode="online">Online</button>
+        <button class="toggle-btn" id="btn-offline" data-pricing-mode="offline">Offline (TP.HCM)</button>
       </div>
 
       <!-- Slider: cards có IDs khớp với Google Sheets selectors -->
@@ -760,7 +760,7 @@
               </div>
             </div>
           </div>
-        <form class="contact-form" id="booking-form" onsubmit="handleSubmit(event)">
+        <form class="contact-form" id="booking-form">
           <h3>Đăng Ký Đặt Lịch</h3>
           <div class="form-group">
             <label for="name">Họ và tên *</label>
@@ -888,7 +888,7 @@
     </a>
   </div>
 
-  <script src="script.js?v=20260715-booking-package-sync" defer></script>
+  <script src="script.js?v=20260716-csp-no-inline" defer></script>
 
   <button id="scroll-to-top" aria-label="Lên đầu trang" title="Lên đầu trang">
     <i class="fa-solid fa-chevron-up"></i>

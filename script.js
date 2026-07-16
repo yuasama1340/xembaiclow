@@ -46,6 +46,8 @@ const runtimeConfig = {
 };
 
 let dynamicPackages = [];
+let pricingMode = 'online'; // 'online' | 'offline'
+let pricingCurrent = 0;
 const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v4_navigation';
 const LANDING_CONTENT_CACHE_TTL_MS = 10 * 60 * 1000;
 const NAVIGATION_MENU_CACHE_KEY = 'clowcat_navigation_menu_v2';
@@ -588,9 +590,6 @@ async function handleSubmit(e) {
 // ============================================================
 // 🎴  PRICING SLIDER — Logic
 // ============================================================
-let pricingMode = 'online'; // 'online' | 'offline'
-let pricingCurrent = 0;
-
 function switchPricing(mode) {
   pricingMode = mode;
   pricingCurrent = 0;
@@ -1057,7 +1056,7 @@ function initTestimonialsSlider() {
     dots.forEach((d, i) => d.classList.toggle('active', i === current));
   }
 
-  // Expose globally so onclick="" attributes work
+  // Expose cho bộ điều khiển testimonial và thao tác vuốt dùng chung.
   window.goToTestimonial = goToTestimonial;
   window.prevTestimonial = () => { goToTestimonial(current - 1); resetAutoPlay(); };
   window.nextTestimonial = () => { goToTestimonial(current + 1); resetAutoPlay(); };
@@ -1282,3 +1281,15 @@ function applyAllSectionOrder(sectionOrder, customSections) {
     });
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-testimonial-index]').forEach(button => {
+    button.addEventListener('click', () => window.goToTestimonial(Number(button.dataset.testimonialIndex)));
+  });
+  document.getElementById('test-prev')?.addEventListener('click', window.prevTestimonial);
+  document.getElementById('test-next')?.addEventListener('click', window.nextTestimonial);
+  document.querySelectorAll('[data-pricing-mode]').forEach(button => {
+    button.addEventListener('click', () => switchPricing(button.dataset.pricingMode));
+  });
+  document.getElementById('booking-form')?.addEventListener('submit', handleSubmit);
+});
