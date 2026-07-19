@@ -905,6 +905,11 @@ async function deleteFeedbackImage(slot) {
 // ============================================================
 // LOAD / SAVE CONTENT
 // ============================================================
+async function loadPackages() {
+  const data = await api('listPackages');
+  state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+}
+
 async function loadContent() {
   renderSkeleton();
   const data = await api('adminInit');
