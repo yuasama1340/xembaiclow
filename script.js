@@ -867,29 +867,28 @@ function spawnWave() {
       const duration    = fallDuration + Math.random() * 2;
       const peakOpacity = 0.75 + Math.random() * 0.2;
 
-      const id      = 'fc_' + Date.now() + '_' + i;
-      const styleEl = document.createElement('style');
-      styleEl.textContent = `
-        @keyframes ${id} {
-          0%   { transform: translateY(-200px) rotate(${rotStart.toFixed(1)}deg); opacity: 0; }
-          8%   { opacity: ${peakOpacity.toFixed(2)}; }
-          86%  { opacity: ${(peakOpacity * 0.4).toFixed(2)}; }
-          100% { transform: translateY(115%) rotate(${rotEnd.toFixed(1)}deg); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(styleEl);
-
       card.style.cssText = `
         position: absolute;
         top: 0;
         left: ${left}vw;
-        animation: ${id} ${duration.toFixed(1)}s ease-in forwards;
         will-change: transform, opacity;
       `;
 
       container.appendChild(card);
 
-      setTimeout(() => { card.remove(); styleEl.remove(); }, duration * 1000 + 400);
+      const animation = card.animate([
+        { transform: `translateY(-200px) rotate(${rotStart.toFixed(1)}deg)`, opacity: 0, offset: 0 },
+        { opacity: Number(peakOpacity.toFixed(2)), offset: 0.08 },
+        { opacity: Number((peakOpacity * 0.4).toFixed(2)), offset: 0.86 },
+        { transform: `translateY(115vh) rotate(${rotEnd.toFixed(1)}deg)`, opacity: 0, offset: 1 }
+      ], {
+        duration: duration * 1000,
+        easing: 'ease-in',
+        fill: 'forwards'
+      });
+
+      animation.addEventListener('finish', () => card.remove(), { once: true });
+      setTimeout(() => card.remove(), duration * 1000 + 400);
 
     }, i * stagger);
   });
