@@ -1290,7 +1290,15 @@ function drivePreviewUrl(urlOrId, size = 1600) {
 function initQuillEditor() {
   if (quillEditor) return;
   const container = document.getElementById('quill-editor');
-  if (!container || typeof Quill === 'undefined') return;
+  if (!container) return;
+  if (typeof Quill === 'undefined') {
+    container.contentEditable = 'true';
+    container.classList.add('editor-fallback');
+    container.setAttribute('role', 'textbox');
+    container.setAttribute('aria-multiline', 'true');
+    container.dataset.editorFallback = 'true';
+    return;
+  }
 
   quillEditor = new Quill(container, {
     theme: 'snow',
@@ -1696,6 +1704,10 @@ function openSectionModal(editId) {
     descInp.value    = sec ? (sec.description || '') : '';
     navInp.value     = sec ? (sec.navLabel || '') : '';
     if (quillEditor) quillEditor.root.innerHTML = sec ? (sec.contentHtml || '') : '';
+    else {
+      const fallback = document.getElementById('quill-editor');
+      if (fallback) fallback.innerHTML = sec ? (sec.contentHtml || '') : '';
+    }
   } else {
     titleEl.textContent = 'Tạo Section Mới';
     deleteBtn.style.display = 'none';
@@ -1708,6 +1720,10 @@ function openSectionModal(editId) {
     descInp.value    = '';
     navInp.value     = '';
     if (quillEditor) quillEditor.root.innerHTML = '';
+    else {
+      const fallback = document.getElementById('quill-editor');
+      if (fallback) fallback.innerHTML = '';
+    }
   }
 
   overlay.classList.remove('is-hidden');
@@ -1728,7 +1744,9 @@ async function saveSectionFromModal() {
   const title    = document.getElementById('section-title-input').value.trim();
   const desc     = document.getElementById('section-description').value.trim();
   const navLabel = document.getElementById('section-nav-label').value.trim();
-  const html     = quillEditor ? quillEditor.root.innerHTML : '';
+  const html     = quillEditor
+    ? quillEditor.root.innerHTML
+    : (document.getElementById('quill-editor')?.innerHTML || '');
 
   if (!id) { showToast('Vui lòng nhập ID section.', 'error'); return; }
 
@@ -2276,6 +2294,17 @@ function setBlogHtmlMode(enabled) {
 
 function initBlogQuill() {
   if (blogState.blogQuill) return;
+  if (typeof Quill === 'undefined') {
+    const excerptArea = document.getElementById('blog-post-excerpt');
+    const htmlArea = document.getElementById('blog-post-html');
+    const quillWrap = document.getElementById('blog-quill-editor');
+    if (excerptArea) excerptArea.style.display = '';
+    if (quillWrap) quillWrap.classList.add('is-hidden');
+    if (htmlArea) htmlArea.classList.remove('is-hidden');
+    blogState.htmlMode = true;
+    showToast('Trình soạn thảo nâng cao chưa tải được; đang dùng chế độ HTML dự phòng.', 'error');
+    return;
+  }
   const toolbarOptions = [
     [{ 'header': [1, 2, 3, false] }],
     ['bold', 'italic', 'underline', 'strike'],
@@ -2342,13 +2371,17 @@ function openPostModal(postId) {
   const quillWrap = document.getElementById('blog-quill-editor');
   const htmlToggle = document.getElementById('blog-toggle-html-btn');
 
-  blogState.htmlMode = false;
+  const hasRichEditor = Boolean(blogState.blogQuill);
+  blogState.htmlMode = !hasRichEditor;
   if (htmlArea) {
     htmlArea.value = '';
-    htmlArea.classList.add('is-hidden');
+    htmlArea.classList.toggle('is-hidden', hasRichEditor);
   }
-  if (quillWrap) quillWrap.classList.remove('is-hidden');
-  if (htmlToggle) htmlToggle.querySelector('span').textContent = 'Xem HTML';
+  if (quillWrap) quillWrap.classList.toggle('is-hidden', !hasRichEditor);
+  if (htmlToggle) {
+    htmlToggle.disabled = !hasRichEditor;
+    htmlToggle.querySelector('span').textContent = hasRichEditor ? 'Xem HTML' : 'HTML dự phòng';
+  }
 
   document.getElementById('blog-post-edit-id').value = '';
   document.getElementById('blog-post-title').value = '';
@@ -2394,7 +2427,10 @@ function openPostModal(postId) {
       // Load full content
       api('listClowPosts', { token: state.token, withContent: 'true' }).then(data => {
         const full = (data.posts || []).find(p => p.id === postId);
-        if (full && full.content) setQuillHtml(blogState.blogQuill, full.content);
+        if (full && full.content) {
+          if (blogState.blogQuill) setQuillHtml(blogState.blogQuill, full.content);
+          else if (htmlArea) htmlArea.value = full.content;
+        }
       }).catch(() => {});
     }
   } else {
@@ -2412,7 +2448,9 @@ function closePostModal() {
 function hasPostDraftContent() {
   const title = document.getElementById('blog-post-title')?.value.trim();
   const cover = document.getElementById('blog-cover-url')?.value.trim();
-  const excerptText = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.getText().trim() : '';
+  const excerptText = blogState.blogExcerptQuill
+    ? blogState.blogExcerptQuill.getText().trim()
+    : document.getElementById('blog-post-excerpt')?.value.trim();
   const htmlText = document.getElementById('blog-post-html')?.value.trim();
   const contentText = blogState.htmlMode ? htmlText : (blogState.blogQuill ? blogState.blogQuill.getText().trim() : '');
   return Boolean(title || cover || excerptText || contentText);
@@ -2429,7 +2467,9 @@ async function savePost() {
   const cardCode = document.getElementById('blog-post-card-code')?.value.trim() || '';
   const topicId = document.getElementById('blog-post-topic').value;
   // Lấy nội dung từ Quill editor (nếu trống thì lấy chuỗi rỗng)
-  let excerpt = blogState.blogExcerptQuill ? blogState.blogExcerptQuill.root.innerHTML : '';
+  let excerpt = blogState.blogExcerptQuill
+    ? blogState.blogExcerptQuill.root.innerHTML
+    : document.getElementById('blog-post-excerpt')?.value.trim() || '';
   if (excerpt === '<p><br></p>') excerpt = '';
   const content = blogState.htmlMode
     ? document.getElementById('blog-post-html')?.value || ''
