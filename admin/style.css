@@ -1875,6 +1875,40 @@ input:disabled, textarea:disabled {
   min-height: 260px;
   padding-bottom: 34px;
 }
+.editor-fallback {
+  width: 100%;
+  min-height: 160px;
+  margin-top: 8px;
+  padding: 16px;
+  overflow-y: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font-family: 'Lora', serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  white-space: normal;
+}
+.editor-fallback:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  font-style: italic;
+  pointer-events: none;
+}
+.editor-fallback:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.18);
+}
+.editor-fallback img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px auto;
+}
+.blog-excerpt-editor.editor-fallback { min-height: 150px; }
+.blog-quill-wrap.editor-fallback { min-height: 300px; }
 .blog-editor-heading {
   display: flex;
   align-items: center;

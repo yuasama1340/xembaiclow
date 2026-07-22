@@ -1200,6 +1200,45 @@ const NATIVE_SECTION_LABELS = {
 
 let quillEditor = null;
 
+function createNativeEditor(container, placeholder = '') {
+  if (!container) return null;
+  container.contentEditable = 'true';
+  container.classList.add('editor-fallback');
+  container.setAttribute('role', 'textbox');
+  container.setAttribute('aria-multiline', 'true');
+  container.dataset.placeholder = placeholder;
+  container.dataset.editorFallback = 'true';
+
+  return {
+    root: container,
+    clipboard: {
+      dangerouslyPasteHTML(index, html) {
+        container.innerHTML = html || '';
+      }
+    },
+    getModule() { return null; },
+    getSelection() { return { index: container.textContent.length, length: 0 }; },
+    getLength() { return container.textContent.length; },
+    getText() { return container.textContent || ''; },
+    setText(text) { container.textContent = text || ''; },
+    setSelection() {},
+    insertEmbed(index, type, value) {
+      if (type !== 'image') return;
+      const paragraph = document.createElement('p');
+      const image = document.createElement('img');
+      image.src = value;
+      image.alt = '';
+      paragraph.appendChild(image);
+      container.appendChild(paragraph);
+    },
+    insertText(index, text) {
+      if (text && !container.lastChild) container.appendChild(document.createTextNode(text));
+    },
+    removeFormat() {},
+    update() {}
+  };
+}
+
 function setQuillHtml(quill, html) {
   if (!quill) return;
   quill.setText('');
@@ -1292,11 +1331,7 @@ function initQuillEditor() {
   const container = document.getElementById('quill-editor');
   if (!container) return;
   if (typeof Quill === 'undefined') {
-    container.contentEditable = 'true';
-    container.classList.add('editor-fallback');
-    container.setAttribute('role', 'textbox');
-    container.setAttribute('aria-multiline', 'true');
-    container.dataset.editorFallback = 'true';
+    quillEditor = createNativeEditor(container, 'Nhập nội dung section tại đây...');
     return;
   }
 
@@ -2295,14 +2330,14 @@ function setBlogHtmlMode(enabled) {
 function initBlogQuill() {
   if (blogState.blogQuill) return;
   if (typeof Quill === 'undefined') {
-    const excerptArea = document.getElementById('blog-post-excerpt');
-    const htmlArea = document.getElementById('blog-post-html');
+    const editorContainer = document.getElementById('blog-quill-editor');
+    const excerptContainer = document.getElementById('blog-excerpt-quill-editor');
     const quillWrap = document.getElementById('blog-quill-editor');
-    if (excerptArea) excerptArea.style.display = '';
-    if (quillWrap) quillWrap.classList.add('is-hidden');
-    if (htmlArea) htmlArea.classList.remove('is-hidden');
-    blogState.htmlMode = true;
-    showToast('Trình soạn thảo nâng cao chưa tải được; đang dùng chế độ HTML dự phòng.', 'error');
+    blogState.blogQuill = createNativeEditor(editorContainer, 'Viết nội dung bài tại đây...');
+    blogState.blogExcerptQuill = createNativeEditor(excerptContainer, 'Tóm tắt ngắn nội dung bài...');
+    if (quillWrap) quillWrap.classList.remove('is-hidden');
+    blogState.htmlMode = false;
+    showToast('Đang dùng trình soạn thảo nội bộ vì editor nâng cao bị chặn.', 'error');
     return;
   }
   const toolbarOptions = [
