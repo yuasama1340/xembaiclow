@@ -2258,6 +2258,7 @@ function handleIncrementPostViews(params) {
   const id = String(params.id || '').trim();
   if (!id) return json({ success: true }); // Im lặng nếu không có id
 
+  let updatedViews = null;
   try {
     const sheet = ensureClowPostsSheet();
     const map = getColumnMap(sheet);
@@ -2271,7 +2272,8 @@ function handleIncrementPostViews(params) {
         const viewsCol = map['Luot xem'];
         if (viewsCol) {
           const currentViews = Number(rows[i][viewsCol - 1] || 0);
-          sheet.getRange(i + 2, viewsCol).setValue(currentViews + 1);
+          updatedViews = currentViews + 1;
+          sheet.getRange(i + 2, viewsCol).setValue(updatedViews);
           // Xóa cache bài này để lần sau lấy views mới
           const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
           try { CacheService.getScriptCache().remove('clowcat_post_' + safeId); } catch(e) {}
@@ -2283,7 +2285,7 @@ function handleIncrementPostViews(params) {
     // Im lặng — views là số liệu thống kê, không nên gây lỗi hiển thị
     console.error('incrementPostViews error:', e);
   }
-  return json({ success: true });
+  return json({ success: true, views: updatedViews });
 }
 
 // ── ADMIN API (POST, cần token) ───────────────────────────────

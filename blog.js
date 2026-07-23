@@ -469,9 +469,9 @@ async function loadSinglePost() {
       <h1 class="post-title">${escapeBlogHtml(p.title)}</h1>
       
       <div class="post-meta">
-        <div><i class="fa-solid fa-calendar-days" style="margin-right:6px"></i> ${dateStr}</div>
-        <div><i class="fa-solid fa-eye" style="margin-right:6px"></i> ${p.views || 0} lượt xem</div>
-        ${topicName ? `<div><i class="fa-solid fa-tag" style="margin-right:6px"></i> ${escapeBlogHtml(topicName)}</div>` : ''}
+        <div class="post-meta-item post-meta-item--compact"><i class="fa-solid fa-calendar-days" style="margin-right:6px"></i> ${dateStr}</div>
+        <div class="post-meta-item post-meta-item--compact"><i class="fa-solid fa-eye" style="margin-right:6px"></i> <span id="post-view-count">${p.views || 0}</span>&nbsp;lượt xem</div>
+        ${topicName ? `<div class="post-meta-item post-meta-item--topic"><i class="fa-solid fa-tag" style="margin-right:6px"></i> ${escapeBlogHtml(topicName)}</div>` : ''}
       </div>
 
       ${p.coverImage ? `
@@ -505,9 +505,19 @@ async function loadSinglePost() {
 
     container.innerHTML = html;
 
-    // T\u0103ng l\u01b0\u1ee3t xem ng\u1ea7m sau khi \u0111\u00e3 hi\u1ec3n th\u1ecb b\u00e0i \u2014 kh\u00f4ng await, kh\u00f4ng block UI
+    // Tăng lượt xem ngầm sau khi đã hiển thị bài — không block UI.
+    // API mới trả về số chính xác; fallback +1 để tương thích bản Apps Script cũ.
     fetch(`${LANDING_CONTENT_SCRIPT_URL}?action=incrementpostviews&id=${encodeURIComponent(postId)}`)
-      .catch(() => {}); // Im l\u1eb7ng n\u1ebfu l\u1ed7i
+      .then(response => response.json())
+      .then(result => {
+        if (!result.success) return;
+        const viewCount = document.getElementById('post-view-count');
+        if (!viewCount) return;
+        const currentViews = Number(viewCount.textContent || 0);
+        const updatedViews = Number(result.views);
+        viewCount.textContent = Number.isFinite(updatedViews) ? updatedViews : currentViews + 1;
+      })
+      .catch(() => {}); // Im lặng nếu lỗi; bài viết vẫn hiển thị bình thường
 
     // Lưu bài viết hiện tại vào lịch sử đã xem
     try {
