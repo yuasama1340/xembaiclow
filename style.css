@@ -512,8 +512,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .pricing-slider-wrap {
   position: relative;
   z-index: 1;
-  margin-bottom: 32px;
-  padding: 12px 0 24px;
+  margin-bottom: 0;
+  padding: 12px 0 8px;
 }
 
 /* Gradient fade 2 bên — chỉ hiện khi có 4+ gói */
@@ -658,7 +658,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   min-height: 22px;
 }
 
-.pricing-dots:not(.is-visible) { opacity: 0; pointer-events: none; }
+.pricing-dots:not(.is-visible) { display: none; }
 
 .pricing-dot {
   width: 8px;
@@ -733,6 +733,23 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .extra-icon { font-size: 2rem; }
 .extra-text { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; }
 .gold { color: var(--gold); font-weight: 700; }
+
+.extra-fee.pricing-extra-fee {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 20px;
+}
+.pricing-extra-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.pricing-extra-divider { width: 100%; height: 1px; background: rgba(255,255,255,0.08); }
+.pricing-extra-fee .extra-icon { font-size: 1.4rem; line-height: 1; text-align: center; }
+.pricing-extra-fee .extra-text { font-size: .9rem; line-height: 1.45; }
 
 /* FLEXIBLE 3-IN-1 */
 .flexible-3in1 {
@@ -1362,6 +1379,10 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .toggle-btn { flex: 1; padding: 12px 10px; font-size: .9rem; letter-spacing: 0; border-radius: 14px; }
   .extra-fee { align-items: flex-start; padding: 18px; gap: 14px; }
   .extra-text { font-size: .95rem; }
+  .extra-fee.pricing-extra-fee { padding: 13px 15px; gap: 9px; }
+  .pricing-extra-row { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; align-items: start; }
+  .pricing-extra-fee .extra-icon { font-size: 1.2rem; margin-top: 2px; }
+  .pricing-extra-fee .extra-text { font-size: .88rem; line-height: 1.4; }
   .solution-banner, .offer-card, .contact-form { padding: 26px 18px; border-radius: 18px; }
   .magic-circle { width: 130px; height: 130px; }
   .magic-center-logo { width: 136px; height: 136px; }
