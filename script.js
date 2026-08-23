@@ -46,6 +46,7 @@ const runtimeConfig = {
 };
 
 let dynamicPackages = [];
+let dynamicAnnualPackages = [];
 let pricingMode = 'online'; // 'online' | 'offline'
 let pricingCurrent = 0;
 const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_v4_navigation';
@@ -207,6 +208,7 @@ function applyLandingPayload(data) {
   data.items.forEach(applyFeedbackImageItem);
   data.items.forEach(applyLandingContentItem);
   if (Array.isArray(data.packages) && data.packages.length) applyDynamicPackages(data.packages);
+  if (Array.isArray(data.annualPackages) && data.annualPackages.length) applyDynamicAnnualPackages(data.annualPackages);
   if (Array.isArray(data.navigation) && data.navigation.length) {
     writeNavigationMenuCache(data.navigation);
     applyNavigationMenu(data.navigation);
@@ -240,6 +242,7 @@ async function loadLandingContent() {
     writeLandingContentCache(data);
     applyLandingPayload(data);
     if (!Array.isArray(data.packages) || !data.packages.length) await loadDynamicPackages();
+    if (!Array.isArray(data.annualPackages) || !data.annualPackages.length) await loadDynamicAnnualPackages();
   } catch (error) {
     console.warn('Không thể nạp nội dung landing page từ Google Sheet:', error);
   } finally {
@@ -288,6 +291,19 @@ async function loadDynamicPackages() {
   }
 }
 
+async function loadDynamicAnnualPackages() {
+  if (!LANDING_CONTENT_SCRIPT_URL || LANDING_CONTENT_SCRIPT_URL.includes('THAY_URL')) return;
+  try {
+    const params = new URLSearchParams({ action: 'listPublicAnnualPackages', fresh: '1', t: String(Date.now()) });
+    const res = await fetch(`${LANDING_CONTENT_SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.packages) || !data.packages.length) return;
+    applyDynamicAnnualPackages(data.packages);
+  } catch (error) {
+    console.warn('Không thể nạp bảng giá định hướng 1 năm:', error);
+  }
+}
+
 function applyDynamicPackages(packages) {
   dynamicPackages = packages
     .filter(pkg => pkg.enabled !== false)
@@ -299,6 +315,16 @@ function applyDynamicPackages(packages) {
   updatePackageOptions();
   // Detect overflow sau khi DOM render xong
   setTimeout(() => updateSliderElements(), 120);
+}
+
+function applyDynamicAnnualPackages(packages) {
+  dynamicAnnualPackages = packages
+    .filter(pkg => pkg.enabled !== false)
+    .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  if (!dynamicAnnualPackages.length) return;
+  renderDynamicAnnualPricing();
+  renderDynamicPackageOptions();
+  updatePackageOptions();
 }
 
 function renderDynamicPricing() {
@@ -341,11 +367,40 @@ function renderDynamicPricing() {
   track.innerHTML = cardHtml.join('');
 }
 
+function renderDynamicAnnualPricing() {
+  const grid = document.getElementById('annual-pricing-grid');
+  if (!grid || !dynamicAnnualPackages.length) return;
+
+  grid.innerHTML = dynamicAnnualPackages.map(pkg => {
+    const price = Number(pkg.onlinePrice || 0);
+    const isFeatured = pkg.featured === true || String(pkg.featured).toUpperCase() === 'TRUE';
+    const features = packageFeatures(pkg);
+    return `
+      <article class="price-card annual-price-card${isFeatured ? ' price-featured' : ''}" data-package-code="${escapeHtml(pkg.code)}">
+        ${pkg.badge ? `<div class="price-popular">${escapeHtml(pkg.badge)}</div>` : ''}
+        <div class="price-card-header">
+          <div class="price-tier">${escapeHtml(pkg.name)}</div>
+          <div class="price-tag">
+            <span class="price-amount">${escapeHtml(formatPackageMoney(price, true))}</span>
+            <span class="price-unit">${escapeHtml(pkg.unit || '/gói')}</span>
+          </div>
+          <div class="price-time">⊙ ${escapeHtml(pkg.duration || 'Định hướng 1 năm')}</div>
+        </div>
+        <ul class="price-features">
+          ${features.map(feature => `<li>✦ ${escapeHtml(feature.replace(/^✦\s*/, ''))}</li>`).join('')}
+        </ul>
+        ${pkg.note ? `<div class="price-note">${escapeHtml(pkg.note)}</div>` : ''}
+        <a href="#contact" class="btn-price${isFeatured ? ' btn-price-featured' : ''}" data-booking-package="${escapeHtml(pkg.code)}" data-booking-mode="online">${escapeHtml(pkg.button || 'Đặt Lịch Ngay')}</a>
+      </article>
+    `;
+  }).join('');
+}
+
 function renderDynamicPackageOptions() {
   const packageSelect = document.getElementById('package');
-  if (!packageSelect || !dynamicPackages.length) return;
+  if (!packageSelect || (!dynamicPackages.length && !dynamicAnnualPackages.length)) return;
 
-  const groups = ['online', 'offline'].map(mode => {
+  const standardGroups = ['online', 'offline'].map(mode => {
     const options = dynamicPackages
       .filter(pkg => Number(mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice) > 0)
       .map(pkg => {
@@ -357,7 +412,16 @@ function renderDynamicPackageOptions() {
     return `<optgroup label="${mode === 'online' ? 'Online' : 'Offline'}">${options}</optgroup>`;
   }).join('');
 
-  packageSelect.innerHTML = `<option value="">-- Chọn hình thức trước --</option>${groups}`;
+  const annualOptions = dynamicAnnualPackages
+    .filter(pkg => Number(pkg.onlinePrice || 0) > 0)
+    .map(pkg => {
+      const text = `${pkg.name} – ${formatPackageMoney(pkg.onlinePrice, true)} / ${pkg.duration || 'gói'}`;
+      return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${Number(pkg.onlinePrice) || 0}" data-booking-note="${escapeHtml(pkg.bookingNote || '')}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
+    })
+    .join('');
+  const annualGroup = annualOptions ? `<optgroup label="Online · Định hướng 1 năm">${annualOptions}</optgroup>` : '';
+
+  packageSelect.innerHTML = `<option value="">-- Chọn hình thức trước --</option>${standardGroups}${annualGroup}`;
 }
 
 // ============================================================
@@ -453,6 +517,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const button = event.target.closest('[data-booking-package]');
     if (!button) return;
     chooseBookingPackage(button.dataset.bookingPackage, button.dataset.bookingMode || pricingMode || 'online');
+  });
+  document.getElementById('annual-pricing-grid')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-booking-package]');
+    if (!button) return;
+    chooseBookingPackage(button.dataset.bookingPackage, button.dataset.bookingMode || 'online');
   });
 });
 
@@ -625,8 +694,8 @@ function updateSliderElements() {
   const cards = track.querySelectorAll(`.pricing-${pricingMode}-card`);
   const total = cards.length;
   
-  // Tự động detect cần scroll không (nếu số gói > 3 hoặc màn hình hẹp)
-  const needsScroll = total > 3 || (track.scrollWidth > track.clientWidth + 10);
+  // Desktop hiển thị trọn 4 gói; chỉ bật slider khi có từ 5 gói hoặc màn hình hẹp.
+  const needsScroll = total > 4 || (track.scrollWidth > track.clientWidth + 10);
   track.classList.toggle('is-scrollable', needsScroll);
   if (wrap) wrap.classList.toggle('has-overflow', needsScroll);
   if (prev) prev.style.display = needsScroll ? '' : 'none';

@@ -4,12 +4,13 @@
 // Booking/thanh toan van giu Code.gs rieng cua landing page.
 // ============================================================
 
-const SCRIPT_VERSION = 'clowcat-admin-content-2026-07-15-package-booking-note-v1';
+const SCRIPT_VERSION = 'clowcat-admin-content-2026-08-23-annual-pricing-v1';
 const SPREADSHEET_ID = '1trJt0MvdNBCx1y_oOiRxsugWF7_x0VY5Fh8T53e9IbA';
 
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const PACKAGES_SHEET_NAME = 'Packages';
+const ANNUAL_PACKAGES_SHEET_NAME = 'Annual Packages';
 const AUDIT_LOG_SHEET_NAME = 'Audit log';
 const FEEDBACK_DRIVE_FOLDER = 'ClowCat Patronus/Testimonials';
 const ADMIN_DEFAULT_USERNAME = 'admin';
@@ -33,6 +34,7 @@ const AUTO_BACKUP_HANDLER = 'runScheduledBackup';
 const BACKUP_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const PUBLIC_CACHE_KEY = 'clowcat_public_landing_payload_v8';
 const PUBLIC_PACKAGES_CACHE_KEY = 'clowcat_public_packages_v8';
+const PUBLIC_ANNUAL_PACKAGES_CACHE_KEY = 'clowcat_public_annual_packages_v1';
 const PUBLIC_CACHE_SECTIONS_KEY = 'clowcat_public_custom_sections_v2';
 const PUBLIC_CACHE_SECONDS = 7200; // 2 tiếng — blog ít thay đổi, cache lâu để giảm số lần đọc Sheet
 
@@ -66,6 +68,7 @@ const SPECIAL_3IN1_BOOKING_NOTE = 'Bạn vui lòng điền thêm dưới phần 
 const RESTORABLE_SHEET_NAMES = [
   LANDING_CONTENT_SHEET_NAME,
   PACKAGES_SHEET_NAME,
+  ANNUAL_PACKAGES_SHEET_NAME,
   NAVIGATION_MENU_SHEET_NAME,
   SECTION_ORDER_SHEET_NAME,
   CUSTOM_SECTIONS_SHEET_NAME,
@@ -79,6 +82,9 @@ const AUDITED_ACTION_TYPES = {
   savepackage: 'package',
   deletepackage: 'package',
   reorderpackages: 'package',
+  saveannualpackage: 'annual-package',
+  deleteannualpackage: 'annual-package',
+  reorderannualpackages: 'annual-package',
   uploadfeedbackimage: 'feedback',
   deletefeedbackimage: 'feedback',
   savecustomsection: 'section',
@@ -118,6 +124,17 @@ function buildDefaultPackageRows() {
     pkg(true, 'toan-dien', 'Gói Toàn Diện', 500000, 550000, '/buổi', 'star', 'teal', false, '', '60 phút',
       'Đa chủ đề không giới hạn\nPhân tích bài Clow chuyên sâu\nLời khuyên thực tế ngay lập tức\nThông điệp chữa lành\nTặng kèm file PDF tóm tắt buổi tư vấn',
       'Dành cho những tâm hồn cần một buổi trị liệu và định hướng tổng thể.', '', 'Đặt Lịch Ngay', 3)
+  ];
+}
+
+function buildDefaultAnnualPackageRows() {
+  return [
+    pkg(true, 'dinh-huong-1-nam-3-cong-cu', 'Dịch vụ tư vấn 3 trong 1 định hướng 1 năm', 1800000, 0, '/gói', 'compass', 'gold', true, '✦ Kết hợp 3 công cụ', 'Định hướng 1 năm',
+      'Kết hợp Bài Clow, Bản đồ sao Mặt Trời hồi vị và Nhân số học năm cá nhân\nXem tổng quan 12 khía cạnh quan trọng trong cuộc sống\nLộ trình định hướng và các giai đoạn nổi bật trong 12 tháng',
+      'Gói chuyên sâu giúp bạn nhìn một năm mới qua ba hệ quy chiếu bổ trợ cho nhau.', SPECIAL_3IN1_BOOKING_NOTE, 'Đặt Lịch Ngay', 1),
+    pkg(true, 'dinh-huong-1-nam-clow-2-trai', 'Dịch vụ tư vấn định hướng 1 năm bài Clow 2 trải bài', 1000000, 0, '/gói', 'cards', 'purple', false, '', '2 trải bài',
+      'Trải bài Clow Zodiacs xem 12 khía cạnh trong cuộc sống\nTrải bài Clow lộ trình 12 tháng\nTổng quan sự kiện từng tháng và các giai đoạn quan trọng trong năm',
+      'Phù hợp khi bạn muốn tập trung vào thông điệp và lộ trình một năm bằng bài Clow.', '', 'Đặt Lịch Ngay', 2)
   ];
 }
 
@@ -200,6 +217,10 @@ function buildDefaultLandingContentRows() {
     lc(true, 'pricing.package.offline.1', 'Bảng giá', 'Form - lựa chọn offline gói 1', '#pkg-offline-discovery', 'text', '', 'Gói Khám Phá – 300k / 30 phút'),
     lc(true, 'pricing.package.offline.2', 'Bảng giá', 'Form - lựa chọn offline gói 2', '#pkg-offline-connect', 'text', '', 'Gói Kết Nối – 400k / 45 phút'),
     lc(true, 'pricing.package.offline.3', 'Bảng giá', 'Form - lựa chọn offline gói 3', '#pkg-offline-full', 'text', '', 'Gói Toàn Diện – 550k / 60 phút'),
+
+    lc(true, 'annualPricing.label', 'Bảng giá định hướng 1 năm', 'Nhãn section', '#annual-pricing .section-label', 'text', '', 'Bảng giá tư vấn định hướng 1 năm'),
+    lc(true, 'annualPricing.title', 'Bảng giá định hướng 1 năm', 'Tiêu đề section', '#annual-pricing .annual-pricing-title', 'html', '', 'Chọn Lộ Trình <em>Đồng Hành Cùng Bạn Suốt Một Năm</em>'),
+    lc(true, 'annualPricing.intro', 'Bảng giá định hướng 1 năm', 'Mô tả section', '#annual-pricing .annual-pricing-intro', 'text', '', 'Hai lựa chọn chuyên sâu giúp bạn nhìn rõ các chủ đề quan trọng, nhịp chuyển động và lộ trình hành động trong 12 tháng sắp tới.'),
 
     lc(true, 'flexible.label', 'Gói 3 trong 1', 'Nhãn section', '#flexible-3in1 .section-label', 'text', '', 'Gói tư vấn linh hoạt 3 trong 1'),
     lc(true, 'flexible.title', 'Gói 3 trong 1', 'Tiêu đề section', '#flexible-3in1 .section-title', 'html', '', 'Một Buổi Tư Vấn, <em>Ba Lăng Kính Soi Chiếu</em>'),
@@ -333,6 +354,9 @@ function doGet(e) {
       case 'listpublicpackages':
       case 'getpackages':
         return handleListPublicPackages(params);
+      case 'listpublicannualpackages':
+      case 'getannualpackages':
+        return handleListPublicAnnualPackages(params);
       case 'getcustomsections':
         return handleGetPublicCustomSections();
       case 'getclowtopics':
@@ -360,6 +384,14 @@ function doGet(e) {
       case 'admindeletepackage':
       case 'reorderpackages':
       case 'adminreorderpackages':
+      case 'listannualpackages':
+      case 'adminlistannualpackages':
+      case 'saveannualpackage':
+      case 'adminsaveannualpackage':
+      case 'deleteannualpackage':
+      case 'admindeleteannualpackage':
+      case 'reorderannualpackages':
+      case 'adminreorderannualpackages':
       case 'listcustomsections':
       case 'adminlistcustomsections':
       case 'savecustomsection':
@@ -440,6 +472,18 @@ function dispatchPostAction(action, params) {
     case 'reorderpackages':
     case 'adminreorderpackages':
       return handleReorderPackages(params);
+    case 'listannualpackages':
+    case 'adminlistannualpackages':
+      return handleListAnnualPackages(params);
+    case 'saveannualpackage':
+    case 'adminsaveannualpackage':
+      return handleSaveAnnualPackage(params);
+    case 'deleteannualpackage':
+    case 'admindeleteannualpackage':
+      return handleDeleteAnnualPackage(params);
+    case 'reorderannualpackages':
+    case 'adminreorderannualpackages':
+      return handleReorderAnnualPackages(params);
     case 'uploadfeedbackimage':
     case 'adminuploadfeedbackimage':
       return handleUploadFeedbackImage(params);
@@ -525,10 +569,11 @@ function getSheetIfExists(name) {
 
 function publicCacheGroups() {
   return {
-    all: [PUBLIC_CACHE_KEY, PUBLIC_PACKAGES_CACHE_KEY, PUBLIC_CACHE_SECTIONS_KEY, PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
+    all: [PUBLIC_CACHE_KEY, PUBLIC_PACKAGES_CACHE_KEY, PUBLIC_ANNUAL_PACKAGES_CACHE_KEY, PUBLIC_CACHE_SECTIONS_KEY, PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
     landing: [PUBLIC_CACHE_KEY],
     content: [PUBLIC_CACHE_KEY],
     packages: [PUBLIC_CACHE_KEY, PUBLIC_PACKAGES_CACHE_KEY],
+    annualPackages: [PUBLIC_CACHE_KEY, PUBLIC_ANNUAL_PACKAGES_CACHE_KEY],
     sections: [PUBLIC_CACHE_KEY, PUBLIC_CACHE_SECTIONS_KEY],
     navigation: [PUBLIC_CACHE_KEY],
     blog: [PUBLIC_CLOW_TOPICS_CACHE_KEY, PUBLIC_CLOW_POSTS_CACHE_KEY],
@@ -637,6 +682,7 @@ function expectedSheetContracts() {
   return [
     { name: LANDING_CONTENT_SHEET_NAME, headers: CONTENT_HEADERS },
     { name: PACKAGES_SHEET_NAME, headers: PACKAGE_HEADERS },
+    { name: ANNUAL_PACKAGES_SHEET_NAME, headers: PACKAGE_HEADERS },
     { name: NAVIGATION_MENU_SHEET_NAME, headers: NAVIGATION_MENU_HEADERS },
     { name: SECTION_ORDER_SHEET_NAME, headers: SECTION_ORDER_HEADERS },
     { name: CUSTOM_SECTIONS_SHEET_NAME, headers: CUSTOM_SECTIONS_HEADERS },
@@ -841,6 +887,29 @@ function ensurePackagesSheet(options) {
   return sheet;
 }
 
+function ensureAnnualPackagesSheet(options) {
+  options = options || {};
+  const sheet = getOrCreateSheet(ANNUAL_PACKAGES_SHEET_NAME, PACKAGE_HEADERS);
+  const map = getColumnMap(sheet);
+  let changed = false;
+
+  PACKAGE_HEADERS.forEach(header => {
+    if (!map[header]) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+      changed = true;
+    }
+  });
+
+  if (sheet.getLastRow() < 2) {
+    const rows = buildDefaultAnnualPackageRows();
+    sheet.getRange(2, 1, rows.length, PACKAGE_HEADERS.length).setValues(rows);
+    changed = true;
+  }
+
+  if (options.format !== false || changed) formatPackagesSheet(sheet);
+  return sheet;
+}
+
 function initializeLandingContentSheet() {
   const sheet = getOrCreateSheet(LANDING_CONTENT_SHEET_NAME, CONTENT_HEADERS);
   sheet.clear();
@@ -980,6 +1049,22 @@ function readPackageRows(includeDisabled, options) {
     .sort((a, b) => (a.order || 999) - (b.order || 999));
 }
 
+function readAnnualPackageRows(includeDisabled, options) {
+  options = options || {};
+  const sheet = options.ensure === false
+    ? getSheetIfExists(ANNUAL_PACKAGES_SHEET_NAME)
+    : ensureAnnualPackagesSheet({ format: options.format !== false });
+  if (!sheet) return [];
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  return sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues()
+    .map((row, index) => packageFromRow(row, map, index + 2))
+    .filter(item => includeDisabled || item.enabled)
+    .sort((a, b) => (a.order || 999) - (b.order || 999));
+}
+
 function readContentRows(includeDisabled, options) {
   options = options || {};
   const sheet = options.ensure === false
@@ -1015,6 +1100,7 @@ function buildPublicLandingPayload() {
     generatedAt: new Date().toISOString(),
     items: readContentRows(false, { sync: false }),
     packages: readPackageRows(false, { format: false }),
+    annualPackages: readAnnualPackageRows(false, { format: false }),
     customSections: readCustomSectionRows(false),
     sectionOrder: readSectionOrder(),
     navigation: readNavigationMenu(false)
@@ -1039,6 +1125,12 @@ function handleGetLandingContent(params) {
       scriptVersion: payload.scriptVersion,
       generatedAt: payload.generatedAt,
       packages: payload.packages
+    }), PUBLIC_CACHE_SECONDS);
+    safeCachePut(PUBLIC_ANNUAL_PACKAGES_CACHE_KEY, JSON.stringify({
+      success: true,
+      scriptVersion: payload.scriptVersion,
+      generatedAt: payload.generatedAt,
+      packages: payload.annualPackages
     }), PUBLIC_CACHE_SECONDS);
   }
   return json(payload);
@@ -1110,6 +1202,7 @@ function handleAdminInit(params) {
     user: session,
     items: readContentRows(true),
     packages: readPackageRows(true),
+    annualPackages: readAnnualPackageRows(true),
     customSectionsCount: getCustomSectionsCount(),
     clowPostsCount: getClowPostsCount()
   });
@@ -1264,8 +1357,45 @@ function handleListPackages(params) {
   return json({ success: true, scriptVersion: SCRIPT_VERSION, packages: readPackageRows(true, { format: false }) });
 }
 
+function handleListPublicAnnualPackages(params) {
+  const bypassCache = shouldBypassPublicCache(params);
+  const cache = CacheService.getScriptCache();
+  const cached = bypassCache ? null : cache.get(PUBLIC_ANNUAL_PACKAGES_CACHE_KEY);
+  if (cached) return json(JSON.parse(cached));
+
+  const payload = {
+    success: true,
+    scriptVersion: SCRIPT_VERSION,
+    generatedAt: new Date().toISOString(),
+    packages: readAnnualPackageRows(false, { format: false })
+  };
+  if (!bypassCache) safeCachePut(PUBLIC_ANNUAL_PACKAGES_CACHE_KEY, JSON.stringify(payload), PUBLIC_CACHE_SECONDS);
+  return json(payload);
+}
+
+function handleListAnnualPackages(params) {
+  requireSession(params, ['admin', 'editor']);
+  return json({ success: true, scriptVersion: SCRIPT_VERSION, packages: readAnnualPackageRows(true, { format: false }) });
+}
+
 function findPackageRow(code) {
   const sheet = ensurePackagesSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const codes = sheet.getRange(2, map['Ma goi'], lastRow - 1, 1).getValues().flat();
+  const target = String(code || '').trim().toLowerCase();
+  for (let i = 0; i < codes.length; i++) {
+    if (String(codes[i] || '').trim().toLowerCase() === target) {
+      return { sheet, map, row: i + 2 };
+    }
+  }
+  return null;
+}
+
+function findAnnualPackageRow(code) {
+  const sheet = ensureAnnualPackagesSheet();
   const map = getColumnMap(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
@@ -1400,6 +1530,82 @@ function handleReorderPackages(params) {
     sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
   });
   clearPublicCache('packages');
+  return json({ success: true, updatedAt: now, updatedBy: session.username });
+}
+
+function handleSaveAnnualPackage(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const item = packagePayload(params);
+  if (!item.name) throw new Error('Thiếu tên gói.');
+  if (!item.onlinePrice) throw new Error('Cần nhập giá gói định hướng 1 năm.');
+
+  const found = findAnnualPackageRow(item.code);
+  const sheet = found ? found.sheet : ensureAnnualPackagesSheet();
+  const map = getColumnMap(sheet);
+  const row = found ? found.row : sheet.getLastRow() + 1;
+  const now = new Date();
+
+  sheet.getRange(row, map.Bat).setValue(item.enabled);
+  sheet.getRange(row, map['Ma goi']).setValue(item.code);
+  sheet.getRange(row, map['Ten goi']).setValue(item.name);
+  sheet.getRange(row, map['Gia online']).setValue(item.onlinePrice);
+  sheet.getRange(row, map['Gia offline']).setValue(0);
+  sheet.getRange(row, map['Don vi']).setValue(item.unit || '/gói');
+  sheet.getRange(row, map.Icon).setValue(item.icon);
+  sheet.getRange(row, map['Mau nhan']).setValue(item.accent);
+  sheet.getRange(row, map['Noi bat']).setValue(item.featured);
+  sheet.getRange(row, map.Badge).setValue(item.badge);
+  sheet.getRange(row, map['Thoi luong']).setValue(item.duration);
+  sheet.getRange(row, map['Quyen loi']).setValue(item.features);
+  sheet.getRange(row, map['Ghi chu']).setValue(item.note);
+  sheet.getRange(row, map['Luu y dat lich']).setValue(item.bookingNote);
+  sheet.getRange(row, map.Nut).setValue(item.button);
+  sheet.getRange(row, map['Thu tu']).setValue(item.order);
+  sheet.getRange(row, map['Cap nhat luc']).setValue(now);
+  sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
+  formatPackagesSheet(sheet);
+  clearPublicCache('annualPackages');
+
+  return json({ success: true, package: item, updatedAt: now, updatedBy: session.username });
+}
+
+function handleDeleteAnnualPackage(params) {
+  requireSession(params, ['admin', 'editor']);
+  const code = String(params.code || '').trim();
+  const found = findAnnualPackageRow(code);
+  if (!found) throw new Error('Không tìm thấy gói: ' + code);
+  found.sheet.deleteRow(found.row);
+  clearPublicCache('annualPackages');
+  return json({ success: true });
+}
+
+function handleReorderAnnualPackages(params) {
+  const session = requireSession(params, ['admin', 'editor']);
+  const codes = String(params.codes || '')
+    .split(',')
+    .map(code => normalizePackageCode(code))
+    .filter(Boolean);
+  if (!codes.length) throw new Error('Thiếu thứ tự gói.');
+
+  const sheet = ensureAnnualPackagesSheet();
+  const map = getColumnMap(sheet);
+  const lastRow = sheet.getLastRow();
+  const rowByCode = {};
+  if (lastRow >= 2) {
+    sheet.getRange(2, map['Ma goi'], lastRow - 1, 1).getValues().flat().forEach((code, index) => {
+      rowByCode[normalizePackageCode(code)] = index + 2;
+    });
+  }
+
+  const now = new Date();
+  codes.forEach((code, index) => {
+    const row = rowByCode[code];
+    if (!row) return;
+    sheet.getRange(row, map['Thu tu']).setValue(index + 1);
+    sheet.getRange(row, map['Cap nhat luc']).setValue(now);
+    sheet.getRange(row, map['Cap nhat boi']).setValue(session.username);
+  });
+  clearPublicCache('annualPackages');
   return json({ success: true, updatedAt: now, updatedBy: session.username });
 }
 

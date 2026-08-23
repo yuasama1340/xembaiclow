@@ -14,6 +14,7 @@ const state = {
   user:  storedSession.user  || null,
   items: [],
   packages: [],
+  annualPackages: [],
   activeSection: '',
   pending:   new Map(),
   originals: new Map(),
@@ -58,6 +59,11 @@ function packageOptionText(pkg, mode) {
 function isPricingSection(section) {
   const raw = String(section || '').toLowerCase();
   return raw.includes('bảng giá') || raw.includes('bang gia');
+}
+
+function isAnnualPricingSection(section) {
+  const raw = String(section || '').toLowerCase();
+  return raw.includes('định hướng 1 năm') || raw.includes('dinh huong 1 nam') || raw.includes('annual pricing');
 }
 
 function isFeedbackSection(section) {
@@ -368,8 +374,14 @@ function renderContent() {
   const panel = document.createElement('section');
   panel.className = 'section-panel';
 
+  if (isAnnualPricingSection(state.activeSection)) {
+    renderPackagesPanel(panel, 'annual');
+    board.appendChild(panel);
+    return;
+  }
+
   if (isPricingSection(state.activeSection)) {
-    renderPackagesPanel(panel);
+    renderPackagesPanel(panel, 'standard');
     board.appendChild(panel);
     return;
   }
@@ -401,16 +413,21 @@ function renderContent() {
 // ============================================================
 // PACKAGES — dynamic pricing manager
 // ============================================================
-function renderPackagesPanel(panel) {
+function packageCollection(kind = 'standard') {
+  return kind === 'annual' ? state.annualPackages : state.packages;
+}
+
+function renderPackagesPanel(panel, kind = 'standard') {
   const canEdit = ['admin', 'editor'].includes(state.user?.role);
-  const sortedPackages = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  const isAnnual = kind === 'annual';
+  const sortedPackages = [...packageCollection(kind)].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   const enabledCount = sortedPackages.filter(pkg => pkg.enabled).length;
 
   panel.innerHTML = `
     <div class="section-heading">
       <div>
-        <div class="eyebrow">Bảng giá động</div>
-        <h2>Quản lý gói tư vấn</h2>
+        <div class="eyebrow">${isAnnual ? 'Bảng giá riêng' : 'Bảng giá động'}</div>
+        <h2>${isAnnual ? 'Tư vấn định hướng 1 năm' : 'Quản lý gói tư vấn'}</h2>
       </div>
       <div class="topbar-actions">
         <div class="pkg-stats-mini">
@@ -427,7 +444,7 @@ function renderPackagesPanel(panel) {
     </div>
     <div class="pkg-inline-hint">
       <i class="fa-solid fa-wand-magic-sparkles"></i>
-      <span>Kéo thả để đổi thứ tự. Gói đang bật sẽ tự hiển thị trên bảng giá landing page và dropdown đặt lịch.</span>
+      <span>${isAnnual ? 'Nhóm này hiển thị riêng bên dưới bảng giá chính và vẫn được thêm vào form đặt lịch.' : 'Kéo thả để đổi thứ tự. Gói đang bật sẽ tự hiển thị trên bảng giá landing page và dropdown đặt lịch.'}</span>
     </div>
     <div class="packages-grid-inline" id="packages-grid-inline"></div>
   `;
@@ -441,14 +458,14 @@ function renderPackagesPanel(panel) {
       </div>
     `;
   } else {
-    sortedPackages.forEach((pkg, index) => grid.appendChild(createPackageCard(pkg, index, sortedPackages.length, canEdit)));
+    sortedPackages.forEach((pkg, index) => grid.appendChild(createPackageCard(pkg, index, sortedPackages.length, canEdit, kind)));
   }
 
-  $('.js-add-package', panel).addEventListener('click', () => openPackageModal());
-  $('.js-save-package-order', panel).addEventListener('click', event => withButtonPending(event.currentTarget, savePackageOrder));
+  $('.js-add-package', panel).addEventListener('click', () => openPackageModal(null, kind));
+  $('.js-save-package-order', panel).addEventListener('click', event => withButtonPending(event.currentTarget, () => savePackageOrder(kind)));
 }
 
-function createPackageCard(pkg, index, total, canEdit) {
+function createPackageCard(pkg, index, total, canEdit, kind = 'standard') {
   const card = document.createElement('article');
   card.className = `pkg-card${pkg.enabled ? '' : ' pkg-card--off'}`;
   card.dataset.code = pkg.code;
@@ -477,8 +494,8 @@ function createPackageCard(pkg, index, total, canEdit) {
       <span class="pkg-order-badge">#${index + 1}</span>
     </div>
     <div class="pkg-prices">
-      <span class="pkg-price pkg-price--online">Online ${formatMoney(pkg.onlinePrice)}</span>
-      <span class="pkg-price pkg-price--offline">Offline ${formatMoney(pkg.offlinePrice)}</span>
+      <span class="pkg-price pkg-price--online">${kind === 'annual' ? 'Giá gói' : 'Online'} ${formatMoney(pkg.onlinePrice)}</span>
+      ${kind === 'annual' ? '' : `<span class="pkg-price pkg-price--offline">Offline ${formatMoney(pkg.offlinePrice)}</span>`}
       ${pkg.duration ? `<span class="pkg-duration-badge">${escHtml(pkg.duration)}</span>` : ''}
       <span class="pkg-badge-color badge-${escAttr(accent)}">${escHtml(accent)}</span>
     </div>
@@ -502,10 +519,10 @@ function createPackageCard(pkg, index, total, canEdit) {
     </div>
   `;
 
-  $('.pkg-edit-btn', card).addEventListener('click', () => openPackageModal(pkg));
-  $('.pkg-delete-btn', card).addEventListener('click', () => deletePackage(pkg.code));
-  $('.pkg-move-up', card).addEventListener('click', () => movePackage(pkg.code, -1));
-  $('.pkg-move-down', card).addEventListener('click', () => movePackage(pkg.code, 1));
+  $('.pkg-edit-btn', card).addEventListener('click', () => openPackageModal(pkg, kind));
+  $('.pkg-delete-btn', card).addEventListener('click', () => deletePackage(pkg.code, kind));
+  $('.pkg-move-up', card).addEventListener('click', () => movePackage(pkg.code, -1, kind));
+  $('.pkg-move-down', card).addEventListener('click', () => movePackage(pkg.code, 1, kind));
 
   card.addEventListener('dragstart', event => {
     if (!canEdit) return;
@@ -528,57 +545,59 @@ function createPackageCard(pkg, index, total, canEdit) {
     event.preventDefault();
     card.classList.remove('pkg-drag-over');
     if (!state.draggingPackage || state.draggingPackage === pkg.code) return;
-    placePackageBefore(state.draggingPackage, pkg.code);
+    placePackageBefore(state.draggingPackage, pkg.code, kind);
   });
 
   return card;
 }
 
-function movePackage(code, direction) {
-  const sorted = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+function movePackage(code, direction, kind = 'standard') {
+  const sorted = [...packageCollection(kind)].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   const index = sorted.findIndex(pkg => pkg.code === code);
   const nextIndex = index + direction;
   if (index < 0 || nextIndex < 0 || nextIndex >= sorted.length) return;
   [sorted[index], sorted[nextIndex]] = [sorted[nextIndex], sorted[index]];
-  applyPackageOrder(sorted);
+  applyPackageOrder(sorted, kind);
 }
 
-function placePackageBefore(dragCode, targetCode) {
-  const sorted = [...state.packages].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+function placePackageBefore(dragCode, targetCode, kind = 'standard') {
+  const sorted = [...packageCollection(kind)].sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   const dragIndex = sorted.findIndex(pkg => pkg.code === dragCode);
   const targetIndex = sorted.findIndex(pkg => pkg.code === targetCode);
   if (dragIndex < 0 || targetIndex < 0) return;
   const [dragged] = sorted.splice(dragIndex, 1);
   const insertIndex = sorted.findIndex(pkg => pkg.code === targetCode);
   sorted.splice(insertIndex, 0, dragged);
-  applyPackageOrder(sorted);
+  applyPackageOrder(sorted, kind);
 }
 
-function applyPackageOrder(sorted) {
+function applyPackageOrder(sorted, kind = 'standard') {
   sorted.forEach((pkg, index) => { pkg.order = index + 1; });
-  state.packages = sorted;
+  if (kind === 'annual') state.annualPackages = sorted;
+  else state.packages = sorted;
   renderContent();
 }
 
-function openPackageModal(pkg = null) {
+function openPackageModal(pkg = null, kind = 'standard') {
   const isEdit = Boolean(pkg);
+  const isAnnual = kind === 'annual';
   const current = pkg || {
     enabled: true,
     code: '',
     name: '',
     onlinePrice: '',
     offlinePrice: '',
-    unit: '/buổi',
+    unit: isAnnual ? '/gói' : '/buổi',
     icon: 'sparkles',
     accent: 'purple',
     featured: false,
     badge: '',
-    duration: '',
+    duration: isAnnual ? 'Định hướng 1 năm' : '',
     features: '',
     note: '',
     bookingNote: '',
     button: 'Đặt Lịch Ngay',
-    order: state.packages.length + 1,
+    order: packageCollection(kind).length + 1,
   };
 
   const overlay = document.createElement('div');
@@ -586,7 +605,7 @@ function openPackageModal(pkg = null) {
   overlay.innerHTML = `
     <div class="pkg-modal" role="dialog" aria-modal="true">
       <div class="pkg-modal-header">
-        <h2><i class="fa-solid fa-gem"></i>${isEdit ? 'Sửa gói tư vấn' : 'Thêm gói tư vấn'}</h2>
+        <h2><i class="fa-solid fa-gem"></i>${isEdit ? 'Sửa' : 'Thêm'} ${isAnnual ? 'gói định hướng 1 năm' : 'gói tư vấn'}</h2>
         <button type="button" class="pkg-modal-close" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form class="pkg-form" id="pkg-form">
@@ -601,16 +620,16 @@ function openPackageModal(pkg = null) {
             <input name="name" value="${escAttr(current.name)}" placeholder="Gói Khám Phá" required />
           </label>
           <label class="pkg-label">
-            <span>Giá online</span>
+            <span>${isAnnual ? 'Giá gói' : 'Giá online'}</span>
             <input name="onlinePrice" type="number" min="0" step="1000" value="${escAttr(current.onlinePrice)}" />
           </label>
-          <label class="pkg-label">
+          ${isAnnual ? '' : `<label class="pkg-label">
             <span>Giá offline</span>
             <input name="offlinePrice" type="number" min="0" step="1000" value="${escAttr(current.offlinePrice)}" />
-          </label>
+          </label>`}
           <label class="pkg-label">
             <span>Đơn vị</span>
-            <input name="unit" value="${escAttr(current.unit || '/buổi')}" />
+            <input name="unit" value="${escAttr(current.unit || (isAnnual ? '/gói' : '/buổi'))}" />
           </label>
           <label class="pkg-label">
             <span>Thời lượng</span>
@@ -670,19 +689,19 @@ function openPackageModal(pkg = null) {
   $('#pkg-form', overlay).addEventListener('submit', async event => {
     event.preventDefault();
     await withButtonPending($('.js-submit-package', overlay), async () => {
-      await savePackageFromForm(new FormData(event.target), current.order);
+      await savePackageFromForm(new FormData(event.target), current.order, kind);
       close();
     });
   });
 }
 
-async function savePackageFromForm(formData, order) {
+async function savePackageFromForm(formData, order, kind = 'standard') {
   try {
     const params = {
       code: formData.get('code'),
       name: formData.get('name'),
       onlinePrice: formData.get('onlinePrice'),
-      offlinePrice: formData.get('offlinePrice'),
+      offlinePrice: kind === 'annual' ? 0 : formData.get('offlinePrice'),
       unit: formData.get('unit'),
       icon: formData.get('icon'),
       accent: formData.get('accent'),
@@ -696,34 +715,34 @@ async function savePackageFromForm(formData, order) {
       button: formData.get('button'),
       order,
     };
-    await api('savePackage', params);
+    await api(kind === 'annual' ? 'saveAnnualPackage' : 'savePackage', params);
     clearPublicLocalCaches();
-    await loadPackages();
+    await loadPackages(kind);
     renderContent();
-    showToast('Đã lưu gói tư vấn.');
+    showToast(kind === 'annual' ? 'Đã lưu gói định hướng 1 năm.' : 'Đã lưu gói tư vấn.');
   } catch (error) { showToast(error.message, 'error'); }
 }
 
-async function deletePackage(code) {
+async function deletePackage(code, kind = 'standard') {
   if (!confirm('Bạn muốn xoá gói này khỏi bảng giá?')) return;
   try {
-    await api('deletePackage', { code });
+    await api(kind === 'annual' ? 'deleteAnnualPackage' : 'deletePackage', { code });
     clearPublicLocalCaches();
-    await loadPackages();
+    await loadPackages(kind);
     renderContent();
     showToast('Đã xoá gói.');
   } catch (error) { showToast(error.message, 'error'); }
 }
 
-async function savePackageOrder() {
+async function savePackageOrder(kind = 'standard') {
   try {
-    const codes = [...state.packages]
+    const codes = [...packageCollection(kind)]
       .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999))
       .map(pkg => pkg.code)
       .join(',');
-    await api('reorderPackages', { codes });
+    await api(kind === 'annual' ? 'reorderAnnualPackages' : 'reorderPackages', { codes });
     clearPublicLocalCaches();
-    await loadPackages();
+    await loadPackages(kind);
     renderContent();
     showToast('Đã lưu thứ tự bảng giá.');
   } catch (error) { showToast(error.message, 'error'); }
@@ -905,9 +924,11 @@ async function deleteFeedbackImage(slot) {
 // ============================================================
 // LOAD / SAVE CONTENT
 // ============================================================
-async function loadPackages() {
-  const data = await api('listPackages');
-  state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+async function loadPackages(kind = 'standard') {
+  const data = await api(kind === 'annual' ? 'listAnnualPackages' : 'listPackages');
+  const packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  if (kind === 'annual') state.annualPackages = packages;
+  else state.packages = packages;
 }
 
 async function loadContent() {
@@ -924,6 +945,7 @@ async function loadContent() {
   state.pending.clear();
   
   state.packages = (data.packages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
+  state.annualPackages = (data.annualPackages || []).sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999));
   
   state.customSectionsCount = data.customSectionsCount || 0;
   state.clowPostsCount = data.clowPostsCount || 0;

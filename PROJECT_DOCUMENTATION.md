@@ -74,6 +74,7 @@ Các tab cần có:
 ```text
 Landing content
 Packages
+Annual Packages
 Navigation Menu
 Section Order
 Custom Sections
@@ -90,6 +91,9 @@ Landing content:
 Bat | Khoa | Section | Mo ta | Selector | Kieu | Thuoc tinh | Noi dung | Cap nhat luc | Cap nhat boi
 
 Packages:
+Bat | Ma goi | Ten goi | Gia online | Gia offline | Don vi | Icon | Mau nhan | Noi bat | Badge | Thoi luong | Quyen loi | Ghi chu | Luu y dat lich | Nut | Thu tu | Cap nhat luc | Cap nhat boi
+
+Annual Packages:
 Bat | Ma goi | Ten goi | Gia online | Gia offline | Don vi | Icon | Mau nhan | Noi bat | Badge | Thoi luong | Quyen loi | Ghi chu | Luu y dat lich | Nut | Thu tu | Cap nhat luc | Cap nhat boi
 
 Navigation Menu:
@@ -175,6 +179,7 @@ Public read:
 getLandingContent
 getPublicConfig
 listPublicPackages
+listPublicAnnualPackages
 getCustomSections
 getClowTopics
 getClowPosts
@@ -188,6 +193,7 @@ Admin:
 login
 listContent / saveContent
 listPackages / savePackage / deletePackage / reorderPackages
+listAnnualPackages / saveAnnualPackage / deleteAnnualPackage / reorderAnnualPackages
 listNavigationMenu / saveNavigationMenu
 listCustomSections / saveCustomSection / deleteCustomSection / reorderAllSections
 listClowTopics / saveClowTopic / deleteClowTopic / reorderClowTopics
@@ -248,6 +254,7 @@ Các nhóm chỉnh sửa chính:
 - `Thứ tự section`: bật/tắt/sắp xếp các section thật.
 - `Landing content`: sửa text/html/config của từng phần.
 - `Packages`: sửa gói tư vấn và giá online/offline.
+- `Bảng giá định hướng 1 năm`: quản lý riêng hai gói dài hạn trong sheet `Annual Packages`; các gói bật sẽ xuất hiện dưới bảng giá chính và trong form đặt lịch online.
 - `Thanh toán (SePay)` và `Thanh toán (Thủ công)`: chỉnh tài khoản nhận tiền và chế độ thanh toán.
 - `Giải Mã Clow`: quản lý chủ đề, bài viết, mã lá bài, sắp xếp.
 
