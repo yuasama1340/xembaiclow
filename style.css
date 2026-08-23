@@ -585,6 +585,19 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .price-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(107,63,160,0.3); }
 .price-featured { background: linear-gradient(135deg, rgba(45,27,94,.85), rgba(107,63,160,.35)); border-color: var(--purple-bright); box-shadow: 0 0 40px rgba(107,63,160,.35); }
 
+/* Gói được đánh dấu nổi bật sẽ trôi nhẹ như các lá bài ở hero. */
+.price-card.price-featured {
+  animation: featuredPriceFloat 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+.price-card.price-featured:nth-child(2n) { animation-delay: -3.25s; }
+.price-card.price-featured:nth-child(3n) { animation-delay: -1.625s; }
+
+@keyframes featuredPriceFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 /* Badge nổi bật — absolute ở góc trên phải */
 .price-popular {
   position: absolute;
