@@ -206,10 +206,22 @@ function renderStats() {
   $('#last-sync').textContent = lastUpdated ? formatDate(lastUpdated) : '--';
 }
 
+function orderAdminSectionEntries(groups) {
+  const entries = Object.entries(groups);
+  const pricingIndex = entries.findIndex(([section]) => isPricingSection(section) && !isAnnualPricingSection(section));
+  const annualIndex = entries.findIndex(([section]) => isAnnualPricingSection(section));
+  if (pricingIndex < 0 || annualIndex < 0 || annualIndex === pricingIndex + 1) return entries;
+
+  const [annualEntry] = entries.splice(annualIndex, 1);
+  const currentPricingIndex = entries.findIndex(([section]) => isPricingSection(section) && !isAnnualPricingSection(section));
+  entries.splice(currentPricingIndex + 1, 0, annualEntry);
+  return entries;
+}
+
 function renderSectionNav(groups) {
   const nav = $('#section-nav');
   nav.innerHTML = '';
-  Object.entries(groups).forEach(([section, items]) => {
+  orderAdminSectionEntries(groups).forEach(([section, items]) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `nav-section${section === state.activeSection && !document.getElementById('sections-panel').classList.contains('is-hidden') === false ? ' is-active' : ''}`;
