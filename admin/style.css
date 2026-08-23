@@ -1,4 +1,5 @@
 *, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 
 :root {
   --bg-dark: #0a0812;
@@ -23,6 +24,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100svh;
   overflow-x: hidden;
   font-family: 'Lora', serif;
   background: var(--bg-dark);
@@ -83,6 +85,7 @@ h1, h2, h3 { margin: 0; font-family: 'Playfair Display', serif; letter-spacing: 
    ============================================================ */
 .login-view {
   min-height: 100vh;
+  min-height: 100svh;
   display: grid;
   place-items: center;
   padding: 28px;
@@ -107,6 +110,7 @@ h1, h2, h3 { margin: 0; font-family: 'Playfair Display', serif; letter-spacing: 
    ============================================================ */
 .admin-shell {
   min-height: 100vh;
+  min-height: 100svh;
   display: grid;
   grid-template-columns: 290px minmax(0, 1fr);
 }
@@ -115,12 +119,14 @@ h1, h2, h3 { margin: 0; font-family: 'Playfair Display', serif; letter-spacing: 
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100svh;
   padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 22px;
   border-right: 1px solid var(--border);
   background: rgba(10, 8, 18, 0.8);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   overflow-y: auto;
 }
@@ -862,6 +868,7 @@ input:disabled, textarea:disabled {
   place-items: center;
   padding: 20px;
   background: rgba(5, 3, 12, 0.82);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   animation: fadeIn 0.18s ease;
 }
@@ -1321,6 +1328,7 @@ input:disabled, textarea:disabled {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.72);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
@@ -1779,6 +1787,7 @@ input:disabled, textarea:disabled {
   position: fixed;
   inset: 0;
   background: rgba(5, 2, 18, .85);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;

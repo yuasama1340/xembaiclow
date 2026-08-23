@@ -39,7 +39,7 @@ body.js-loading {
   to { opacity: 1; pointer-events: auto; }
 }
 
-html { scroll-behavior: smooth; font-size: 18px; overflow-x: hidden; }
+html { scroll-behavior: smooth; font-size: 18px; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
 a, button, .audio-btn, .float-btn, .toggle-btn { cursor: none !important; }
 body.native-cursor,
 body.native-cursor a,
@@ -57,7 +57,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 
 /* NAV */
 .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; transition: all .3s; }
-.navbar.scrolled { background: rgba(10,8,18,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--glass-border); }
+.navbar.scrolled { background: rgba(10,8,18,.92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--glass-border); }
 .nav-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
 .logo { display: inline-flex; align-items: center; text-decoration: none; }
 .logo picture, .hero-content > picture, .magic-center picture, .test-card-inner picture, .footer-brand picture { display: contents; }
@@ -82,7 +82,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .section-title { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; line-height: 1.2; margin-bottom: 48px; }
 
 /* HERO */
-.hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 140px 0 60px; }
+.hero { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 140px 0 60px; }
 .hero-bg { position: absolute; inset: 0; z-index: 0; }
 .star-field { position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.6) 0%, transparent 100%), radial-gradient(1px 1px at 30% 60%, rgba(180,126,229,.8) 0%, transparent 100%), radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,.5) 0%, transparent 100%), radial-gradient(1px 1px at 80% 70%, rgba(201,168,76,.6) 0%, transparent 100%), radial-gradient(1px 1px at 50% 85%, rgba(255,255,255,.4) 0%, transparent 100%); background-size: 200px 200px; animation: twinkle 4s infinite alternate, panStars 60s linear infinite; }
 @keyframes twinkle { from { opacity: .7; } to { opacity: 1; } }
@@ -546,6 +546,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   scrollbar-width: none;
   /* scroll-padding: card sẽ snap vào được căn giữa */
   scroll-padding-inline: 50%;
+  justify-content: center;
   justify-content: safe center;
 }
 
@@ -575,7 +576,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   transition: transform .3s, box-shadow .3s;
   position: relative;
   overflow: hidden;
-  flex: 0 0 min(calc((100% - 42px) / 4), 78vw);
+  flex: 0 0 min(calc(25% - 10.5px), 78vw);
   min-height: 390px;
   scroll-snap-align: center;
   word-break: break-word;
@@ -589,13 +590,15 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .price-card.price-featured {
   animation: featuredPriceFloat 6.5s ease-in-out infinite;
   will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 .price-card.price-featured:nth-child(2n) { animation-delay: -3.25s; }
 .price-card.price-featured:nth-child(3n) { animation-delay: -1.625s; }
 
 @keyframes featuredPriceFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -8px, 0); }
 }
 
 /* Badge nổi bật — absolute ở góc trên phải */
@@ -647,6 +650,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   cursor: none;
   z-index: 20;
   transition: all 0.22s;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.1);
 }
@@ -1194,7 +1198,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 .footer-tagline { color: var(--purple-bright) !important; }
 
 /* MODAL */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; }
 .modal.active { display: flex; }
 .modal-box { background: linear-gradient(135deg, #1e1035, #2d1b5e); border: 1px solid var(--gold); border-radius: 24px; padding: 48px; text-align: center; max-width: 400px; animation: modalIn .3s ease; }
 @keyframes modalIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
@@ -1207,7 +1211,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 @media (max-width: 900px) {
   html { font-size: 17px; }
   .container { padding: 0 20px; }
-  .navbar { padding: 10px 0; background: rgba(10,8,18,.92); backdrop-filter: none; border-bottom: 1px solid var(--glass-border); }
+  .navbar { padding: 10px 0; background: rgba(10,8,18,.92); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 1px solid var(--glass-border); }
   .nav-inner { padding: 0 16px; gap: 14px; align-items: center; }
   .nav-logo-img { height: 42px; flex: 0 0 auto; }
   .nav-links { flex: 1; min-width: 0; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 4px 2px 6px; }
@@ -1609,6 +1613,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   z-index: 99;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   transition: all 0.3s ease;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .audio-btn:hover {
@@ -2289,8 +2294,8 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   }
   .blog-scroll-row {
     gap: 18px;
-    padding: 4px max(18px, calc((100vw - min(86vw, 340px)) / 2)) 18px;
-    scroll-padding-inline: max(18px, calc((100vw - min(86vw, 340px)) / 2));
+    padding: 4px max(18px, calc(50vw - min(43vw, 170px))) 18px;
+    scroll-padding-inline: max(18px, calc(50vw - min(43vw, 170px)));
   }
   .blog-scroll-wrap::before,
   .blog-scroll-wrap::after {
@@ -2336,6 +2341,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
 
 .blog-page .nav, .post-page .nav {
   background: rgba(10, 8, 18, 0.95);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
