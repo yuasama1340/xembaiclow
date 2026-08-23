@@ -708,6 +708,12 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   padding: 30px 28px;
 }
 .annual-price-card .price-tier { font-size: .9rem; }
+.annual-price-card .price-tag { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 6px; }
+.annual-price-card .price-amount {
+  font-size: clamp(1.75rem, 2.4vw, 2.15rem);
+  letter-spacing: -.025em;
+  white-space: nowrap;
+}
 .annual-price-card .price-features li { font-size: .92rem; }
 .annual-price-card .price-note { font-size: .86rem; }
 
@@ -1351,6 +1357,7 @@ em { font-family: "Palatino", "Palatino Linotype", "Palatino LT STD", "Book Anti
   .annual-pricing-intro { font-size: .94rem; }
   .annual-price-card { min-height: 0; padding: 24px 20px; }
   .annual-price-card .price-tier { font-size: .82rem; }
+  .annual-price-card .price-amount { font-size: 1.7rem; }
   .pricing-mode-toggle { width: 100%; border-radius: 18px; padding: 5px; margin-bottom: 30px; }
   .toggle-btn { flex: 1; padding: 12px 10px; font-size: .9rem; letter-spacing: 0; border-radius: 14px; }
   .extra-fee { align-items: flex-start; padding: 18px; gap: 14px; }

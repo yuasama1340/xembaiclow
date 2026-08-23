@@ -266,6 +266,10 @@ function formatPackageMoney(amount, compact = false) {
   return value.toLocaleString('vi-VN') + 'đ';
 }
 
+function formatAnnualPackageMoney(amount) {
+  return `${Number(amount || 0).toLocaleString('en-US')} vnđ`;
+}
+
 function packageSelectText(pkg, mode) {
   const price = mode === 'offline' ? pkg.offlinePrice : pkg.onlinePrice;
   return `${pkg.name} – ${formatPackageMoney(price, true)} / ${pkg.duration || 'theo lịch'}`;
@@ -381,7 +385,7 @@ function renderDynamicAnnualPricing() {
         <div class="price-card-header">
           <div class="price-tier">${escapeHtml(pkg.name)}</div>
           <div class="price-tag">
-            <span class="price-amount">${escapeHtml(formatPackageMoney(price, true))}</span>
+            <span class="price-amount">${escapeHtml(formatAnnualPackageMoney(price))}</span>
             <span class="price-unit">${escapeHtml(pkg.unit || '/gói')}</span>
           </div>
           <div class="price-time">⊙ ${escapeHtml(pkg.duration || 'Định hướng 1 năm')}</div>
@@ -415,7 +419,7 @@ function renderDynamicPackageOptions() {
   const annualOptions = dynamicAnnualPackages
     .filter(pkg => Number(pkg.onlinePrice || 0) > 0)
     .map(pkg => {
-      const text = `${pkg.name} – ${formatPackageMoney(pkg.onlinePrice, true)} / ${pkg.duration || 'gói'}`;
+      const text = `${pkg.name} – ${formatAnnualPackageMoney(pkg.onlinePrice)} / ${pkg.duration || 'gói'}`;
       return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${Number(pkg.onlinePrice) || 0}" data-booking-note="${escapeHtml(pkg.bookingNote || '')}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
     })
     .join('');
