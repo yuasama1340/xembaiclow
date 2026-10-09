@@ -32,11 +32,12 @@ let pollCount    = 0;
 let maxPolls     = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
 let manualMode   = false;
 let manualListenerAttached = false;
+let qrImageRequestId = 0;
 
-function init() {
+async function init() {
   // Đọc thông tin đơn từ sessionStorage (được lưu bởi script.js sau khi đăng ký thành công)
   const stored = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
-  applyPaymentConfig(stored.paymentConfig);
+  applyPaymentConfig(stored.paymentConfig, {}, stored.paymentEnabled === false);
 
   orderId     = stored.orderId     || getUrlParam('orderId') || '';
   orderAmount = stored.amount      || parseInt(getUrlParam('amount') || '0');
@@ -55,8 +56,6 @@ function init() {
     return;
   }
 
-  manualMode = stored.paymentEnabled === false || CLIENT_CONFIG.PAYMENT_ENABLED === false;
-
   // Hiển thị thông tin
   document.getElementById('display-order-id').textContent = orderId;
   document.getElementById('display-name').textContent     = name;
@@ -65,35 +64,46 @@ function init() {
   document.getElementById('hint-order-id').textContent    = orderId;
   document.title = `Thanh Toán ${orderId} | Clow Cat Patronus`;
 
+  // Nạp tài khoản hiện tại trước khi hiển thị QR, tránh hiện tài khoản cũ của đơn.
+  await refreshPaymentConfig(stored);
+  manualMode = stored.paymentEnabled === false || CLIENT_CONFIG.PAYMENT_ENABLED === false;
+
   // Tạo QR Code chuyển khoản
   buildQrCode(orderId, orderAmount);
 
   if (manualMode) {
     setupManualTransferMode();
   } else {
+    const description = document.getElementById('payment-description');
+    if (description) description.textContent = 'Hệ thống sẽ tự động xác nhận ngay khi nhận được thanh toán';
     // Bắt đầu polling SePay
     startPolling();
   }
-
-  refreshPaymentConfigInBackground(stored);
 }
 
-function applyPaymentConfig(payment = {}) {
+function applyPaymentConfig(payment = {}, manualPayment = {}, forceManual = false) {
+  payment = payment || {};
+  manualPayment = manualPayment || {};
   if (payment.enabled !== undefined) CLIENT_CONFIG.PAYMENT_ENABLED = payment.enabled === true || String(payment.enabled).toUpperCase() === 'TRUE';
-  if (payment.bankCode) CLIENT_CONFIG.SEPAY_BANK_CODE = String(payment.bankCode).trim().toUpperCase();
-  if (payment.accountNo) CLIENT_CONFIG.SEPAY_ACCOUNT_NO = String(payment.accountNo).trim();
-  if (payment.accountName) CLIENT_CONFIG.SEPAY_ACCOUNT_NAME = String(payment.accountName).trim();
+  if (forceManual) CLIENT_CONFIG.PAYMENT_ENABLED = false;
+  const useManual = CLIENT_CONFIG.PAYMENT_ENABLED === false;
+  const bankCode = (useManual && (manualPayment.bankCode || payment.manualBankCode)) || payment.bankCode;
+  const accountNo = (useManual && (manualPayment.accountNo || payment.manualAccountNo)) || payment.accountNo;
+  const accountName = (useManual && (manualPayment.accountName || payment.manualAccountName)) || payment.accountName;
+  const transferNote = (useManual && (manualPayment.transferNote || payment.manualTransferNote)) || payment.transferNote;
+  if (bankCode) CLIENT_CONFIG.SEPAY_BANK_CODE = String(bankCode).trim().toUpperCase();
+  if (accountNo) CLIENT_CONFIG.SEPAY_ACCOUNT_NO = String(accountNo).trim();
+  if (accountName) CLIENT_CONFIG.SEPAY_ACCOUNT_NAME = String(accountName).trim();
   if (payment.pollIntervalMs) CLIENT_CONFIG.POLL_INTERVAL = Number(payment.pollIntervalMs) || CLIENT_CONFIG.POLL_INTERVAL;
   if (payment.maxWaitMinutes) CLIENT_CONFIG.MAX_WAIT_MINUTES = Number(payment.maxWaitMinutes) || CLIENT_CONFIG.MAX_WAIT_MINUTES;
-  if (payment.transferNote) CLIENT_CONFIG.TRANSFER_NOTE = String(payment.transferNote);
+  if (transferNote) CLIENT_CONFIG.TRANSFER_NOTE = String(transferNote);
   maxPolls = (CLIENT_CONFIG.MAX_WAIT_MINUTES * 60 * 1000) / CLIENT_CONFIG.POLL_INTERVAL;
   updateTransferHint();
 }
 
-async function refreshPaymentConfigInBackground(stored) {
+async function refreshPaymentConfig(stored) {
   if (!CLIENT_CONFIG.ADMIN_CONFIG_URL) return;
 
-  const previousQrSignature = getQrSignature();
   let timeout = null;
   try {
     const controller = new AbortController();
@@ -105,15 +115,7 @@ async function refreshPaymentConfigInBackground(stored) {
 
     const data = await res.json();
     if (data.success && data.config && data.config.payment) {
-      applyPaymentConfig(data.config.payment);
-      if (getQrSignature() !== previousQrSignature) buildQrCode(orderId, orderAmount);
-
-      const shouldUseManual = stored.paymentEnabled === false || CLIENT_CONFIG.PAYMENT_ENABLED === false;
-      if (shouldUseManual && !manualMode) {
-        manualMode = true;
-        if (pollTimer) clearInterval(pollTimer);
-        setupManualTransferMode();
-      }
+      applyPaymentConfig(data.config.payment, data.config.manualPayment, stored.paymentEnabled === false);
     }
   } catch (err) {
     console.warn('Không thể nạp cấu hình thanh toán từ admin:', err);
@@ -126,14 +128,6 @@ function updateTransferHint() {
   document.getElementById('transfer-hint').innerHTML =
     `📌 ${escapeHtml(CLIENT_CONFIG.TRANSFER_NOTE)}<br/>` +
       `<strong id="hint-order-id" class="transfer-order-id">${escapeHtml(orderId || 'CLOW-XXX')}</strong>`;
-}
-
-function getQrSignature() {
-  return [
-    CLIENT_CONFIG.SEPAY_BANK_CODE,
-    CLIENT_CONFIG.SEPAY_ACCOUNT_NO,
-    CLIENT_CONFIG.SEPAY_ACCOUNT_NAME,
-  ].join('|');
 }
 
 function escapeHtml(value) {
@@ -186,13 +180,16 @@ function buildQrCode(orderId, amount) {
 
 // Load ảnh QR vào img element, fade-in khi xong, ẩn skeleton
 function _loadQrImage(imgEl, skeleton, url) {
+  const requestId = ++qrImageRequestId;
   const tempImg = new Image();
   tempImg.onload = () => {
+    if (requestId !== qrImageRequestId) return;
     imgEl.src = url;
     imgEl.classList.add('loaded');
     if (skeleton) skeleton.classList.add('hidden');
   };
   tempImg.onerror = () => {
+    if (requestId !== qrImageRequestId) return;
     // Nếu lỗi load, vẫn gán src để thấy broken image thay vì trắng mãi
     imgEl.src = url;
     imgEl.classList.add('loaded');
@@ -202,6 +199,8 @@ function _loadQrImage(imgEl, skeleton, url) {
 }
 
 function setupManualTransferMode() {
+  const description = document.getElementById('payment-description');
+  if (description) description.textContent = 'Sau khi chuyển khoản, bạn nhấn nút xác nhận bên dưới. ClowCat sẽ kiểm tra giao dịch và xác nhận lịch với bạn.';
   const statusText = document.getElementById('status-text');
   const manualNote = document.getElementById('manual-note');
   const manualBtn = document.getElementById('manual-confirm-btn');
