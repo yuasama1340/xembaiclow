@@ -423,9 +423,12 @@ function renderDynamicPackageOptions() {
       return `<option data-package-code="${escapeHtml(pkg.code)}" data-package-amount="${Number(pkg.onlinePrice) || 0}" data-booking-note="${escapeHtml(pkg.bookingNote || '')}" value="${escapeHtml(text)}">${escapeHtml(text)}</option>`;
     })
     .join('');
-  const annualGroup = annualOptions ? `<optgroup label="Online · Định hướng 1 năm">${annualOptions}</optgroup>` : '';
+  // Gói định hướng dùng chung giá gói cho cả hai hình thức tư vấn.
+  const annualGroups = annualOptions
+    ? ['Online', 'Offline'].map(mode => `<optgroup label="${mode} · Định hướng 1 năm">${annualOptions}</optgroup>`).join('')
+    : '';
 
-  packageSelect.innerHTML = `<option value="">-- Chọn hình thức trước --</option>${standardGroups}${annualGroup}`;
+  packageSelect.innerHTML = `<option value="">-- Chọn hình thức trước --</option>${standardGroups}${annualGroups}`;
 }
 
 // ============================================================
@@ -489,7 +492,7 @@ function chooseBookingPackage(packageCode, mode) {
     item.dataset.packageCode === packageCode && !item.disabled
   );
   if (option) {
-    packageSelect.value = option.value;
+    option.selected = true;
     updatePackageBookingNote();
   }
 }
